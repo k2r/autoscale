@@ -1,0 +1,2 @@
+syntax: glob
+target/scheduler-0.0.1-SNAPSHOT.jar
