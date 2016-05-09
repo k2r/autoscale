@@ -3,23 +3,33 @@
  */
 package storm.autoscale.scheduler;
 
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import backtype.storm.scheduler.Cluster;
 import backtype.storm.scheduler.IScheduler;
 import backtype.storm.scheduler.Topologies;
+import storm.autoscale.scheduler.modules.AssignmentMonitor;
+import storm.autoscale.scheduler.modules.ComponentMonitor;
 
 /**
  * @author Roland
  *
  */
 public class AutoscaleScheduler implements IScheduler {
+	
+	private ComponentMonitor components;
+	private AssignmentMonitor assignments;
+	private ArrayList<String> congested;
+	private ArrayList<String> toFork;
+	private static Logger logger = Logger.getLogger("AutoscaleScheduler");
 
 	/**
 	 * 
 	 */
 	public AutoscaleScheduler() {
-		// TODO Auto-generated constructor stub
+		logger.info("The auto-scaling scheduler for Storm is starting...");
 	}
 
 	/* (non-Javadoc)
@@ -28,10 +38,9 @@ public class AutoscaleScheduler implements IScheduler {
 	@SuppressWarnings("rawtypes")
 	@Override
 	public void prepare(Map conf) {
-		// TODO Auto-generated method stub
-
 	}
 
+	
 	/* (non-Javadoc)
 	 * @see backtype.storm.scheduler.IScheduler#schedule(backtype.storm.scheduler.Topologies, backtype.storm.scheduler.Cluster)
 	 */

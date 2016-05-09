@@ -45,8 +45,8 @@ public class ResourceMonitor {
     	Map<String, SupervisorDetails> supIdToSupervisor = cluster.getSupervisors();
     	for(String supId : supIdToSupervisor.keySet()){
     		SupervisorDetails sd = supIdToSupervisor.get(supId);
-    		Double cpuUsage = sd.getCpu();
-    		Double memUsage = sd.getMemory();
+    		Double cpuUsage = 0.0;//sd.getCpu();
+    		Double memUsage = 0.0;//sd.getMemory();
     		if(cpuUsage != null && memUsage != null){
     			ResourceMonitor.logger.fine(supId + " cpu usage = " + cpuUsage + " memory usage = " + memUsage);
     			String line = supId + " cpu usage = " + cpuUsage + " memory usage = " + memUsage;
