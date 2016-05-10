@@ -57,7 +57,7 @@ public class ComponentMonitor {
 		String user = "root";
 		Class.forName(jdbcDriver);
 		this.connection = DriverManager.getConnection(dbUrl,user, null);
-		this.statement = this.connection.createStatement();
+		this.statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 		
 		this.step = 10L;
 		this.initTimestamp();
@@ -74,7 +74,7 @@ public class ComponentMonitor {
 				this.lastTimestamp = 0L;
 				this.currentTimestamp = this.lastTimestamp + this.step;
 				String queryInitTimestamp = "INSERT INTO " + TABLE_TIMESTAMP + " VALUES('" + this.getCurrentTimestamp() + "')";
-				this.statement.executeQuery(queryInitTimestamp);
+				this.statement.executeUpdate(queryInitTimestamp);
 			}
 		} catch (SQLException e) {
 			logger.severe("Scheduler timestamp can not be retrieved because " + e);
@@ -82,9 +82,9 @@ public class ComponentMonitor {
 	}
 	
 	public void updateTimestamp(){
-		String queryUpdateTimestamp = "INSERT INTO " + TABLE_TIMESTAMP + " VALUES('" + this.getCurrentTimestamp() + "')";
+		String queryUpdateTimestamp = "INSERT INTO " + TABLE_TIMESTAMP + " VALUES(" + this.getCurrentTimestamp() + ")";
 		try {
-			this.statement.executeQuery(queryUpdateTimestamp);
+			this.statement.executeUpdate(queryUpdateTimestamp);
 		} catch (SQLException e) {
 			logger.severe("Scheduler timestamp can not be updated because " + e);
 		}
@@ -93,7 +93,7 @@ public class ComponentMonitor {
 	public void update(){
 		/*Get queue sizes for each component between the last and the current timestamp*/
 		String queryQueues = "SELECT " + KEY_COMPONENT + ","
-				+ " SUM(" + INPUTS  + ") AS inputs, " + ", SUM(" + EXECUTED + ") AS executed, " + ", SUM(" + OUTPUTS  + ") AS outputs "
+				+ " SUM(" + INPUTS  + ") AS inputs, " + "SUM(" + EXECUTED + ") AS executed, " + "SUM(" + OUTPUTS  + ") AS outputs "
 				+ "FROM " + TABLE_QUEUES + 
 				" WHERE " + KEY_TIMESTAMP + " BETWEEN " + this.getLastTimestamp() + " AND " + this.getCurrentTimestamp() +
 				" GROUP BY " + KEY_COMPONENT;
@@ -141,7 +141,7 @@ public class ComponentMonitor {
 		
 		/*Get average CPU load for each component between the last and the current timestamp*/
 		String queryLoad = "SELECT " + KEY_COMPONENT + ","
-				+ " AVG(" + LOAD + ") AS load "
+				+ " AVG(" + LOAD + ") AS avgLoad "
 				+ "FROM " + TABLE_LOAD + 
 				" WHERE " + KEY_TIMESTAMP + " BETWEEN " + this.getLastTimestamp() + " AND " + this.getCurrentTimestamp() +
 				" GROUP BY " + KEY_COMPONENT;

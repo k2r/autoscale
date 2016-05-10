@@ -126,6 +126,7 @@ public class AutoscaleScheduler implements IScheduler {
 				this.toAssign.remove(executor);
 			}
 		}
+		logger.info("Component " + component + " has been forked");
 	}
 	
 	/* (non-Javadoc)
@@ -133,10 +134,14 @@ public class AutoscaleScheduler implements IScheduler {
 	 */
 	@Override
 	public void schedule(Topologies topologies, Cluster cluster) {
-		/*First, we take all scaling decisions*/
+		/*In a first time, we let the default scheduler balance the load*/
+		DefaultScheduler scheduler = new DefaultScheduler();
+		scheduler.schedule(topologies, cluster);
+		
+		/*Then, we take all scaling decisions*/
 		for(TopologyDetails topology : topologies.getTopologies()){
 			try {
-				this.components = new ComponentMonitor("127.0.0.1");
+				this.components = new ComponentMonitor("localhost");
 			} catch (ClassNotFoundException e) {
 				logger.severe("The autoscale scheduler can not be launched because of its component monitor, error while starting: " + e);
 			} catch (SQLException e) {
@@ -144,13 +149,16 @@ public class AutoscaleScheduler implements IScheduler {
 			}
 			this.assignments = new AssignmentMonitor(cluster, topology);
 			this.explorer = new TopologyExplorer(topology.getTopology());
-			
-			this.components.update();
 			this.assignments.update();
+			this.components.update();
 			IMetric impactMetric = new WelfMetric(this.explorer, this.components);
 			
 			this.congested = this.components.getCongested();
+			this.toFork = new ArrayList<>();
+			this.toAssign = new ArrayList<>();
+			
 			while(!this.congested.isEmpty()){
+				System.out.println(this.congested.size() + " congested components");
 				String mostImportantComponent = this.congested.get(0);
 				for(String component : this.congested){
 					if(impactMetric.compute(component) > impactMetric.compute(mostImportantComponent)){
@@ -167,9 +175,5 @@ public class AutoscaleScheduler implements IScheduler {
 				forkAndAssign(component, cluster, topology);
 			}	
 		}
-		
-		/*Finally, we let the default scheduler balance the load*/
-		DefaultScheduler scheduler = new DefaultScheduler();
-		scheduler.schedule(topologies, cluster);
 	}
 }
