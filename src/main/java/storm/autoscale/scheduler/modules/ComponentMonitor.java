@@ -176,24 +176,60 @@ public class ComponentMonitor {
 		return this.components.get(component).get(INPUTS);
 	}
 	
+	public void setInputQueueSize(String component, Double value){
+		HashMap<String, Double> monitorData = this.components.get(component);
+		monitorData.replace(INPUTS, value);
+		this.components.replace(component, monitorData);
+	}
+	
 	public Double getNbExecuted(String component){
 		return this.components.get(component).get(EXECUTED);
+	}
+	
+	public void setNbExecuted(String component, Double value){
+		HashMap<String, Double> monitorData = this.components.get(component);
+		monitorData.replace(EXECUTED, value);
+		this.components.replace(component, monitorData);
 	}
 	
 	public Double getNbOutputs(String component){
 		return this.components.get(component).get(OUTPUTS);
 	}
 	
+	public void setOutputQueueSize(String component, Double value){
+		HashMap<String, Double> monitorData = this.components.get(component);
+		monitorData.replace(OUTPUTS, value);
+		this.components.replace(component, monitorData);
+	}
+	
 	public Double getAvgLatency(String component){
 		return this.components.get(component).get(LATENCY);
+	}
+	
+	public void setAvgLatency(String component, Double value){
+		HashMap<String, Double> monitorData = this.components.get(component);
+		monitorData.replace(LATENCY, value);
+		this.components.replace(component, monitorData);
 	}
 	
 	public Double getAvgCpuLoad(String component){
 		return this.components.get(component).get(LOAD);
 	}
 	
+	public void setAvgCpuLoad(String component, Double value){
+		HashMap<String, Double> monitorData = this.components.get(component);
+		monitorData.replace(LOAD, value);
+		this.components.replace(component, monitorData);
+	}
+	
 	public Double getEstimatedSelectivy(String component){
 		return this.components.get(component).get(SELECTIVITY);
+	}
+	
+	public void setEstimatedSelectivity(String component, Double value){
+		HashMap<String, Double> monitorData = this.components.get(component);
+		monitorData.replace(SELECTIVITY, value);
+		this.components.replace(component, monitorData);
 	}
 	
 	public boolean isCongested(String component){

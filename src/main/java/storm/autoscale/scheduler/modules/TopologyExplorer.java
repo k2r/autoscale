@@ -30,6 +30,7 @@ public class TopologyExplorer {
 		this.topology = topology;
 		this.spouts = this.topology.get_spouts();
 		this.bolts = this.topology.get_bolts();
+		this.components = new ArrayList<>();
 		this.components.addAll(this.spouts.keySet());
 		this.components.addAll(this.bolts.keySet());
 	}
@@ -75,7 +76,7 @@ public class TopologyExplorer {
 		return result;
 	}
 	
-	public ArrayList<String> getChilds(String parent){
+	public ArrayList<String> getChildren(String parent){
 		ArrayList<String> result = new ArrayList<>();
 		for(String candidate : this.components){
 			if(this.spouts.containsKey(candidate)){

@@ -126,4 +126,31 @@ public class AssignmentMonitor {
 		}
 		return result;
 	}
+	
+	public ArrayList<Integer> getAllSortedTasks(String component){
+		ArrayList<Integer> result = new ArrayList<>();
+		Map<ExecutorDetails, String> executorToComponents = this.topology.getExecutorToComponent();
+		for(ExecutorDetails executor : executorToComponents.keySet()){
+			if(executorToComponents.get(executor).equalsIgnoreCase(component)){
+				int start = executor.getStartTask();
+				int stop = executor.getEndTask();
+				for(int i = start; i <= stop; i++){
+					result.add(i);
+				}
+			}
+		}
+		result.sort(null);
+		return result;
+	}
+	
+	public Integer getParallelism(String component){
+		int result = 0;
+		Map<ExecutorDetails, String> executorToComponents = this.topology.getExecutorToComponent();
+		for(ExecutorDetails executor : executorToComponents.keySet()){
+			if(executorToComponents.get(executor).equalsIgnoreCase(component)){
+				result++;
+			}
+		}
+		return result;
+	}
 }

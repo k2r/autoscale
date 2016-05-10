@@ -1,4 +1,10 @@
-storm\psrl\scheduler\PSRLScheduler.class
+storm\autoscale\scheduler\modules\ComponentMonitor.class
 storm\psrl\scheduler\InputManager.class
+storm\autoscale\scheduler\modules\TopologyExplorer.class
+storm\autoscale\scheduler\metrics\WelfMetric.class
+storm\psrl\scheduler\PSRLScheduler.class
+storm\autoscale\scheduler\modules\AssignmentMonitor.class
 storm\psrl\scheduler\ResourceMonitor.class
+storm\autoscale\scheduler\AutoscaleScheduler.class
 storm\psrl\scheduler\util\ExecutorUIdentifier.class
+storm\autoscale\scheduler\metrics\IMetric.class
