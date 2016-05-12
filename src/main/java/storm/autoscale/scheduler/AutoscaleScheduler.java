@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import backtype.storm.scheduler.Cluster;
-import backtype.storm.scheduler.DefaultScheduler;
+import backtype.storm.scheduler.EvenScheduler;
 import backtype.storm.scheduler.ExecutorDetails;
 import backtype.storm.scheduler.IScheduler;
 import backtype.storm.scheduler.Topologies;
@@ -83,50 +83,80 @@ public class AutoscaleScheduler implements IScheduler {
 		return best;
 	}
 	
-	public void forkAndAssign(String component, Cluster cluster, TopologyDetails topology){
-		int newParallelism = this.assignments.getParallelism(component) + 1;
-		ArrayList<Integer> tasks = this.assignments.getAllSortedTasks(component);
+	public void unassign(String component, Cluster cluster, TopologyDetails topology){
+		ArrayList<ExecutorDetails> executors = this.assignments.getAllExecutors(component);
+		for(ExecutorDetails executor : executors){
+			if(cluster.getAssignmentById(topology.getId()).isExecutorAssigned(executor)){
+				cluster.freeSlot(cluster.getAssignmentById(topology.getId()).getExecutorToSlot().get(executor));
+				//cluster.getAssignmentById(topology.getId()).getExecutorToSlot().remove(executor);
+			}
+		}
+	}
+	
+	public ArrayList<ArrayList<Integer>> getBorderTasks(ArrayList<Integer> tasks, Integer parallelism){
+		ArrayList<ArrayList<Integer>> result = new ArrayList<>();
 		int nbTasks = tasks.size();
-		int quotient = nbTasks / newParallelism;
-		int remainder = nbTasks - (newParallelism * quotient);
+		int quotient = nbTasks / parallelism;
+		int remainder = nbTasks - (parallelism * quotient);
 		if(remainder == 0){
 			for(int i = 0; i < nbTasks; i += quotient){
+				ArrayList<Integer> delimiters = new ArrayList<>();
 				int start = tasks.get(i);
 				int end = tasks.get(i + quotient - 1);
-				ExecutorDetails executor = new ExecutorDetails(start, end);
-				this.toAssign.add(executor);
+				delimiters.add(start);
+				delimiters.add(end);
+				result.add(delimiters);
 			}
-			this.toFork.remove(component);
 		}else{
-			for(int i = 0; i < nbTasks - remainder; i += quotient){
+			for(int i = 0; i < nbTasks - (quotient + remainder); i += quotient){
+				ArrayList<Integer> delimiters = new ArrayList<>();
 				int start = tasks.get(i);
 				int end = tasks.get(i + quotient - 1);
-				ExecutorDetails executor = new ExecutorDetails(start, end);
-				this.toAssign.add(executor);
+				delimiters.add(start);
+				delimiters.add(end);
+				result.add(delimiters);
 			}
-			int start = tasks.get(nbTasks - remainder);
+			ArrayList<Integer> delimiters = new ArrayList<>();
+			int start = tasks.get(nbTasks - (quotient + remainder));
 			int end = tasks.get(nbTasks - 1);
+			delimiters.add(start);
+			delimiters.add(end);
+			result.add(delimiters);
+		}
+		return result;
+	}
+	
+	public void forkAndAssign(String component, Cluster cluster, TopologyDetails topology){
+		unassign(component, cluster, topology);
+		int newParallelism = this.assignments.getParallelism(component) + 1;
+		ArrayList<Integer> tasks = this.assignments.getAllSortedTasks(component);
+		ArrayList<ArrayList<Integer>> borders = getBorderTasks(tasks, newParallelism);
+		int nbExecutors = borders.size();
+		for(int i = 0; i < nbExecutors; i++){
+			ArrayList<Integer> executorBorders = borders.get(i);
+			int start = executorBorders.get(0);
+			int end = executorBorders.get(1);
 			ExecutorDetails executor = new ExecutorDetails(start, end);
 			this.toAssign.add(executor);
-			this.toFork.remove(component);
 		}
-		for(ExecutorDetails executor : this.toAssign){
+		for(int i = 0; i < this.toAssign.size(); i++){
+			ExecutorDetails executor = this.toAssign.get(i);
 			WorkerSlot slot = getBestLocation(component);
 			if(cluster.isSlotOccupied(slot)){
 				ArrayList<ExecutorDetails> sharedExecutorPool = new ArrayList<>();
 				sharedExecutorPool.add(executor);
-				cluster.freeSlot(slot);
-				sharedExecutorPool.addAll(cluster.getUnassignedExecutors(topology));
+				//cluster.freeSlot(slot);
+				//sharedExecutorPool.addAll(cluster.getUnassignedExecutors(topology));
 				cluster.assign(slot, topology.getId(), sharedExecutorPool);
-				this.toAssign.remove(executor);
+				//this.toAssign.remove(executor);
 			}else{
 				ArrayList<ExecutorDetails> exclusiveExecutorPool = new ArrayList<>();
 				exclusiveExecutorPool.add(executor);
 				cluster.assign(slot, topology.getId(), exclusiveExecutorPool);
-				this.toAssign.remove(executor);
+				//this.toAssign.remove(executor);
 			}
 		}
-		logger.info("Component " + component + " has been forked");
+		logger.info("Component " + component + " has been uncongested successfully");
 	}
 	
 	/* (non-Javadoc)
@@ -134,12 +164,9 @@ public class AutoscaleScheduler implements IScheduler {
 	 */
 	@Override
 	public void schedule(Topologies topologies, Cluster cluster) {
-		/*In a first time, we let the default scheduler balance the load*/
-		DefaultScheduler scheduler = new DefaultScheduler();
-		scheduler.schedule(topologies, cluster);
-		
-		/*Then, we take all scaling decisions*/
+		/*In a first time, we take all scaling decisions*/
 		for(TopologyDetails topology : topologies.getTopologies()){
+			
 			try {
 				this.components = new ComponentMonitor("localhost");
 			} catch (ClassNotFoundException e) {
@@ -156,9 +183,25 @@ public class AutoscaleScheduler implements IScheduler {
 			this.congested = this.components.getCongested();
 			this.toFork = new ArrayList<>();
 			this.toAssign = new ArrayList<>();
-			
+			String monitoring = "Current monitoring info (timestamp " + this.components.getLastTimestamp() + " to " + this.components.getCurrentTimestamp() + ")\n";
+			logger.info(monitoring);
+			for(String component : this.components.getComponents()){
+				String infos = "Component " + component + " ---> inputs: " + this.components.getInputQueueSize(component);
+				infos += ", executed: " + this.components.getNbExecuted(component);
+				infos += ", outputs: " + this.components.getNbOutputs(component); 
+				infos += ", latency: " + this.components.getAvgLatency(component) + "\n";
+				logger.info(infos);
+			}
+			if(this.congested.isEmpty()){
+				logger.info("No component to scale out!");
+			}	
 			while(!this.congested.isEmpty()){
-				System.out.println(this.congested.size() + " congested components");
+				String congestInfo = "Congested components ";
+				for(String component : this.congested){
+					congestInfo += component + " ";
+				}
+				congestInfo = "have been detected!";
+				logger.info(congestInfo);
 				String mostImportantComponent = this.congested.get(0);
 				for(String component : this.congested){
 					if(impactMetric.compute(component) > impactMetric.compute(mostImportantComponent)){
@@ -169,11 +212,15 @@ public class AutoscaleScheduler implements IScheduler {
 				incrParallelism(mostImportantComponent);
 				if(!this.components.isCongested(mostImportantComponent)){
 					this.congested.remove(mostImportantComponent);
+					logger.info("Component " + mostImportantComponent + " is being uncongested...");
 				}
+				forkAndAssign(mostImportantComponent, cluster, topology);
 			}
-			for(String component : this.toFork){
-				forkAndAssign(component, cluster, topology);
-			}	
+				
 		}
+		
+		/*Then we let the default scheduler balance the load*/
+		EvenScheduler scheduler = new EvenScheduler();
+		scheduler.schedule(topologies, cluster);
 	}
 }

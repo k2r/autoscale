@@ -21,7 +21,6 @@ public class ComponentMonitor {
 
 	private Long lastTimestamp;
 	private Long currentTimestamp;
-	private final Long step;
 	
 	private HashMap<String, HashMap<String, Double>> components;
 	
@@ -58,21 +57,34 @@ public class ComponentMonitor {
 		Class.forName(jdbcDriver);
 		this.connection = DriverManager.getConnection(dbUrl,user, null);
 		this.statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-		
-		this.step = 10L;
 		this.initTimestamp();
 	}
 	
 	public void initTimestamp(){
-		String queryTimestamp = "SELECT " + KEY_TIMESTAMP + " FROM " + TABLE_TIMESTAMP;
+		String queryLastTimestamp = "SELECT " + KEY_TIMESTAMP + " FROM " + TABLE_TIMESTAMP;
+		String queryCurrentTimestamp = "SELECT " + KEY_TIMESTAMP + " FROM " + TABLE_QUEUES;
 		try {
-			ResultSet resultTimestamp = this.statement.executeQuery(queryTimestamp);
-			if(resultTimestamp.last()){
-				this.lastTimestamp = resultTimestamp.getLong(KEY_TIMESTAMP);
-				this.currentTimestamp = this.lastTimestamp + this.step;
+			ResultSet resultLastTimestamp = this.statement.executeQuery(queryLastTimestamp);
+			if(resultLastTimestamp.last()){
+				this.lastTimestamp = resultLastTimestamp.getLong(KEY_TIMESTAMP);
+				ResultSet resultCurrentTimestamp = this.statement.executeQuery(queryCurrentTimestamp);
+				if(resultCurrentTimestamp.last()){
+					this.currentTimestamp = resultCurrentTimestamp.getLong(KEY_TIMESTAMP);
+				}else{
+					this.currentTimestamp = this.lastTimestamp;
+				}
 			}else{
-				this.lastTimestamp = 0L;
-				this.currentTimestamp = this.lastTimestamp + this.step;
+				String queryGetFirstTimestamp = "SELECT " + KEY_TIMESTAMP + " FROM " + TABLE_QUEUES;
+				ResultSet resultFirstTimestamp = this.statement.executeQuery(queryGetFirstTimestamp);
+				if(resultFirstTimestamp.first()){
+					this.lastTimestamp = resultFirstTimestamp.getLong(KEY_TIMESTAMP);
+					if(resultFirstTimestamp.last()){
+						this.currentTimestamp = resultFirstTimestamp.getLong(KEY_TIMESTAMP);
+					}
+				}else{
+					this.lastTimestamp = 0L;
+					this.currentTimestamp = 0L;
+				}
 				String queryInitTimestamp = "INSERT INTO " + TABLE_TIMESTAMP + " VALUES('" + this.getCurrentTimestamp() + "')";
 				this.statement.executeUpdate(queryInitTimestamp);
 			}
@@ -118,7 +130,7 @@ public class ComponentMonitor {
 		
 		/*Get average latency for each component between the last and the current timestamp*/
 		String queryLatency = "SELECT " + KEY_COMPONENT + ","
-				+ " AVG(" + LATENCY  + ") AS latency "
+				+ " AVG(" + LATENCY  + ") AS avgLatency "
 				+ "FROM " + TABLE_LATENCY + 
 				" WHERE " + KEY_TIMESTAMP + " BETWEEN " + this.getLastTimestamp() + " AND " + this.getCurrentTimestamp() +
 				" GROUP BY " + KEY_COMPONENT;
@@ -131,7 +143,7 @@ public class ComponentMonitor {
 					this.components.put(component, monitorData);
 				}
 				HashMap<String, Double> monitorData = this.components.get(component);
-				Double latency = resultLatency.getDouble(LATENCY);
+				Double latency = resultLatency.getDouble("avgLatency");
 				monitorData.put(LATENCY, latency);
 				this.components.replace(component, monitorData);
 			}
@@ -154,8 +166,8 @@ public class ComponentMonitor {
 					this.components.put(component, monitorData);
 				}
 				HashMap<String, Double> monitorData = this.components.get(component);
-				Double load = resultLoad.getDouble(LATENCY);
-				monitorData.put(LATENCY, load);
+				Double load = resultLoad.getDouble("avgLoad");
+				monitorData.put(LOAD, load);
 				this.components.replace(component, monitorData);
 			}
 		}catch (SQLException e){
@@ -170,6 +182,14 @@ public class ComponentMonitor {
 	
 	public Long getCurrentTimestamp(){
 		return this.currentTimestamp;
+	}
+	
+	public ArrayList<String> getComponents(){
+		ArrayList<String> result = new ArrayList<>();
+		for(String component : this.components.keySet()){
+			result.add(component);
+		}
+		return result;
 	}
 	
 	public Double getInputQueueSize(String component){
@@ -233,7 +253,13 @@ public class ComponentMonitor {
 	}
 	
 	public boolean isCongested(String component){
-		return this.getInputQueueSize(component) > this.getNbExecuted(component);
+		Double inputs = this.getInputQueueSize(component);
+		Double nbExecuted = this.getNbExecuted(component);
+		if(inputs == null || nbExecuted == null){
+			return false;
+		}else{
+			return inputs > nbExecuted;
+		}
 	}
 	
 	public ArrayList<String> getCongested(){

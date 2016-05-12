@@ -45,6 +45,9 @@ public class WelfMetric implements IMetric {
 		Double inputs = this.cm.getInputQueueSize(component);
 		Double selectivity = this.cm.getEstimatedSelectivy(component);
 		Double latency = this.cm.getAvgLatency(component);
+		if(latency == null){
+			latency = 1.0; //ONLY FOR DEBUGGING PURPOSE
+		}
 		return inputs * selectivity * latency;
 	}
 	

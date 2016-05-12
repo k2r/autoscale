@@ -56,14 +56,16 @@ public class AssignmentMonitor {
 	
 	public void update(){
 		SchedulerAssignment schedAssignment = this.cluster.getAssignmentById(this.topology.getId());
-		Map<ExecutorDetails, WorkerSlot> executorToSlots = schedAssignment.getExecutorToSlot();
-		for(ExecutorDetails executor : executorToSlots.keySet()){
-			WorkerSlot slot = executorToSlots.get(executor);
-			String component = this.topology.getExecutorToComponent().get(executor);
-			ArrayList<String> affectedComponents = this.assignments.get(slot);
-			if(!affectedComponents.contains(component)){
-				affectedComponents.add(component);
-				this.assignments.replace(slot, affectedComponents);
+		if(schedAssignment != null){
+			Map<ExecutorDetails, WorkerSlot> executorToSlots = schedAssignment.getExecutorToSlot();
+			for(ExecutorDetails executor : executorToSlots.keySet()){
+				WorkerSlot slot = executorToSlots.get(executor);
+				String component = this.topology.getExecutorToComponent().get(executor);
+				ArrayList<String> affectedComponents = this.assignments.get(slot);
+				if(!affectedComponents.contains(component)){
+					affectedComponents.add(component);
+					this.assignments.replace(slot, affectedComponents);
+				}
 			}
 		}
 	}
@@ -140,6 +142,17 @@ public class AssignmentMonitor {
 			}
 		}
 		result.sort(null);
+		return result;
+	}
+	
+	public ArrayList<ExecutorDetails> getAllExecutors(String component){
+		ArrayList<ExecutorDetails> result = new ArrayList<>();
+		Map<ExecutorDetails, String> executorToComponents = this.topology.getExecutorToComponent();
+		for(ExecutorDetails executor : executorToComponents.keySet()){
+			if(executorToComponents.get(executor).equalsIgnoreCase(component)){
+				result.add(executor);
+			}
+		}
 		return result;
 	}
 	
