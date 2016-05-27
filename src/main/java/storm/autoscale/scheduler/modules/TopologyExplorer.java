@@ -100,4 +100,21 @@ public class TopologyExplorer {
 		}
 		return result;
 	}
+	
+	public ArrayList<String> getParents(String child){
+		ArrayList<String> result = new ArrayList<>();
+		if(this.spouts.containsKey(child)){
+			ComponentCommon component = this.spouts.get(child).get_common();
+			for(GlobalStreamId input : component.get_inputs().keySet()){
+				result.add(input.get_componentId());
+			}
+		}
+		if(this.bolts.containsKey(child)){
+			ComponentCommon component = this.bolts.get(child).get_common();
+			for(GlobalStreamId input : component.get_inputs().keySet()){
+				result.add(input.get_componentId());
+			}
+		}
+		return result;
+	}
 }

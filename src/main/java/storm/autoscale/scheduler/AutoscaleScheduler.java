@@ -5,13 +5,16 @@ package storm.autoscale.scheduler;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import backtype.storm.scheduler.Cluster;
 import backtype.storm.scheduler.EvenScheduler;
 import backtype.storm.scheduler.ExecutorDetails;
 import backtype.storm.scheduler.IScheduler;
+import backtype.storm.scheduler.SchedulerAssignment;
 import backtype.storm.scheduler.Topologies;
 import backtype.storm.scheduler.TopologyDetails;
 import backtype.storm.scheduler.WorkerSlot;
@@ -31,8 +34,9 @@ public class AutoscaleScheduler implements IScheduler {
 	private AssignmentMonitor assignments;
 	private TopologyExplorer explorer;
 	private ArrayList<String> congested;
-	private ArrayList<String> toFork;
+	//private ArrayList<String> toFork;
 	private ArrayList<ExecutorDetails> toAssign;
+	private boolean isScaled;
 	private static Logger logger = Logger.getLogger("AutoscaleScheduler");
 
 	/**
@@ -84,11 +88,16 @@ public class AutoscaleScheduler implements IScheduler {
 	}
 	
 	public void unassign(String component, Cluster cluster, TopologyDetails topology){
-		ArrayList<ExecutorDetails> executors = this.assignments.getAllExecutors(component);
-		for(ExecutorDetails executor : executors){
-			if(cluster.getAssignmentById(topology.getId()).isExecutorAssigned(executor)){
-				cluster.freeSlot(cluster.getAssignmentById(topology.getId()).getExecutorToSlot().get(executor));
-				//cluster.getAssignmentById(topology.getId()).getExecutorToSlot().remove(executor);
+		SchedulerAssignment schedAssignment = cluster.getAssignmentById(topology.getId());
+		Set<ExecutorDetails> executors = schedAssignment.getExecutors(); 
+		Map<ExecutorDetails, String> executorToComponents = topology.getExecutorToComponent();
+		Iterator<ExecutorDetails> iterator = executors.iterator();
+		while(iterator.hasNext()){
+			ExecutorDetails executor = iterator.next();
+			String linkedComponent = executorToComponents.get(executor);
+			if(linkedComponent.equalsIgnoreCase(component) && schedAssignment.isExecutorAssigned(executor)){
+				WorkerSlot slot = schedAssignment.getExecutorToSlot().get(executor);
+				cluster.freeSlot(slot);
 			}
 		}
 	}
@@ -181,8 +190,9 @@ public class AutoscaleScheduler implements IScheduler {
 			IMetric impactMetric = new WelfMetric(this.explorer, this.components);
 			
 			this.congested = this.components.getCongested();
-			this.toFork = new ArrayList<>();
+			//this.toFork = new ArrayList<>();
 			this.toAssign = new ArrayList<>();
+			
 			String monitoring = "Current monitoring info (timestamp " + this.components.getLastTimestamp() + " to " + this.components.getCurrentTimestamp() + ")\n";
 			logger.info(monitoring);
 			for(String component : this.components.getComponents()){
@@ -193,28 +203,34 @@ public class AutoscaleScheduler implements IScheduler {
 				logger.info(infos);
 			}
 			if(this.congested.isEmpty()){
+				this.isScaled = true;
 				logger.info("No component to scale out!");
-			}	
-			while(!this.congested.isEmpty()){
+			}else{
+				this.isScaled = false;
 				String congestInfo = "Congested components ";
 				for(String component : this.congested){
 					congestInfo += component + " ";
 				}
-				congestInfo = "have been detected!";
+				congestInfo += "have been detected!";
 				logger.info(congestInfo);
-				String mostImportantComponent = this.congested.get(0);
-				for(String component : this.congested){
-					if(impactMetric.compute(component) > impactMetric.compute(mostImportantComponent)){
-						mostImportantComponent = component;
+			}
+			while(!isScaled){
+				if(this.congested.isEmpty()){
+					this.isScaled = true;
+					break;
+				}else{
+					String mostImportantComponent = this.congested.get(0);
+					for(String component : this.congested){
+						if(impactMetric.compute(component) > impactMetric.compute(mostImportantComponent)){
+							mostImportantComponent = component;
+						}
 					}
-				}
-				this.toFork.add(mostImportantComponent);
-				incrParallelism(mostImportantComponent);
-				if(!this.components.isCongested(mostImportantComponent)){
+					//this.toFork.add(mostImportantComponent);
+					incrParallelism(mostImportantComponent);
 					this.congested.remove(mostImportantComponent);
 					logger.info("Component " + mostImportantComponent + " is being uncongested...");
+					forkAndAssign(mostImportantComponent, cluster, topology);
 				}
-				forkAndAssign(mostImportantComponent, cluster, topology);
 			}
 				
 		}
