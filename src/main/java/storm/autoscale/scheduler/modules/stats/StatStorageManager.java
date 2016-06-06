@@ -36,10 +36,13 @@ public class StatStorageManager implements Runnable{
 
 	private static StatStorageManager manager = null;
 	private NimbusListener listener;
+	private Integer timestamp;
+	private Integer rate;
 	private final Connection connection;
 	private final Statement statement;
-	private static Integer timestamp = 0;
 	private final static String ALLTIME = ":all-time";
+	private final static String TABLE_SPOUT = "all_time_spouts_stats";
+	private final static String TABLE_BOLT = "all_time_bolts_stats";
 	private static Logger logger = Logger.getLogger("StatStorageManager");
 	
 	/**
@@ -47,7 +50,7 @@ public class StatStorageManager implements Runnable{
 	 * @throws ClassNotFoundException 
 	 * 
 	 */
-	private StatStorageManager(String dbHost, String nimbusHost, Integer nimbusPort) throws SQLException, ClassNotFoundException {
+	private StatStorageManager(String dbHost, String nimbusHost, Integer nimbusPort, Integer rate) throws SQLException, ClassNotFoundException {
 		String jdbcDriver = "com.mysql.jdbc.Driver";
 		String dbUrl = "jdbc:mysql://"+ dbHost +"/benchmarks";
 		String user = "root";
@@ -55,13 +58,23 @@ public class StatStorageManager implements Runnable{
 		this.connection = DriverManager.getConnection(dbUrl,user, null);
 		this.statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 		this.listener = new NimbusListener(nimbusHost, nimbusPort);
+		this.timestamp = 0;
+		this.rate = 0;
 	}
 	
-	public static StatStorageManager getManager(String dbHost, String nimbusHost, Integer nimbusPort) throws ClassNotFoundException, SQLException{
+	public static StatStorageManager getManager(String dbHost, String nimbusHost, Integer nimbusPort, Integer rate) throws ClassNotFoundException, SQLException{
 		if(StatStorageManager.manager == null){
-			StatStorageManager.manager = new StatStorageManager(dbHost, nimbusHost, nimbusPort);
+			StatStorageManager.manager = new StatStorageManager(dbHost, nimbusHost, nimbusPort, rate);
 		}
 		return StatStorageManager.manager;
+	}
+	
+	public Integer getCurrentTimestamp(){
+		return this.timestamp;
+	}
+	
+	public Integer getRate(){
+		return this.rate;
 	}
 	
 	public void storeStatistics(){
@@ -115,7 +128,7 @@ public class StatStorageManager implements Runnable{
 							count++;
 						}
 						Double avgLatency = sum / count;
-						storeSpoutExecutorStats(host, port, topology.get_id(), componentId, startTask, endTask, outputs, throughput, losses, avgLatency);
+						storeSpoutExecutorStats(this.getCurrentTimestamp(), host, port, topology.get_id(), componentId, startTask, endTask, outputs, throughput, losses, avgLatency);
 					}else{
 						BoltStats boltStats = specStats.get_bolt();
 						if(boltStats != null){
@@ -135,7 +148,7 @@ public class StatStorageManager implements Runnable{
 							Double avgLatency = sum / count;
 							
 							Double selectivity = outputs / (nbExecuted * 1.0);
-							storeBoltExecutorStats(host, port, topology.get_id(), componentId, startTask, endTask, nbExecuted, outputs, avgLatency, selectivity);
+							storeBoltExecutorStats(this.getCurrentTimestamp(), host, port, topology.get_id(), componentId, startTask, endTask, nbExecuted, outputs, avgLatency, selectivity);
 						}else{
 							logger.warning("Unable to identify the type of the operator");
 						}
@@ -147,89 +160,159 @@ public class StatStorageManager implements Runnable{
 		}
 	}			
 
-	public void storeSpoutExecutorStats(String host, Integer port, String topology, String component, Integer startTask, Integer endTask, Long outputs, Long throughput, Long losses, Double avgLatency){
-		//TODO store the values and add the timestamp
+	public void storeSpoutExecutorStats(Integer timestamp, String host, Integer port, String topology, String component, Integer startTask, Integer endTask, Long outputs, Long throughput, Long losses, Double avgLatency){
+		String query = "INSERT INTO " + TABLE_SPOUT + " VALUES(" + timestamp + "', ";
+		query += "'" + host + "', " + "'" + port + "', " + "'" + topology + "', " + "'" + component + "', "
+				+ "'" + startTask + "', " + "'" + endTask + "', "
+					+ "'" + outputs + "', " + "'" + throughput + "', " + "'" + losses + "', " + "'" + avgLatency + "')";
+		try {
+			this.statement.executeUpdate(query);
+		} catch (SQLException e) {
+			logger.severe("Unable to store spout executor stats because of " + e);
+		}
 	}
 	
-	public void storeBoltExecutorStats(String host, Integer port, String topology, String component, Integer startTask, Integer endTask, Long executed, Long outputs, Double avgLatency, Double selectivity){
-		//TODO store the values and add the timstamp
+	public void storeBoltExecutorStats(Integer timestamp, String host, Integer port, String topology, String component, Integer startTask, Integer endTask, Long executed, Long outputs, Double avgLatency, Double selectivity){
+		String query = "INSERT INTO " + TABLE_BOLT + " VALUES("  + timestamp + "', ";
+		query += "'" + host + "', " + "'" + port + "', " + "'" + topology + "', " + "'" + component + "', "
+				+ "'" + startTask + "', " + "'" + endTask + "', "
+					+ "'" + executed + "', " + "'" + outputs + "', " + "'" + avgLatency + "', " + "'" + selectivity + "')";
+		try {
+			this.statement.executeUpdate(query);
+		} catch (SQLException e) {
+			logger.severe("Unable to store bolt executor stats because of " + e);
+		}
 	}
-
-	public ArrayList<String> getWorkers(String component){
+	
+	public ArrayList<String> getWorkers(String component, Integer timestamp){
 		ArrayList<String> workers = new ArrayList<>();
-		//TODO Look for the component in spout and bolt tables, if there is some results, for each row, add the host+port values into workers
+		String querySpouts = "SELECT DISTINCT host, port FROM " + TABLE_SPOUT + " WHERE component = " + component + " AND timestamp = " + timestamp + ";";
+		String queryBolts = "SELECT DISTINCT host, port FROM " + TABLE_BOLT + " WHERE component = " + component + " AND timestamp = " + timestamp + ";";
+		try {
+			ResultSet resultSpouts = this.statement.executeQuery(querySpouts);
+			while(resultSpouts.next()){
+				String worker = resultSpouts.getString("host") + "@" + resultSpouts.getString("port");
+				workers.add(worker);
+			}
+			
+			ResultSet resultBolts = this.statement.executeQuery(queryBolts);
+			while(resultBolts.next()){
+				String worker = resultBolts.getString("host") + "@" + resultBolts.getString("port");
+				workers.add(worker);
+			}
+			
+			if(workers.isEmpty()){
+				logger.warning("Component " +  component + " seems to be unaffected or do not exist in running topologies");
+			}
+		} catch (SQLException e) {
+			logger.severe("Unable to retrieve assignments for component " + component + " because of " + e);
+		}
 		return workers;
 	}
 	
-	public Long getExecuted(String component){
+	public Long getExecuted(String component, Integer timestamp){
 		Long result = 0L;
-		//TODO Look in the bolt table all bolts related to the component and aggregate their executed values into result
+		try {
+			String query  = "SELECT SUM(executed) AS nbExecuted FROM " + TABLE_BOLT + " WHERE component = " + component + " AND timestamp = " + timestamp + " GROUP BY component;";
+			ResultSet results = this.statement.executeQuery(query);
+			if(results.next()){
+				result = results.getLong("nbExecuted");
+			}
+		} catch (SQLException e) {
+			logger.severe("Unable to compute the number of executed tuples of the component " + component + " because of " + e);
+		}
 		return result;
 	}
 	
-	public Long getPreviousExecuted(String component){
+	public Long getOutputs(String component, Integer timestamp){
 		Long result = 0L;
-		//TODO Look in the bolt table all bolts related to the component and aggregate their executed values into result
+		try {
+			String querySpout  = "SELECT SUM(outputs) AS nbOutputs FROM " + TABLE_SPOUT + " WHERE component = " + component + " AND timestamp = " + timestamp + " GROUP BY component;";
+			ResultSet resultSpout = this.statement.executeQuery(querySpout);
+			if(resultSpout.next()){
+				result = resultSpout.getLong("nbOutputs");
+			}else{
+				String queryBolt  = "SELECT SUM(outputs) AS nbOutputs FROM " + TABLE_BOLT + " WHERE component = " + component + " AND timestamp = " + timestamp + " GROUP BY component;";
+				ResultSet resultBolt = this.statement.executeQuery(queryBolt);
+				if(resultBolt.next()){
+					result = resultBolt.getLong("nbOutputs");
+				}else{
+					logger.warning("Component " +  component + " seems to emit no tuples or do not exist in running topologies");
+				}
+			}
+		} catch (SQLException e) {
+			logger.severe("Unable to compute the number of executed tuples of the component " + component + " because of " + e);
+		}
 		return result;
 	}
 	
-	public Long getOutputs(String component){
-		Long result = 0L;
-		//TODO Look in the spout and bolt tables all executors related to the component and if the result is not null, aggregate their outputs values into result
-		return result;
-	}
-	
-	public Long getPreviousOutputs(String component){
-		Long result = 0L;
-		//TODO Look in the spout and bolt tables all executors related to the component and if the result is not null, aggregate their outputs values into result
-		return result;
-	}
-	
-	public Double getAvgLatency(String component){
+	public Double getAvgLatency(String component, Integer timestamp){
 		Double result = 0.0;
-		//TODO Look in the bolt table all bolts related to the component and compute the average value of their latencies, pick it as the result 
+		try {
+			String query  = "SELECT AVG(execute_ms_avg) AS avgLatency FROM " + TABLE_BOLT + " WHERE component = " + component + " AND timestamp = " + timestamp + " GROUP BY component;";
+			ResultSet results = this.statement.executeQuery(query);
+			if(results.next()){
+				result = results.getDouble("avgLatency");
+			}
+		} catch (SQLException e) {
+			logger.severe("Unable to compute the average latency of the component " + component + " because of " + e);
+		}
 		return result;
 	}
 	
-	public Double getSelectivity(String component){
+	public Double getSelectivity(String component, Integer timestamp){
+		Double result = 0.0; 
+		try {
+			String query  = "SELECT AVG(selectivity) AS avgSelectivity FROM " + TABLE_BOLT + " WHERE component = " + component + " AND timestamp = " + timestamp + " GROUP BY component;";
+			ResultSet results = this.statement.executeQuery(query);
+			if(results.next()){
+				result = results.getDouble("avgSelectivity");
+			}
+		} catch (SQLException e) {
+			logger.severe("Unable to compute the average selectivity of the component " + component + " because of " + e);
+		}
+		return result;
+	}
+	
+	public Long getTopologyThroughput(String topology, Integer timestamp){
+		Long result = 0L;
+		try {
+			String query  = "SELECT SUM(throughput) AS topThroughput FROM " + TABLE_SPOUT + " WHERE topology = " + topology + " AND timestamp = " + timestamp + " GROUP BY topology;";
+			ResultSet results = this.statement.executeQuery(query);
+			if(results.next()){
+				result = results.getLong("topThroughput");
+			}
+		} catch (SQLException e) {
+			logger.severe("Unable to compute the global throughput of the topology " + topology + " because of " + e);
+		}
+		return result;
+	}
+	
+	public Long getTopologyLosses(String topology, Integer timestamp){
+		Long result = 0L;
+		try {
+			String query  = "SELECT SUM(losses) AS topLosses FROM " + TABLE_SPOUT + " WHERE topology = " + topology + " AND timestamp = " + timestamp + " GROUP BY topology;";
+			ResultSet results = this.statement.executeQuery(query);
+			if(results.next()){
+				result = results.getLong("topLosses");
+			}
+		} catch (SQLException e) {
+			logger.severe("Unable to compute the global losses of the topology " + topology + " because of " + e);
+		}
+		return result;
+	}
+	
+	public Double getTopologyAvgLatency(String topology, Integer timestamp){
 		Double result = 0.0;
-		//TODO Look in the bolt table all bolts related to the component and compute the average value of their selectivities, pick it as the result 
-		return result;
-	}
-	
-	public Double getPreviousSelectivity(String component){
-		Double result = 0.0;
-		//TODO Look in the bolt table all bolts related to the component and compute the average value of their selectivities, pick it as the result 
-		return result;
-	}
-	
-	public Long getTopologyThroughput(String topology){
-		Long result = 0L;
-		//TODO Look in the spout table all spouts related to the topology and aggregate their throughput values into result
-		return result;
-	}
-	
-	public Long getPreviousTopologyThroughput(String topology){
-		Long result = 0L;
-		//TODO Look in the spout table all spouts related to the topology and aggregate their throughput values into result
-		return result;
-	}
-	
-	public Long getTopologyLosses(String topology){
-		Long result = 0L;
-		//TODO Look in the spout table all spouts related to the topology and aggregate their losses values into result
-		return result;
-	}
-	
-	public Long getPreviousTopologyLosses(String topology){
-		Long result = 0L;
-		//TODO Look in the spout table all spouts related to the topology and aggregate their losses values into result
-		return result;
-	}
-	
-	public Double getTopologyAvgLatency(String topology){
-		Double result = 0.0;
-		//TODO Look in the spout table all spouts related to the topology and order them by decreasing average latency, pick up the first one as the result 
+		try {
+			String query  = "SELECT MAX(complete_ms_avg) AS topLatency FROM " + TABLE_SPOUT + " WHERE topology = " + topology + " AND timestamp = " + timestamp + " GROUP BY topology;";
+			ResultSet results = this.statement.executeQuery(query);
+			if(results.next()){
+				result = results.getDouble("topLatency");
+			}
+		} catch (SQLException e) {
+			logger.severe("Unable to compute the global latency of the topology " + topology + " because of " + e);
+		}
 		return result;
 	}
 	
@@ -237,8 +320,8 @@ public class StatStorageManager implements Runnable{
 	public void run() {
 		storeStatistics();
 		try {
-			Thread.sleep(1000);
-			timestamp++;
+			Thread.sleep(this.getRate());
+			this.timestamp++;
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}

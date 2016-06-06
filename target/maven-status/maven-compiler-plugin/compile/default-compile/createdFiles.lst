@@ -1,7 +1,11 @@
-storm\autoscale\scheduler\modules\ComponentMonitor.class
+storm\autoscale\scheduler\modules\stats\ComponentStats.class
 storm\psrl\scheduler\InputManager.class
-storm\autoscale\scheduler\modules\TopologyExplorer.class
 storm\autoscale\scheduler\metrics\WelfMetric.class
+storm\autoscale\scheduler\modules\listener\NimbusListener.class
+storm\autoscale\scheduler\modules\stats\ComponentMonitor.class
+storm\autoscale\scheduler\modules\ComponentMonitor.class
+storm\autoscale\scheduler\modules\stats\StatStorageManager.class
+storm\autoscale\scheduler\modules\TopologyExplorer.class
 storm\psrl\scheduler\PSRLScheduler.class
 storm\autoscale\scheduler\modules\AssignmentMonitor.class
 storm\psrl\scheduler\ResourceMonitor.class

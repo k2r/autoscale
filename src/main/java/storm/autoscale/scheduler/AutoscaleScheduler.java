@@ -21,7 +21,9 @@ import backtype.storm.scheduler.WorkerSlot;
 import storm.autoscale.scheduler.metrics.IMetric;
 import storm.autoscale.scheduler.metrics.WelfMetric;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
-import storm.autoscale.scheduler.modules.ComponentMonitor;
+import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
+import storm.autoscale.scheduler.modules.stats.ComponentStats;
+import storm.autoscale.scheduler.modules.stats.StatStorageManager;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
 
 /**
@@ -34,7 +36,6 @@ public class AutoscaleScheduler implements IScheduler {
 	private AssignmentMonitor assignments;
 	private TopologyExplorer explorer;
 	private ArrayList<String> congested;
-	//private ArrayList<String> toFork;
 	private ArrayList<ExecutorDetails> toAssign;
 	private boolean isScaled;
 	private static Logger logger = Logger.getLogger("AutoscaleScheduler");
@@ -58,8 +59,10 @@ public class AutoscaleScheduler implements IScheduler {
 	public void incrParallelism(String component){
 		int parallelism = this.assignments.getParallelism(component);
 		Double paralFactor = (parallelism + 1) / (parallelism * 1.0);
-		Double expectedExecuted = Math.min(this.components.getNbExecuted(component) * paralFactor, this.components.getInputQueueSize(component));
-		this.components.setNbExecuted(component, expectedExecuted);
+		ComponentStats stats = this.components.getStats(component);
+		Double expectedExecuted = Math.min(stats.getNbExecuted() * paralFactor, stats.getNbInputs());
+		stats.setNbExecuted(expectedExecuted);
+		this.components.updateStatistics(stats);
 	}
 	
 	public WorkerSlot getBestLocation(String component){
@@ -154,15 +157,11 @@ public class AutoscaleScheduler implements IScheduler {
 			if(cluster.isSlotOccupied(slot)){
 				ArrayList<ExecutorDetails> sharedExecutorPool = new ArrayList<>();
 				sharedExecutorPool.add(executor);
-				//cluster.freeSlot(slot);
-				//sharedExecutorPool.addAll(cluster.getUnassignedExecutors(topology));
 				cluster.assign(slot, topology.getId(), sharedExecutorPool);
-				//this.toAssign.remove(executor);
 			}else{
 				ArrayList<ExecutorDetails> exclusiveExecutorPool = new ArrayList<>();
 				exclusiveExecutorPool.add(executor);
 				cluster.assign(slot, topology.getId(), exclusiveExecutorPool);
-				//this.toAssign.remove(executor);
 			}
 		}
 		logger.info("Component " + component + " has been uncongested successfully");
@@ -173,33 +172,36 @@ public class AutoscaleScheduler implements IScheduler {
 	 */
 	@Override
 	public void schedule(Topologies topologies, Cluster cluster) {
+		StatStorageManager manager = null;
+		try {
+			manager = StatStorageManager.getManager("localhost", "localhost", 6617, 1000);
+			Thread thread = new Thread(manager);
+			thread.start();
+		} catch (ClassNotFoundException | SQLException e1) {
+			logger.severe("Unable to start the StatStorageManage because of " + e1);
+		}
+
 		/*In a first time, we take all scaling decisions*/
 		for(TopologyDetails topology : topologies.getTopologies()){
-			
-			try {
-				this.components = new ComponentMonitor("localhost");
-			} catch (ClassNotFoundException e) {
-				logger.severe("The autoscale scheduler can not be launched because of its component monitor, error while starting: " + e);
-			} catch (SQLException e) {
-				logger.severe("The autoscale scheduler can not be launched because of its component monitor, error while starting: " + e);
-			}
+
+			this.components = new ComponentMonitor("localhost", "localhost", 6617, 1000);
 			this.assignments = new AssignmentMonitor(cluster, topology);
 			this.explorer = new TopologyExplorer(topology.getTopology());
 			this.assignments.update();
-			this.components.update();
+			this.components.getStatistics(explorer);
 			IMetric impactMetric = new WelfMetric(this.explorer, this.components);
-			
+
 			this.congested = this.components.getCongested();
-			//this.toFork = new ArrayList<>();
 			this.toAssign = new ArrayList<>();
-			
-			String monitoring = "Current monitoring info (timestamp " + this.components.getLastTimestamp() + " to " + this.components.getCurrentTimestamp() + ")\n";
+
+			String monitoring = "Current monitoring info (timestamp " + manager.getCurrentTimestamp() + ")\n";
 			logger.info(monitoring);
-			for(String component : this.components.getComponents()){
-				String infos = "Component " + component + " ---> inputs: " + this.components.getInputQueueSize(component);
-				infos += ", executed: " + this.components.getNbExecuted(component);
-				infos += ", outputs: " + this.components.getNbOutputs(component); 
-				infos += ", latency: " + this.components.getAvgLatency(component) + "\n";
+			for(String component : explorer.getComponents()){
+				ComponentStats stats = this.components.getStats(component);
+				String infos = "Component " + component + " ---> inputs: " + stats.getNbInputs();
+				infos += ", executed: " + stats.getNbExecuted();
+				infos += ", outputs: " + stats.getNbOutputs(); 
+				infos += ", latency: " + stats.getAvgLatency() + "\n";
 				logger.info(infos);
 			}
 			if(this.congested.isEmpty()){
@@ -225,16 +227,15 @@ public class AutoscaleScheduler implements IScheduler {
 							mostImportantComponent = component;
 						}
 					}
-					//this.toFork.add(mostImportantComponent);
 					incrParallelism(mostImportantComponent);
 					this.congested.remove(mostImportantComponent);
 					logger.info("Component " + mostImportantComponent + " is being uncongested...");
 					forkAndAssign(mostImportantComponent, cluster, topology);
 				}
 			}
-				
+
 		}
-		
+
 		/*Then we let the default scheduler balance the load*/
 		EvenScheduler scheduler = new EvenScheduler();
 		scheduler.schedule(topologies, cluster);
