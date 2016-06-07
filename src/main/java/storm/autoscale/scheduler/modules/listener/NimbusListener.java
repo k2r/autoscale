@@ -19,15 +19,23 @@ public class NimbusListener {
 	private TFramedTransport tTransport;
 	private TBinaryProtocol tBinaryProtocol;
 	private Nimbus.Client client;
+	private static NimbusListener instance = null;
 	
 	/**
 	 * 
 	 */
-	public NimbusListener(String nimbusHost, Integer nimbusPort) {
+	private NimbusListener(String nimbusHost, Integer nimbusPort) {
 		this.tsocket = new TSocket(nimbusHost, nimbusPort);
 		this.tTransport = new TFramedTransport(tsocket);
 		this.tBinaryProtocol = new TBinaryProtocol(tTransport);
 		this.client = new Nimbus.Client(tBinaryProtocol);
+	}
+	
+	public static NimbusListener getInstance(String nimbusHost, Integer nimbusPort){
+		if(instance == null){
+			instance = new NimbusListener(nimbusHost, nimbusPort);
+		}
+		return instance;
 	}
 
 	/**

@@ -32,7 +32,7 @@ import storm.autoscale.scheduler.modules.listener.NimbusListener;
  * @author Roland
  *
  */
-public class StatStorageManager implements Runnable{
+public class StatStorageManager extends Thread{
 
 	private static StatStorageManager manager = null;
 	private NimbusListener listener;
@@ -57,9 +57,11 @@ public class StatStorageManager implements Runnable{
 		Class.forName(jdbcDriver);
 		this.connection = DriverManager.getConnection(dbUrl,user, null);
 		this.statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-		this.listener = new NimbusListener(nimbusHost, nimbusPort);
+		this.listener = NimbusListener.getInstance(nimbusHost, nimbusPort);
 		this.timestamp = 0;
 		this.rate = 0;
+		
+		this.start();
 	}
 	
 	public static StatStorageManager getManager(String dbHost, String nimbusHost, Integer nimbusPort, Integer rate) throws ClassNotFoundException, SQLException{
@@ -67,6 +69,10 @@ public class StatStorageManager implements Runnable{
 			StatStorageManager.manager = new StatStorageManager(dbHost, nimbusHost, nimbusPort, rate);
 		}
 		return StatStorageManager.manager;
+	}
+	
+	public Nimbus.Client getClient(){
+		return this.listener.getClient();
 	}
 	
 	public Integer getCurrentTimestamp(){
@@ -79,10 +85,11 @@ public class StatStorageManager implements Runnable{
 	
 	public void storeStatistics(){
 		TFramedTransport tTransport = this.listener.gettTransport();
-		Nimbus.Client client = this.listener.getClient();
+		Nimbus.Client client = this.getClient();
+		List<TopologySummary> topologies;
 		try {
 			tTransport.open();
-			List<TopologySummary> topologies = client.getClusterInfo().get_topologies();
+			topologies = client.getClusterInfo().get_topologies();
 			for(TopologySummary topSummary : topologies){
 				TopologyInfo topology = client.getTopologyInfo(topSummary.get_id());
 				List<ExecutorSummary> executors = topology.get_executors();
@@ -90,21 +97,21 @@ public class StatStorageManager implements Runnable{
 					String componentId = executor.get_component_id();
 					String host = executor.get_host();
 					Integer port = executor.get_port();
-					
+
 					ExecutorInfo info = executor.get_executor_info();
 					Integer startTask = info.get_task_start();
 					Integer endTask = info.get_task_end();
 					ExecutorStats stats = executor.get_stats();
-					
+
 					/*Get outputs independently of the output stream and from the start of the topology*/
 					Map<String, Long> emitted = stats.get_emitted().get(ALLTIME);
 					Long outputs = 0L;
 					for(String stream : emitted.keySet()){
 						outputs += emitted.get(stream);
 					}
-					
+
 					ExecutorSpecificStats specStats = stats.get_specific();
-					
+
 					/*Try to look if it is a spout*/
 					SpoutStats spoutStats = specStats.get_spout();
 					if(spoutStats != null){
@@ -113,13 +120,13 @@ public class StatStorageManager implements Runnable{
 						for(String stream : acked.keySet()){
 							throughput += acked.get(stream);
 						}
-						
+
 						Map<String, Long> failed = spoutStats.get_failed().get(ALLTIME);
 						Long losses = 0L;
 						for(String stream : failed.keySet()){
 							losses += failed.get(stream);
 						}
-						
+
 						Map<String, Double> completeAvgTime = spoutStats.get_complete_ms_avg().get(ALLTIME);
 						Double sum = 0.0;
 						Double count = 0.0;
@@ -137,7 +144,7 @@ public class StatStorageManager implements Runnable{
 							for(GlobalStreamId gs : executed.keySet()){
 								nbExecuted += executed.get(gs);
 							}
-							
+
 							Map<GlobalStreamId, Double> executionAvgTime = boltStats.get_execute_ms_avg().get(ALLTIME);
 							Double sum = 0.0;
 							Double count = 0.0;
@@ -146,7 +153,7 @@ public class StatStorageManager implements Runnable{
 								count++;
 							}
 							Double avgLatency = sum / count;
-							
+
 							Double selectivity = outputs / (nbExecuted * 1.0);
 							storeBoltExecutorStats(this.getCurrentTimestamp(), host, port, topology.get_id(), componentId, startTask, endTask, nbExecuted, outputs, avgLatency, selectivity);
 						}else{
@@ -155,8 +162,9 @@ public class StatStorageManager implements Runnable{
 					}
 				}
 			}
-		}catch(TException exception){
-			exception.printStackTrace();
+
+		} catch (TException e) {
+			e.printStackTrace();
 		}
 	}			
 

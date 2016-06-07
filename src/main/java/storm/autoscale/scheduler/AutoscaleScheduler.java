@@ -174,9 +174,7 @@ public class AutoscaleScheduler implements IScheduler {
 	public void schedule(Topologies topologies, Cluster cluster) {
 		StatStorageManager manager = null;
 		try {
-			manager = StatStorageManager.getManager("localhost", "localhost", 6617, 1000);
-			Thread thread = new Thread(manager);
-			thread.start();
+			manager = StatStorageManager.getManager("localhost", "localhost", 6627, 1000);
 		} catch (ClassNotFoundException | SQLException e1) {
 			logger.severe("Unable to start the StatStorageManage because of " + e1);
 		}
@@ -184,7 +182,7 @@ public class AutoscaleScheduler implements IScheduler {
 		/*In a first time, we take all scaling decisions*/
 		for(TopologyDetails topology : topologies.getTopologies()){
 
-			this.components = new ComponentMonitor("localhost", "localhost", 6617, 1000);
+			this.components = new ComponentMonitor("localhost", "localhost", 6627, 1000);
 			this.assignments = new AssignmentMonitor(cluster, topology);
 			this.explorer = new TopologyExplorer(topology.getTopology());
 			this.assignments.update();

@@ -6,28 +6,39 @@ import org.mockito.Mockito;
 
 import junit.framework.TestCase;
 import storm.autoscale.scheduler.metrics.WelfMetric;
-import storm.autoscale.scheduler.modules.ComponentMonitor;
+import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
+import storm.autoscale.scheduler.modules.stats.ComponentStats;
 
 public class WelfMetricTest extends TestCase {
 
 	public final void testEstimatedLatency() {
+		ComponentStats statsA = Mockito.mock(ComponentStats.class);
+		ComponentStats statsC = Mockito.mock(ComponentStats.class);
+		ComponentStats statsD = Mockito.mock(ComponentStats.class);
+		ComponentStats statsF = Mockito.mock(ComponentStats.class);
+		
+		Mockito.when(statsA.getNbInputs()).thenReturn(1000.0);
+		Mockito.when(statsA.getAvgLatency()).thenReturn(90.0);
+		Mockito.when(statsA.getSelectivity()).thenReturn(0.55);
+		
+		Mockito.when(statsC.getNbInputs()).thenReturn(1250.0);
+		Mockito.when(statsC.getAvgLatency()).thenReturn(130.0);
+		Mockito.when(statsC.getSelectivity()).thenReturn(0.62);
+		
+		Mockito.when(statsD.getNbInputs()).thenReturn(350.0);
+		Mockito.when(statsD.getAvgLatency()).thenReturn(180.0);
+		Mockito.when(statsD.getSelectivity()).thenReturn(1.0);
+		
+		Mockito.when(statsF.getNbInputs()).thenReturn(425.0);
+		Mockito.when(statsF.getAvgLatency()).thenReturn(170.0);
+		Mockito.when(statsF.getSelectivity()).thenReturn(1.0);
+		
 		ComponentMonitor mockCm = Mockito.mock(ComponentMonitor.class);
-		Mockito.when(mockCm.getInputQueueSize("A")).thenReturn(1000.0);
-		Mockito.when(mockCm.getAvgLatency("A")).thenReturn(90.0);
-		Mockito.when(mockCm.getEstimatedSelectivy("A")).thenReturn(0.55);
-		
-		Mockito.when(mockCm.getInputQueueSize("C")).thenReturn(1250.0);
-		Mockito.when(mockCm.getAvgLatency("C")).thenReturn(130.0);
-		Mockito.when(mockCm.getEstimatedSelectivy("C")).thenReturn(0.62);
-		
-		Mockito.when(mockCm.getInputQueueSize("D")).thenReturn(350.0);
-		Mockito.when(mockCm.getAvgLatency("D")).thenReturn(180.0);
-		Mockito.when(mockCm.getEstimatedSelectivy("D")).thenReturn(1.0);
-		
-		Mockito.when(mockCm.getInputQueueSize("F")).thenReturn(425.0);
-		Mockito.when(mockCm.getAvgLatency("F")).thenReturn(170.0);
-		Mockito.when(mockCm.getEstimatedSelectivy("F")).thenReturn(1.0);
+		Mockito.when(mockCm.getStats("A")).thenReturn(statsA);
+		Mockito.when(mockCm.getStats("C")).thenReturn(statsC);
+		Mockito.when(mockCm.getStats("D")).thenReturn(statsD);
+		Mockito.when(mockCm.getStats("F")).thenReturn(statsF);
 		
 		TopologyExplorer mockTe = Mockito.mock(TopologyExplorer.class);
 		
@@ -45,22 +56,32 @@ public class WelfMetricTest extends TestCase {
 	}
 
 	public final void testCompute() {
+		ComponentStats statsA = Mockito.mock(ComponentStats.class);
+		ComponentStats statsC = Mockito.mock(ComponentStats.class);
+		ComponentStats statsD = Mockito.mock(ComponentStats.class);
+		ComponentStats statsF = Mockito.mock(ComponentStats.class);
+		
+		Mockito.when(statsA.getNbInputs()).thenReturn(1000.0);
+		Mockito.when(statsA.getAvgLatency()).thenReturn(90.0);
+		Mockito.when(statsA.getSelectivity()).thenReturn(0.55);
+		
+		Mockito.when(statsC.getNbInputs()).thenReturn(1250.0);
+		Mockito.when(statsC.getAvgLatency()).thenReturn(130.0);
+		Mockito.when(statsC.getSelectivity()).thenReturn(0.62);
+		
+		Mockito.when(statsD.getNbInputs()).thenReturn(350.0);
+		Mockito.when(statsD.getAvgLatency()).thenReturn(180.0);
+		Mockito.when(statsD.getSelectivity()).thenReturn(1.0);
+		
+		Mockito.when(statsF.getNbInputs()).thenReturn(425.0);
+		Mockito.when(statsF.getAvgLatency()).thenReturn(170.0);
+		Mockito.when(statsF.getSelectivity()).thenReturn(1.0);
+		
 		ComponentMonitor mockCm = Mockito.mock(ComponentMonitor.class);
-		Mockito.when(mockCm.getInputQueueSize("A")).thenReturn(1000.0);
-		Mockito.when(mockCm.getAvgLatency("A")).thenReturn(90.0);
-		Mockito.when(mockCm.getEstimatedSelectivy("A")).thenReturn(0.55);
-
-		Mockito.when(mockCm.getInputQueueSize("C")).thenReturn(1250.0);
-		Mockito.when(mockCm.getAvgLatency("C")).thenReturn(130.0);
-		Mockito.when(mockCm.getEstimatedSelectivy("C")).thenReturn(0.62);
-
-		Mockito.when(mockCm.getInputQueueSize("D")).thenReturn(350.0);
-		Mockito.when(mockCm.getAvgLatency("D")).thenReturn(180.0);
-		Mockito.when(mockCm.getEstimatedSelectivy("D")).thenReturn(1.0);
-
-		Mockito.when(mockCm.getInputQueueSize("F")).thenReturn(425.0);
-		Mockito.when(mockCm.getAvgLatency("F")).thenReturn(170.0);
-		Mockito.when(mockCm.getEstimatedSelectivy("F")).thenReturn(1.0);
+		Mockito.when(mockCm.getStats("A")).thenReturn(statsA);
+		Mockito.when(mockCm.getStats("C")).thenReturn(statsC);
+		Mockito.when(mockCm.getStats("D")).thenReturn(statsD);
+		Mockito.when(mockCm.getStats("F")).thenReturn(statsF);
 
 		TopologyExplorer mockTe = Mockito.mock(TopologyExplorer.class);
 
@@ -80,5 +101,4 @@ public class WelfMetricTest extends TestCase {
 		Double welfA = wm.compute("A");
 		assertEquals(0.17, welfA, 0.05);
 	}
-
 }
