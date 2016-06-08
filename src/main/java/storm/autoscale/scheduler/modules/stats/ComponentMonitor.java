@@ -65,6 +65,10 @@ public class ComponentMonitor {
 		}
 	}
 	
+	public Set<String> getRegisteredComponents(){
+		return this.stats.keySet();
+	}
+	
 	public ComponentStats getStats(String component){
 		return this.stats.get(component);
 	}

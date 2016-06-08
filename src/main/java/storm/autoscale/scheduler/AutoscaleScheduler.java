@@ -194,7 +194,7 @@ public class AutoscaleScheduler implements IScheduler {
 
 			String monitoring = "Current monitoring info (timestamp " + manager.getCurrentTimestamp() + ")\n";
 			logger.info(monitoring);
-			for(String component : explorer.getComponents()){
+			for(String component : this.components.getRegisteredComponents()){
 				ComponentStats stats = this.components.getStats(component);
 				String infos = "Component " + component + " ---> inputs: " + stats.getNbInputs();
 				infos += ", executed: " + stats.getNbExecuted();

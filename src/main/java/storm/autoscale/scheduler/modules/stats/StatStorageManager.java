@@ -59,7 +59,23 @@ public class StatStorageManager extends Thread{
 		this.statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 		this.listener = NimbusListener.getInstance(nimbusHost, nimbusPort);
 		this.timestamp = 0;
-		this.rate = 0;
+		String queryTime1 = "SELECT MAX(timestamp) AS timestampSpout FROM " + TABLE_SPOUT;
+		String queryTime2 = "SELECT MAX(timestamp) AS timestampBolt FROM " + TABLE_BOLT;
+		ResultSet resultTimeSpout = this.statement.executeQuery(queryTime1);
+		if(resultTimeSpout.next()){
+			int update = resultTimeSpout.getInt("timestampSpout");
+			if(update > this.timestamp){
+				this.timestamp = update;
+			}
+		}
+		ResultSet resultTimeBolt = this.statement.executeQuery(queryTime2);
+		if(resultTimeBolt.next()){
+			int update = resultTimeBolt.getInt("timestampBolt");
+			if(update > this.timestamp){
+				this.timestamp = update;
+			}
+		}
+		this.rate = rate;
 		
 		this.start();
 	}
@@ -169,7 +185,7 @@ public class StatStorageManager extends Thread{
 	}			
 
 	public void storeSpoutExecutorStats(Integer timestamp, String host, Integer port, String topology, String component, Integer startTask, Integer endTask, Long outputs, Long throughput, Long losses, Double avgLatency){
-		String query = "INSERT INTO " + TABLE_SPOUT + " VALUES(" + timestamp + "', ";
+		String query = "INSERT INTO " + TABLE_SPOUT + " VALUES('" + timestamp + "', ";
 		query += "'" + host + "', " + "'" + port + "', " + "'" + topology + "', " + "'" + component + "', "
 				+ "'" + startTask + "', " + "'" + endTask + "', "
 					+ "'" + outputs + "', " + "'" + throughput + "', " + "'" + losses + "', " + "'" + avgLatency + "')";
@@ -181,7 +197,7 @@ public class StatStorageManager extends Thread{
 	}
 	
 	public void storeBoltExecutorStats(Integer timestamp, String host, Integer port, String topology, String component, Integer startTask, Integer endTask, Long executed, Long outputs, Double avgLatency, Double selectivity){
-		String query = "INSERT INTO " + TABLE_BOLT + " VALUES("  + timestamp + "', ";
+		String query = "INSERT INTO " + TABLE_BOLT + " VALUES('"  + timestamp + "', ";
 		query += "'" + host + "', " + "'" + port + "', " + "'" + topology + "', " + "'" + component + "', "
 				+ "'" + startTask + "', " + "'" + endTask + "', "
 					+ "'" + executed + "', " + "'" + outputs + "', " + "'" + avgLatency + "', " + "'" + selectivity + "')";
@@ -194,8 +210,8 @@ public class StatStorageManager extends Thread{
 	
 	public ArrayList<String> getWorkers(String component, Integer timestamp){
 		ArrayList<String> workers = new ArrayList<>();
-		String querySpouts = "SELECT DISTINCT host, port FROM " + TABLE_SPOUT + " WHERE component = " + component + " AND timestamp = " + timestamp + ";";
-		String queryBolts = "SELECT DISTINCT host, port FROM " + TABLE_BOLT + " WHERE component = " + component + " AND timestamp = " + timestamp + ";";
+		String querySpouts = "SELECT DISTINCT host, port FROM " + TABLE_SPOUT + " WHERE component = '" + component + "' AND timestamp = '" + timestamp + "';";
+		String queryBolts = "SELECT DISTINCT host, port FROM " + TABLE_BOLT + " WHERE component = '" + component + "' AND timestamp = '" + timestamp + "';";
 		try {
 			ResultSet resultSpouts = this.statement.executeQuery(querySpouts);
 			while(resultSpouts.next()){
@@ -221,7 +237,7 @@ public class StatStorageManager extends Thread{
 	public Long getExecuted(String component, Integer timestamp){
 		Long result = 0L;
 		try {
-			String query  = "SELECT SUM(executed) AS nbExecuted FROM " + TABLE_BOLT + " WHERE component = " + component + " AND timestamp = " + timestamp + " GROUP BY component;";
+			String query  = "SELECT SUM(executed) AS nbExecuted FROM " + TABLE_BOLT + " WHERE component = '" + component + "' AND timestamp = '" + timestamp + "' GROUP BY component;";
 			ResultSet results = this.statement.executeQuery(query);
 			if(results.next()){
 				result = results.getLong("nbExecuted");
@@ -235,12 +251,12 @@ public class StatStorageManager extends Thread{
 	public Long getOutputs(String component, Integer timestamp){
 		Long result = 0L;
 		try {
-			String querySpout  = "SELECT SUM(outputs) AS nbOutputs FROM " + TABLE_SPOUT + " WHERE component = " + component + " AND timestamp = " + timestamp + " GROUP BY component;";
+			String querySpout  = "SELECT SUM(outputs) AS nbOutputs FROM " + TABLE_SPOUT + " WHERE component = '" + component + "' AND timestamp = '" + timestamp + "' GROUP BY component;";
 			ResultSet resultSpout = this.statement.executeQuery(querySpout);
 			if(resultSpout.next()){
 				result = resultSpout.getLong("nbOutputs");
 			}else{
-				String queryBolt  = "SELECT SUM(outputs) AS nbOutputs FROM " + TABLE_BOLT + " WHERE component = " + component + " AND timestamp = " + timestamp + " GROUP BY component;";
+				String queryBolt  = "SELECT SUM(outputs) AS nbOutputs FROM " + TABLE_BOLT + " WHERE component = '" + component + "' AND timestamp = '" + timestamp + "' GROUP BY component;";
 				ResultSet resultBolt = this.statement.executeQuery(queryBolt);
 				if(resultBolt.next()){
 					result = resultBolt.getLong("nbOutputs");
@@ -257,7 +273,7 @@ public class StatStorageManager extends Thread{
 	public Double getAvgLatency(String component, Integer timestamp){
 		Double result = 0.0;
 		try {
-			String query  = "SELECT AVG(execute_ms_avg) AS avgLatency FROM " + TABLE_BOLT + " WHERE component = " + component + " AND timestamp = " + timestamp + " GROUP BY component;";
+			String query  = "SELECT AVG(execute_ms_avg) AS avgLatency FROM " + TABLE_BOLT + " WHERE component = '" + component + "' AND timestamp = '" + timestamp + "' GROUP BY component;";
 			ResultSet results = this.statement.executeQuery(query);
 			if(results.next()){
 				result = results.getDouble("avgLatency");
@@ -271,7 +287,7 @@ public class StatStorageManager extends Thread{
 	public Double getSelectivity(String component, Integer timestamp){
 		Double result = 0.0; 
 		try {
-			String query  = "SELECT AVG(selectivity) AS avgSelectivity FROM " + TABLE_BOLT + " WHERE component = " + component + " AND timestamp = " + timestamp + " GROUP BY component;";
+			String query  = "SELECT AVG(selectivity) AS avgSelectivity FROM " + TABLE_BOLT + " WHERE component = '" + component + "' AND timestamp = '" + timestamp + "' GROUP BY component;";
 			ResultSet results = this.statement.executeQuery(query);
 			if(results.next()){
 				result = results.getDouble("avgSelectivity");
@@ -285,7 +301,7 @@ public class StatStorageManager extends Thread{
 	public Long getTopologyThroughput(String topology, Integer timestamp){
 		Long result = 0L;
 		try {
-			String query  = "SELECT SUM(throughput) AS topThroughput FROM " + TABLE_SPOUT + " WHERE topology = " + topology + " AND timestamp = " + timestamp + " GROUP BY topology;";
+			String query  = "SELECT SUM(throughput) AS topThroughput FROM " + TABLE_SPOUT + " WHERE topology = '" + topology + "' AND timestamp = '" + timestamp + "' GROUP BY topology;";
 			ResultSet results = this.statement.executeQuery(query);
 			if(results.next()){
 				result = results.getLong("topThroughput");
@@ -299,7 +315,7 @@ public class StatStorageManager extends Thread{
 	public Long getTopologyLosses(String topology, Integer timestamp){
 		Long result = 0L;
 		try {
-			String query  = "SELECT SUM(losses) AS topLosses FROM " + TABLE_SPOUT + " WHERE topology = " + topology + " AND timestamp = " + timestamp + " GROUP BY topology;";
+			String query  = "SELECT SUM(losses) AS topLosses FROM " + TABLE_SPOUT + " WHERE topology = '" + topology + "' AND timestamp = '" + timestamp + "' GROUP BY topology;";
 			ResultSet results = this.statement.executeQuery(query);
 			if(results.next()){
 				result = results.getLong("topLosses");
@@ -313,7 +329,7 @@ public class StatStorageManager extends Thread{
 	public Double getTopologyAvgLatency(String topology, Integer timestamp){
 		Double result = 0.0;
 		try {
-			String query  = "SELECT MAX(complete_ms_avg) AS topLatency FROM " + TABLE_SPOUT + " WHERE topology = " + topology + " AND timestamp = " + timestamp + " GROUP BY topology;";
+			String query  = "SELECT MAX(complete_ms_avg) AS topLatency FROM " + TABLE_SPOUT + " WHERE topology = '" + topology + "' AND timestamp = '" + timestamp + "' GROUP BY topology;";
 			ResultSet results = this.statement.executeQuery(query);
 			if(results.next()){
 				result = results.getDouble("topLatency");
@@ -326,9 +342,9 @@ public class StatStorageManager extends Thread{
 	
 	@Override
 	public void run() {
-		storeStatistics();
 		try {
 			Thread.sleep(this.getRate());
+			storeStatistics();
 			this.timestamp++;
 		} catch (InterruptedException e) {
 			e.printStackTrace();
