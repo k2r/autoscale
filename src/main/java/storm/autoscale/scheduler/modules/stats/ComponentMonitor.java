@@ -59,7 +59,7 @@ public class ComponentMonitor {
 			}
 			Double nbExecuted = this.manager.getExecuted(bolt, current) - this.manager.getExecuted(bolt, previous) * 1.0;
 			Double nbOutputs = this.manager.getOutputs(bolt, current)  - this.manager.getOutputs(bolt, previous) * 1.0;
-			Double avgLatency = this.manager.getAvgLatency(bolt, current) * 1.0;
+			Double avgLatency = this.manager.getAvgLatency(bolt, current);
 			ComponentStats component = new ComponentStats(bolt, nbInputs, nbExecuted, nbOutputs, avgLatency);
 			this.stats.put(bolt, component);
 		}
@@ -74,7 +74,7 @@ public class ComponentMonitor {
 	}
 	
 	public void updateStatistics(ComponentStats stats){
-		if(this.stats.containsKey(stats)){
+		if(this.stats.containsKey(stats.getId())){
 			this.stats.replace(stats.getId(), stats);
 		}else{
 			this.stats.put(stats.getId(), stats);

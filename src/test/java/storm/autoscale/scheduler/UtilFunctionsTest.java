@@ -6,17 +6,18 @@ package storm.autoscale.scheduler;
 import java.util.ArrayList;
 
 import junit.framework.TestCase;
+import storm.autoscale.scheduler.actions.UtilFunctions;
 
 /**
- * @author Roland
+ * @author Roland le Divin
  *
  */
-public class AutoscaleSchedulerTest extends TestCase {
+public class UtilFunctionsTest extends TestCase {
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.AutoscaleScheduler#getBorderTasks(java.util.ArrayList, java.lang.Integer)}.
+	 * Test method for {@link storm.autoscale.scheduler.actions.UtilFunctions#getBuckets(java.util.ArrayList, java.lang.Integer)}.
 	 */
-	public final void testGetBorderTasks() {
+	public void testGetBuckets() {
 		ArrayList<Integer> tasks = new ArrayList<>();
 		tasks.add(7);
 		tasks.add(8);
@@ -92,16 +93,15 @@ public class AutoscaleSchedulerTest extends TestCase {
 		expectedBorder7.add(delimiters76);
 		expectedBorder7.add(delimiters77);
 		
-		AutoscaleScheduler scheduler = new AutoscaleScheduler();
-		
-		ArrayList<ArrayList<Integer>> borders1 = scheduler.getBorderTasks(tasks, 1);
-		//ArrayList<ArrayList<Integer>> borders2 = scheduler.getBorderTasks(tasks, 2);
-		ArrayList<ArrayList<Integer>> borders3 = scheduler.getBorderTasks(tasks, 3);
-		ArrayList<ArrayList<Integer>> borders7 = scheduler.getBorderTasks(tasks, 7);
+		ArrayList<ArrayList<Integer>> borders1 = UtilFunctions.getBuckets(tasks, 1);
+		ArrayList<ArrayList<Integer>> borders2 = UtilFunctions.getBuckets(tasks, 2);
+		ArrayList<ArrayList<Integer>> borders3 = UtilFunctions.getBuckets(tasks, 3);
+		ArrayList<ArrayList<Integer>> borders7 = UtilFunctions.getBuckets(tasks, 7);
 		
 		assertEquals(expectedBorder1, borders1);
-		//assertEquals(expectedBorder2, borders2);
+		assertEquals(expectedBorder2, borders2);
 		assertEquals(expectedBorder3, borders3);
 		assertEquals(expectedBorder7, borders7);
 	}
+
 }

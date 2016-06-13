@@ -70,6 +70,36 @@ public class AssignmentMonitor {
 		}
 	}
 	
+	public Cluster getCluster(){
+		return this.cluster;
+	}
+	
+	public ArrayList<String> getRunningComponents(WorkerSlot worker){
+		return this.assignments.get(worker);
+	}
+	
+	public HashMap<SupervisorDetails, ArrayList<WorkerSlot>> getWorkers(){
+		HashMap<SupervisorDetails, ArrayList<WorkerSlot>> result = new HashMap<>();
+		Collection<SupervisorDetails> supervisors = this.cluster.getSupervisors().values();
+		for(SupervisorDetails supervisor : supervisors){
+			ArrayList<WorkerSlot> slots = (ArrayList<WorkerSlot>) this.cluster.getAssignableSlots(supervisor);
+			result.put(supervisor, slots);
+		}
+		return result;
+	}
+	
+	public SupervisorDetails getSupervisor(WorkerSlot ws, HashMap<SupervisorDetails, ArrayList<WorkerSlot>> supToWorkers){
+		SupervisorDetails result = null;
+		for(SupervisorDetails supervisor : supToWorkers.keySet()){
+			ArrayList<WorkerSlot> workers = supToWorkers.get(supervisor);
+			if(workers.contains(ws)){
+				result = supervisor;
+				break;
+			}
+		}
+		return result;
+	}
+	
 	public ArrayList<WorkerSlot> getFreeSlots(){
 		return (ArrayList<WorkerSlot>) this.cluster.getAvailableSlots();
 	}

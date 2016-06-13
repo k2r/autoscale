@@ -342,7 +342,6 @@ public class StatStorageManager extends Thread{
 			try {
 				storeStatistics();
 				Thread.sleep(this.getRate());
-				//this.timestamp++;
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
