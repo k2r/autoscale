@@ -1,5 +1,4 @@
+storm\autoscale\scheduler\UtilFunctionsTest.class
 storm\autoscale\scheduler\WelfMetricTest.class
-storm\autoscale\scheduler\AutoscaleSchedulerTest.class
 storm\autoscale\scheduler\StatStorageManagerTest.class
 storm\autoscale\scheduler\TopologyExplorerTest.class
-storm\psrl\scheduler\AppTest.class

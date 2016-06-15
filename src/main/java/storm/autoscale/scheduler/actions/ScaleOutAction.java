@@ -116,14 +116,16 @@ public class ScaleOutAction implements IAction {
 		for(int i = 0; i < executors.size(); i++){
 			ExecutorDetails executor = executors.get(i);
 			WorkerSlot slot = this.getBestLocation();
-			if(this.cluster.isSlotOccupied(slot)){
-				ArrayList<ExecutorDetails> sharedExecutorPool = new ArrayList<>();
-				sharedExecutorPool.add(executor);
-				this.cluster.assign(slot, this.topology.getId(), sharedExecutorPool);
-			}else{
-				ArrayList<ExecutorDetails> exclusiveExecutorPool = new ArrayList<>();
-				exclusiveExecutorPool.add(executor);
-				this.cluster.assign(slot, this.topology.getId(), exclusiveExecutorPool);
+			if(slot != null){
+				if(this.cluster.isSlotOccupied(slot)){
+					ArrayList<ExecutorDetails> sharedExecutorPool = new ArrayList<>();
+					sharedExecutorPool.add(executor);
+					this.cluster.assign(slot, this.topology.getId(), sharedExecutorPool);
+				}else{
+					ArrayList<ExecutorDetails> exclusiveExecutorPool = new ArrayList<>();
+					exclusiveExecutorPool.add(executor);
+					this.cluster.assign(slot, this.topology.getId(), exclusiveExecutorPool);
+				}
 			}
 		}
 	}

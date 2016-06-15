@@ -6,7 +6,6 @@ package storm.autoscale.scheduler.allocation;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import backtype.storm.scheduler.Cluster;
 import backtype.storm.scheduler.SupervisorDetails;
 import backtype.storm.scheduler.WorkerSlot;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
@@ -44,7 +43,13 @@ public class NetworkAwareStrategy implements IAllocationStrategy {
 			ArrayList<String> neighbourComponents = this.assignMonitor.getRunningComponents(neighbour);
 			for(String neighbourComp : neighbourComponents){
 				if(this.explorer.areLinked(component, neighbourComp)){
-					//check which one is the parent and which is the child, add the volume of the stream linking them
+					if(this.explorer.getParents(component).contains(neighbourComp)){
+						ComponentStats stats = this.compMonitor.getStats(neighbourComp);
+						result += stats.getNbOutputs() / this.assignMonitor.getParallelism(neighbourComp);
+					}else{
+						ComponentStats stats = this.compMonitor.getStats(component);
+						result += stats.getNbOutputs() / this.assignMonitor.getParallelism(component);
+					}
 				}
 			}
 		}
@@ -56,8 +61,11 @@ public class NetworkAwareStrategy implements IAllocationStrategy {
 	 */
 	@Override
 	public HashMap<WorkerSlot, Double> getScores(String component) {
-		// TODO Auto-generated method stub
-		return null;
+		HashMap<WorkerSlot, Double> result = new HashMap<>();
+		for(WorkerSlot slot : this.assignMonitor.getFreeSlots()){
+			Double score = this.computeScore(component, slot);
+			result.put(slot, score);
+		}
+		return result;
 	}
-
 }

@@ -34,6 +34,7 @@ public class ComponentMonitor {
 	}
 
 	public void getStatistics(TopologyExplorer explorer){
+		this.reset();
 		Integer current = this.manager.getCurrentTimestamp();
 		Integer previous = -1;
 		if(current > 0){
@@ -49,7 +50,7 @@ public class ComponentMonitor {
 			this.stats.put(spout, component);
 		}
 		
-		Set<String> bolts = explorer.getSpouts();
+		Set<String> bolts = explorer.getBolts();
 		for(String bolt : bolts){
 			Double nbInputs = 0.0;
 			ArrayList<String> parents = explorer.getParents(bolt);
@@ -118,5 +119,9 @@ public class ComponentMonitor {
 			}
 		}
 		return result;
+	}
+	
+	public void reset(){
+		this.stats = new HashMap<>();
 	}
 }
