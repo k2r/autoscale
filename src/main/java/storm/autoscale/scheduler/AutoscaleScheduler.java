@@ -21,6 +21,7 @@ import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
 import storm.autoscale.scheduler.modules.stats.ComponentStats;
 import storm.autoscale.scheduler.modules.stats.StatStorageManager;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
+import storm.autoscale.scheduler.modules.listener.NimbusListener;
 
 /**
  * @author Roland
@@ -55,17 +56,17 @@ public class AutoscaleScheduler implements IScheduler {
 	 */
 	@Override
 	public void schedule(Topologies topologies, Cluster cluster) {
+		NimbusListener listener = NimbusListener.getInstance("localhost", 6627);
 		StatStorageManager manager = null;
 		try {
-			manager = StatStorageManager.getManager("localhost", "localhost", 6627, 1000);
+			manager = StatStorageManager.getManager("localhost", "localhost", 6627, 2000);
 		} catch (ClassNotFoundException | SQLException e1) {
 			logger.severe("Unable to start the StatStorageManage because of " + e1);
 		}
 
 		/*In a first time, we take all scaling decisions*/
 		for(TopologyDetails topology : topologies.getTopologies()){
-
-			this.compMonitor = new ComponentMonitor("localhost", "localhost", 6627, 1000);
+			this.compMonitor = new ComponentMonitor("localhost", "localhost", 6627, 2000);
 			this.assignMonitor = new AssignmentMonitor(cluster, topology);
 			this.explorer = new TopologyExplorer(topology.getTopology());
 			this.assignMonitor.update();
@@ -105,7 +106,7 @@ public class AutoscaleScheduler implements IScheduler {
 				}else{
 					String congestedComponent = this.congested.get(0);
 					IAction action = new ScaleOutAction(congestedComponent, topology, cluster, compMonitor, assignMonitor, new DelegatedAllocationStrategy(assignMonitor));
-					action.scale();
+					action.scale(listener.getClient());
 					this.congested.remove(congestedComponent);
 					/*String mostImportantComponent = this.congested.get(0);
 					for(String component : this.congested){

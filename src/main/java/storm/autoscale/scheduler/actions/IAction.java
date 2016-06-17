@@ -3,6 +3,7 @@
  */
 package storm.autoscale.scheduler.actions;
 
+import backtype.storm.generated.Nimbus.Client;
 import backtype.storm.scheduler.WorkerSlot;
 
 /**
@@ -16,6 +17,6 @@ public interface IAction {
 	public WorkerSlot getBestLocation();
 	
 	public void unassign();
-	
-	public void scale();
+
+	void scale(Client client);
 }

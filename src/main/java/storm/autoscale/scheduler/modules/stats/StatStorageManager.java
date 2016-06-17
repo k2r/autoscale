@@ -214,13 +214,13 @@ public class StatStorageManager extends Thread{
 				String worker = resultSpouts.getString("host") + "@" + resultSpouts.getString("port");
 				workers.add(worker);
 			}
-			
+			resultSpouts.close();
 			ResultSet resultBolts = this.statement.executeQuery(queryBolts);
 			while(resultBolts.next()){
 				String worker = resultBolts.getString("host") + "@" + resultBolts.getString("port");
 				workers.add(worker);
-			}
-			
+			}			
+			resultBolts.close();
 			if(workers.isEmpty()){
 				logger.warning("Component " +  component + " seems to be unaffected or do not exist in running topologies");
 			}
@@ -237,6 +237,7 @@ public class StatStorageManager extends Thread{
 			ResultSet results = this.statement.executeQuery(query);
 			if(results.next()){
 				result = results.getLong("nbExecuted");
+				results.close();
 			}
 		} catch (SQLException e) {
 			logger.severe("Unable to compute the number of executed tuples of the component " + component + " because of " + e);
@@ -251,11 +252,13 @@ public class StatStorageManager extends Thread{
 			ResultSet resultSpout = this.statement.executeQuery(querySpout);
 			if(resultSpout.next()){
 				result = resultSpout.getLong("nbOutputs");
+				resultSpout.close();
 			}else{
 				String queryBolt  = "SELECT SUM(outputs) AS nbOutputs FROM " + TABLE_BOLT + " WHERE component = '" + component + "' AND timestamp = " + timestamp + " GROUP BY component;";
 				ResultSet resultBolt = this.statement.executeQuery(queryBolt);
 				if(resultBolt.next()){
 					result = resultBolt.getLong("nbOutputs");
+					resultBolt.close();
 				}else{
 					logger.warning("Component " +  component + " seems to emit no tuples or do not exist in running topologies");
 				}
@@ -273,7 +276,8 @@ public class StatStorageManager extends Thread{
 			ResultSet results = this.statement.executeQuery(query);
 			if(results.next()){
 				result = results.getDouble("avgLatency");
-			}
+				results.close();
+				}
 		} catch (SQLException e) {
 			logger.severe("Unable to compute the average latency of the component " + component + " because of " + e);
 		}
@@ -287,6 +291,7 @@ public class StatStorageManager extends Thread{
 			ResultSet results = this.statement.executeQuery(query);
 			if(results.next()){
 				result = results.getDouble("avgSelectivity");
+				results.close();
 			}
 		} catch (SQLException e) {
 			logger.severe("Unable to compute the average selectivity of the component " + component + " because of " + e);
@@ -301,6 +306,7 @@ public class StatStorageManager extends Thread{
 			ResultSet results = this.statement.executeQuery(query);
 			if(results.next()){
 				result = results.getLong("topThroughput");
+				results.close();
 			}
 		} catch (SQLException e) {
 			logger.severe("Unable to compute the global throughput of the topology " + topology + " because of " + e);
@@ -315,6 +321,7 @@ public class StatStorageManager extends Thread{
 			ResultSet results = this.statement.executeQuery(query);
 			if(results.next()){
 				result = results.getLong("topLosses");
+				results.close();
 			}
 		} catch (SQLException e) {
 			logger.severe("Unable to compute the global losses of the topology " + topology + " because of " + e);
@@ -329,6 +336,7 @@ public class StatStorageManager extends Thread{
 			ResultSet results = this.statement.executeQuery(query);
 			if(results.next()){
 				result = results.getDouble("topLatency");
+				results.close();
 			}
 		} catch (SQLException e) {
 			logger.severe("Unable to compute the global latency of the topology " + topology + " because of " + e);

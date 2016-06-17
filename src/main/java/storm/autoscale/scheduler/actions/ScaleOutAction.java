@@ -8,7 +8,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
+import org.apache.thrift7.TException;
+
+import backtype.storm.generated.Nimbus;
+import backtype.storm.generated.RebalanceOptions;
 import backtype.storm.scheduler.Cluster;
 import backtype.storm.scheduler.ExecutorDetails;
 import backtype.storm.scheduler.SchedulerAssignment;
@@ -31,6 +36,7 @@ public class ScaleOutAction implements IAction {
 	private ComponentMonitor compMonitor;
 	private AssignmentMonitor assignMonitor;
 	private IAllocationStrategy allocStrategy;
+	private Logger logger = Logger.getLogger("ScaleOutAction");
 	
 	public ScaleOutAction(String component, TopologyDetails topology, Cluster cluster, ComponentMonitor cm, AssignmentMonitor am, IAllocationStrategy as) {
 		this.component = component;
@@ -81,13 +87,17 @@ public class ScaleOutAction implements IAction {
 		Set<ExecutorDetails> executors = schedAssignment.getExecutors(); 
 		Map<ExecutorDetails, String> executorToComponents = this.topology.getExecutorToComponent();
 		Iterator<ExecutorDetails> iterator = executors.iterator();
+		ArrayList<WorkerSlot> slotsToFree = new ArrayList<>();
 		while(iterator.hasNext()){
 			ExecutorDetails executor = iterator.next();
 			String linkedComponent = executorToComponents.get(executor);
 			if(linkedComponent.equalsIgnoreCase(this.component) && schedAssignment.isExecutorAssigned(executor)){
 				WorkerSlot slot = schedAssignment.getExecutorToSlot().get(executor);
-				this.cluster.freeSlot(slot);
+				slotsToFree.add(slot);
 			}
+		}
+		for(WorkerSlot slot : slotsToFree){
+			this.cluster.freeSlot(slot);
 		}
 	}
 
@@ -95,16 +105,17 @@ public class ScaleOutAction implements IAction {
 	 * @see storm.autoscale.scheduler.actions.IAction#scale()
 	 */
 	@Override
-	public void scale() {
-		ArrayList<ExecutorDetails> executors = new ArrayList<>();
+	public void scale(Nimbus.Client client) {
+		//ArrayList<ExecutorDetails> executors = new ArrayList<>();
 		this.unassign();
 		ComponentStats stats = this.compMonitor.getStats(this.component);
 		/*Add of enough Executors to process all incoming tuples at an equivalent input and process rate*/
 		int nbExecToAdd = (int) Math.round((stats.getNbInputs() - stats.getNbExecuted()) / stats.getNbExecuted()); 
 		ArrayList<Integer> tasks = this.assignMonitor.getAllSortedTasks(component);
 		/*Take into account that we can not create more Executors than there are tasks*/
-		int newParallelism = Math.max(tasks.size(), this.assignMonitor.getParallelism(component) + nbExecToAdd);
-		ArrayList<ArrayList<Integer>> borders = UtilFunctions.getBuckets(tasks, newParallelism);
+		int currentParallelism = this.assignMonitor.getParallelism(component);
+		int newParallelism = Math.min(tasks.size(), currentParallelism + nbExecToAdd);
+		/*ArrayList<ArrayList<Integer>> borders = UtilFunctions.getBuckets(tasks, newParallelism);
 		int nbExecutors = borders.size();
 		for(int i = 0; i < nbExecutors; i++){
 			ArrayList<Integer> executorBorders = borders.get(i);
@@ -127,6 +138,19 @@ public class ScaleOutAction implements IAction {
 					this.cluster.assign(slot, this.topology.getId(), exclusiveExecutorPool);
 				}
 			}
+		}*/
+		RebalanceOptions options = new RebalanceOptions();
+		options.put_to_num_executors(this.component, newParallelism);
+		options.set_num_workers(cluster.getAssignableSlots().size());
+		options.set_wait_secs(0);
+		try {
+			options.validate();
+			logger.info("Changing parallelism degree of component " + this.component + " from " + currentParallelism + " to " + newParallelism + "...");
+			client.rebalance(topology.getName(), options);
+			logger.info("Parallelism of component " + this.component + " increased successfully!");
+			return;
+		} catch (TException e) {
+			logger.severe("Unable to change component " + this.component + " parallelism because " + e) ;
 		}
 	}
 }
