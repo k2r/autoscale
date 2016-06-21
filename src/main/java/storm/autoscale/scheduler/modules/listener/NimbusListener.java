@@ -51,7 +51,7 @@ public class NimbusListener {
 	public void settTransport(TFramedTransport tTransport) {
 		this.tTransport = tTransport;
 	}
-
+	
 	/**
 	 * @return the client
 	 */

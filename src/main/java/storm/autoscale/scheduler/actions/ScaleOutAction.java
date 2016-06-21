@@ -11,6 +11,9 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import org.apache.thrift7.TException;
+import org.apache.thrift7.protocol.TBinaryProtocol;
+import org.apache.thrift7.transport.TFramedTransport;
+import org.apache.thrift7.transport.TSocket;
 
 import backtype.storm.generated.Nimbus;
 import backtype.storm.generated.RebalanceOptions;
@@ -19,6 +22,7 @@ import backtype.storm.scheduler.ExecutorDetails;
 import backtype.storm.scheduler.SchedulerAssignment;
 import backtype.storm.scheduler.TopologyDetails;
 import backtype.storm.scheduler.WorkerSlot;
+
 import storm.autoscale.scheduler.allocation.IAllocationStrategy;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
@@ -45,6 +49,8 @@ public class ScaleOutAction implements IAction {
 		this.compMonitor = cm;
 		this.assignMonitor = am;
 		this.allocStrategy = as;
+		Thread thread = new Thread(this);
+		thread.start();
 	}
 	
 	/* (non-Javadoc)
@@ -105,17 +111,17 @@ public class ScaleOutAction implements IAction {
 	 * @see storm.autoscale.scheduler.actions.IAction#scale()
 	 */
 	@Override
-	public void scale(Nimbus.Client client) {
-		//ArrayList<ExecutorDetails> executors = new ArrayList<>();
-		this.unassign();
+	public void scale() {
+		/*//ArrayList<ExecutorDetails> executors = new ArrayList<>();
+		//this.unassign();
 		ComponentStats stats = this.compMonitor.getStats(this.component);
-		/*Add of enough Executors to process all incoming tuples at an equivalent input and process rate*/
+		Add of enough Executors to process all incoming tuples at an equivalent input and process rate
 		int nbExecToAdd = (int) Math.round((stats.getNbInputs() - stats.getNbExecuted()) / stats.getNbExecuted()); 
 		ArrayList<Integer> tasks = this.assignMonitor.getAllSortedTasks(component);
-		/*Take into account that we can not create more Executors than there are tasks*/
+		Take into account that we can not create more Executors than there are tasks
 		int currentParallelism = this.assignMonitor.getParallelism(component);
 		int newParallelism = Math.min(tasks.size(), currentParallelism + nbExecToAdd);
-		/*ArrayList<ArrayList<Integer>> borders = UtilFunctions.getBuckets(tasks, newParallelism);
+		ArrayList<ArrayList<Integer>> borders = UtilFunctions.getBuckets(tasks, newParallelism);
 		int nbExecutors = borders.size();
 		for(int i = 0; i < nbExecutors; i++){
 			ArrayList<Integer> executorBorders = borders.get(i);
@@ -138,19 +144,52 @@ public class ScaleOutAction implements IAction {
 					this.cluster.assign(slot, this.topology.getId(), exclusiveExecutorPool);
 				}
 			}
-		}*/
+		}
+		TSocket tsocket = new TSocket("localhost", 6627);
+		TFramedTransport tTransport = new TFramedTransport(tsocket);
+		TBinaryProtocol tBinaryProtocol = new TBinaryProtocol(tTransport);
+		Nimbus.Client client = new Nimbus.Client(tBinaryProtocol);
+		//NimbusClient nimbus = NimbusClient.getConfiguredClient(this.conf);
+		
 		RebalanceOptions options = new RebalanceOptions();
 		options.put_to_num_executors(this.component, newParallelism);
-		options.set_num_workers(cluster.getAssignableSlots().size());
-		options.set_wait_secs(0);
-		try {
-			options.validate();
+		//options.set_num_workers(cluster.getAssignableSlots().size());
+		options.set_wait_secs(1);
+		
 			logger.info("Changing parallelism degree of component " + this.component + " from " + currentParallelism + " to " + newParallelism + "...");
+			try {
+				nimbus.getClient().rebalance(topology.getName(), options);
+				logger.info("Parallelism of component " + this.component + " increased successfully!");
+			} catch (TException e) {
+				logger.severe("Unable to scale topology " + topology.getName() + " because of " + e);
+			}
+			//return;
+*/		}
+
+	@Override
+	public void run() {
+		ComponentStats stats = this.compMonitor.getStats(this.component);
+		int nbExecToAdd = (int) Math.round((stats.getNbInputs() - stats.getNbExecuted()) / stats.getNbExecuted()); 
+		ArrayList<Integer> tasks = this.assignMonitor.getAllSortedTasks(component);
+		int currentParallelism = this.assignMonitor.getParallelism(component);
+		int newParallelism = Math.min(tasks.size(), currentParallelism + nbExecToAdd);
+		TSocket tsocket = new TSocket("localhost", 6627);
+		TFramedTransport tTransport = new TFramedTransport(tsocket);
+		TBinaryProtocol tBinaryProtocol = new TBinaryProtocol(tTransport);
+		Nimbus.Client client = new Nimbus.Client(tBinaryProtocol);
+		RebalanceOptions options = new RebalanceOptions();
+		options.put_to_num_executors(this.component, newParallelism);
+		options.set_wait_secs(1);
+		logger.info("Changing parallelism degree of component " + this.component + " from " + currentParallelism + " to " + newParallelism + "...");
+		try {
+			if(!tTransport.isOpen()){
+				tTransport.open();
+			}
 			client.rebalance(topology.getName(), options);
 			logger.info("Parallelism of component " + this.component + " increased successfully!");
-			return;
+			tTransport.close();
 		} catch (TException e) {
-			logger.severe("Unable to change component " + this.component + " parallelism because " + e) ;
+			logger.severe("Unable to scale topology " + topology.getName() + " because of " + e);
 		}
 	}
 }

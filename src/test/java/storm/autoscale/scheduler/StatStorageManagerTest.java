@@ -24,7 +24,7 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testStoreSpoutExecutorStats() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost", "localhost", 6627, 1000);
+			StatStorageManager manager = StatStorageManager.getManager("localhost");
 			Integer timestamp = 0;
 			String host = "testHost";
 			Integer port = 0;
@@ -96,7 +96,7 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testStoreBoltExecutorStats() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost", "localhost", 6627, 1000);
+			StatStorageManager manager = StatStorageManager.getManager("localhost");
 			Integer timestamp = 0;
 			String host = "testHost";
 			Integer port = 0;
@@ -109,17 +109,17 @@ public class StatStorageManagerTest extends TestCase {
 			Double avgLatency = 500.0;
 			Double selectivity = 0.8;
 			manager.storeBoltExecutorStats(timestamp, host, port, topology, component, startTask, endTask, executed, outputs, avgLatency, selectivity);
-			
+
 			String jdbcDriver = "com.mysql.jdbc.Driver";
 			String dbUrl = "jdbc:mysql://localhost/benchmarks";
 			String user = "root";
 			Class.forName(jdbcDriver);
-			
+
 			Connection connection = DriverManager.getConnection(dbUrl,user, null);
 			Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			String testBolttStorageQuery = "SELECT * FROM all_time_bolts_stats";
 			ResultSet result = statement.executeQuery(testBolttStorageQuery);
-			
+
 			Integer actualTimestamp = null;
 			String actualHost = null;
 			Integer actualPort = null;
@@ -155,7 +155,7 @@ public class StatStorageManagerTest extends TestCase {
 			assertEquals(outputs, actualOutputs, 0);
 			assertEquals(avgLatency, actualAvgLatency, 0);
 			assertEquals(selectivity, actualSelectivity, 0);
-			
+
 			String testCleanQuery = "DELETE FROM all_time_bolts_stats";
 			statement.executeUpdate(testCleanQuery);
 		} catch (ClassNotFoundException | SQLException e) {
@@ -168,7 +168,8 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testGetWorkers() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost", "localhost", 6627, 1000);
+			
+			StatStorageManager manager = StatStorageManager.getManager("localhost");
 			Integer timestamp = 0;
 			String topology = "testTopology";
 			String component = "testComponent";
@@ -222,7 +223,7 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testGetExecuted() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost", "localhost", 6627, 1000);
+			StatStorageManager manager = StatStorageManager.getManager("localhost");
 			Integer timestamp = 0;
 			String topology = "testTopology";
 			String component = "testComponent";
@@ -273,7 +274,7 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testGetOutputs() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost", "localhost", 6627, 1000);
+			StatStorageManager manager = StatStorageManager.getManager("localhost");
 			Integer timestamp = 0;
 			String topology = "testTopology";
 			String component = "testComponent";
@@ -324,7 +325,7 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testGetAvgLatency() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost", "localhost", 6627, 1000);
+			StatStorageManager manager = StatStorageManager.getManager("localhost");
 			Integer timestamp = 0;
 			String topology = "testTopology";
 			String component = "testComponent";
@@ -375,7 +376,7 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testGetSelectivity() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost", "localhost", 6627, 1000);
+			StatStorageManager manager = StatStorageManager.getManager("localhost");
 			Integer timestamp = 0;
 			String topology = "testTopology";
 			String component = "testComponent";
@@ -426,7 +427,7 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testGetTopologyThroughput() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost", "localhost", 6627, 1000);
+			StatStorageManager manager = StatStorageManager.getManager("localhost");
 			Integer timestamp = 0;
 			String topology = "testTopology";
 			String component = "testComponent";
@@ -478,7 +479,7 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testGetTopologyLosses() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost", "localhost", 6627, 1000);
+			StatStorageManager manager = StatStorageManager.getManager("localhost");
 			Integer timestamp = 0;
 			String topology = "testTopology";
 			String component = "testComponent";
@@ -530,7 +531,7 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testGetTopologyAvgLatency() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost", "localhost", 6627, 1000);
+			StatStorageManager manager = StatStorageManager.getManager("localhost");
 			Integer timestamp = 0;
 			String topology = "testTopology";
 			String component = "testComponent";

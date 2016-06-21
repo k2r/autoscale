@@ -3,14 +3,13 @@
  */
 package storm.autoscale.scheduler.actions;
 
-import backtype.storm.generated.Nimbus.Client;
 import backtype.storm.scheduler.WorkerSlot;
 
 /**
  * @author Roland
  *
  */
-public interface IAction {
+public interface IAction extends Runnable{
 
 	public void setParallelism();
 	
@@ -18,5 +17,5 @@ public interface IAction {
 	
 	public void unassign();
 
-	void scale(Client client);
+	void scale();
 }
