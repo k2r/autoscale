@@ -84,7 +84,7 @@ public class TopologyExplorerTest extends TestCase {
 		Mockito.when(topology.get_bolts()).thenReturn(bolts);
 		Mockito.when(topology.get_spouts()).thenReturn(spouts);
 		
-		TopologyExplorer explorer = new TopologyExplorer(topology);
+		TopologyExplorer explorer = new TopologyExplorer("test", topology);
 		boolean link1 = explorer.areLinked("A", "C");
 		boolean link2 = explorer.areLinked("C", "A");
 		boolean link3 = explorer.areLinked("C", "D");
@@ -161,7 +161,7 @@ public class TopologyExplorerTest extends TestCase {
 		Mockito.when(topology.get_bolts()).thenReturn(bolts);
 		Mockito.when(topology.get_spouts()).thenReturn(spouts);
 		
-		TopologyExplorer explorer = new TopologyExplorer(topology);
+		TopologyExplorer explorer = new TopologyExplorer("test", topology);
 		
 		ArrayList<String> childrenA = new ArrayList<>();
 		childrenA.add("C");

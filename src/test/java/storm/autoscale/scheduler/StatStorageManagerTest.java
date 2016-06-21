@@ -195,7 +195,7 @@ public class StatStorageManagerTest extends TestCase {
 			manager.storeBoltExecutorStats(timestamp, host1, port1, topology, component, startTask1, endTask1, executed1, outputs1, avgLatency1, selectivity1);
 			manager.storeBoltExecutorStats(timestamp, host2, port2, topology, component, startTask2, endTask2, executed2, outputs2, avgLatency2, selectivity2);
 			
-			ArrayList<String> actualWorkers = manager.getWorkers(component, timestamp);
+			ArrayList<String> actualWorkers = manager.getBoltWorkers(component, timestamp);
 			
 			ArrayList<String> expectedWorkers = new ArrayList<>();
 			expectedWorkers.add(host1 + "@" + port1);
@@ -300,7 +300,7 @@ public class StatStorageManagerTest extends TestCase {
 			manager.storeBoltExecutorStats(timestamp, host1, port1, topology, component, startTask1, endTask1, executed1, outputs1, avgLatency1, selectivity1);
 			manager.storeBoltExecutorStats(timestamp, host2, port2, topology, component, startTask2, endTask2, executed2, outputs2, avgLatency2, selectivity2);
 			
-			Long actualOutputs = manager.getOutputs(component, timestamp);
+			Long actualOutputs = manager.getBoltOutputs(component, timestamp);
 			Long expectedOutputs = outputs1 + outputs2;
 			
 			assertEquals(expectedOutputs, actualOutputs, 0);

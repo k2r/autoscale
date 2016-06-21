@@ -19,6 +19,7 @@ import backtype.storm.generated.StormTopology;
  */
 public class TopologyExplorer {
 
+	private String name;
 	private StormTopology topology;
 	private Map<String, SpoutSpec> spouts;
 	private Map<String, Bolt> bolts;
@@ -27,13 +28,18 @@ public class TopologyExplorer {
 	/**
 	 * 
 	 */
-	public TopologyExplorer(StormTopology topology) {
+	public TopologyExplorer(String name, StormTopology topology) {
+		this.name = name;
 		this.topology = topology;
 		this.spouts = this.topology.get_spouts();
 		this.bolts = this.topology.get_bolts();
 		this.components = new ArrayList<>();
 		this.components.addAll(this.spouts.keySet());
 		this.components.addAll(this.bolts.keySet());
+	}
+	
+	public String getTopologyName(){
+		return this.name;
 	}
 	
 	public ArrayList<String> getComponents(){

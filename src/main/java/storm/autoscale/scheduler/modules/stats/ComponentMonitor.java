@@ -36,30 +36,35 @@ public class ComponentMonitor {
 	public void getStatistics(TopologyExplorer explorer){
 		this.reset();
 		Integer current = this.manager.getCurrentTimestamp();
-		Integer previous = -1;
-		if(current > 0){
-			previous = current - 1;
-		} 
+		Integer previous = this.manager.getStoredTimestamp(); 
 		Set<String> spouts = explorer.getSpouts();
 		for(String spout : spouts){
 			Double nbInputs = 0.0;
 			Double nbExecuted = 0.0;
-			Double nbOutputs = this.manager.getOutputs(spout, current)  - this.manager.getOutputs(spout, previous) * 1.0;
-			Double avgLatency = this.manager.getAvgLatency(spout, current) * 1.0;
-			ComponentStats component = new ComponentStats(spout, nbInputs, nbExecuted, nbOutputs, avgLatency);
+			Double nbOutputs = this.manager.getSpoutOutputs(spout, current) - this.manager.getSpoutOutputs(spout, previous) * 1.0;
+			Double avgTopLatency = this.manager.getTopologyAvgLatency(explorer.getTopologyName(), current) * 1.0;
+			ComponentStats component = new ComponentStats(spout, nbInputs, nbExecuted, nbOutputs, avgTopLatency);
 			this.stats.put(spout, component);
 		}
-		
 		Set<String> bolts = explorer.getBolts();
 		for(String bolt : bolts){
 			Double nbInputs = 0.0;
 			ArrayList<String> parents = explorer.getParents(bolt);
 			for(String parent : parents){
-				Long parentOutput = this.manager.getOutputs(parent, current) - this.manager.getOutputs(parent, previous); 
+				Long parentOutput = this.manager.getBoltOutputs(parent, current);
+				Long spoutParentOutputs = this.manager.getSpoutOutputs(parent, previous);
+				Long boltParentOutputs = this.manager.getBoltOutputs(parent, previous);
+				if(spoutParentOutputs > 0){
+					parentOutput = parentOutput - spoutParentOutputs;
+				}else{
+					if(boltParentOutputs > 0){
+						parentOutput = parentOutput - boltParentOutputs;
+					}
+				}
 				nbInputs += parentOutput;
 			}
 			Double nbExecuted = this.manager.getExecuted(bolt, current) - this.manager.getExecuted(bolt, previous) * 1.0;
-			Double nbOutputs = this.manager.getOutputs(bolt, current)  - this.manager.getOutputs(bolt, previous) * 1.0;
+			Double nbOutputs = this.manager.getBoltOutputs(bolt, current) - this.manager.getBoltOutputs(bolt, previous) * 1.0;
 			Double avgLatency = this.manager.getAvgLatency(bolt, current);
 			ComponentStats component = new ComponentStats(bolt, nbInputs, nbExecuted, nbOutputs, avgLatency);
 			this.stats.put(bolt, component);

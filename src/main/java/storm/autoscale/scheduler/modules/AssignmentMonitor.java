@@ -129,6 +129,10 @@ public class AssignmentMonitor {
 		return result;
 	}
 	
+	public Integer getNbWorkers(){
+		return this.cluster.getAssignableSlots().size();
+	}
+	
 	public ArrayList<WorkerSlot> getSharableSlots(String component){
 		ArrayList<WorkerSlot> result = new ArrayList<>();
 		Collection<WorkerSlot> usedSlots = this.cluster.getUsedSlots();
@@ -143,7 +147,7 @@ public class AssignmentMonitor {
 	
 	public Integer getProximity(String host, String component){
 		Integer result = 0;
-		TopologyExplorer explorer = new TopologyExplorer(this.topology.getTopology()); 
+		TopologyExplorer explorer = new TopologyExplorer(this.topology.getName(), this.topology.getTopology()); 
 		List<SupervisorDetails> supervisors =  this.cluster.getSupervisorsByHost(host);
 		for(SupervisorDetails supervisor : supervisors){
 			ArrayList<WorkerSlot> slots = this.support.get(supervisor);

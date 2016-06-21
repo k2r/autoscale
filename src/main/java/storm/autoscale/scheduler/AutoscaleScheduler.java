@@ -5,6 +5,7 @@ package storm.autoscale.scheduler;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -76,25 +77,22 @@ public class AutoscaleScheduler implements IScheduler {
 			}else{
 				this.compMonitor = new ComponentMonitor("localhost", this.nimbusHost, this.nimbusPort, 2000);
 				this.assignMonitor = new AssignmentMonitor(cluster, topology);
-				this.explorer = new TopologyExplorer(topology.getTopology());
+				this.explorer = new TopologyExplorer(topology.getName(), topology.getTopology());
 				this.assignMonitor.update();
 				this.compMonitor.getStatistics(explorer);
-				/*IMetric impactMetric = new WelfMetric(this.explorer, this.components);
-
-					this.congested = this.components.getCongested();
-					this.toAssign = new ArrayList<>();*/
-
+				this.congested = this.compMonitor.getCongested();
+				HashMap<String, ComponentStats> congestedStats = new HashMap<>();
 				String monitoring = "Current monitoring info (timestamp " + manager.getCurrentTimestamp() + ")\n";
 				logger.info(monitoring);
 				for(String component : this.compMonitor.getRegisteredComponents()){
 					ComponentStats stats = this.compMonitor.getStats(component);
+					congestedStats.put(component, stats);
 					String infos = "Component " + component + " ---> inputs: " + stats.getNbInputs();
 					infos += ", executed: " + stats.getNbExecuted();
 					infos += ", outputs: " + stats.getNbOutputs(); 
 					infos += ", latency: " + stats.getAvgLatency() + "\n";
 					logger.info(infos);
 				}
-				this.congested = this.compMonitor.getCongested();
 				if(this.congested.isEmpty()){
 					this.isScaled = true;
 					logger.info("No component to scale out!");
@@ -103,6 +101,7 @@ public class AutoscaleScheduler implements IScheduler {
 					String congestInfo = "Congested components: ";
 					for(String component : this.congested){
 						congestInfo += component + " ";
+						
 					}
 					congestInfo += "have been detected!";
 					logger.info(congestInfo);
@@ -113,29 +112,17 @@ public class AutoscaleScheduler implements IScheduler {
 						break;
 					}else{
 						String congestedComponent = this.congested.get(0);
-						IAction action = new ScaleOutAction(congestedComponent, topology, cluster, compMonitor, assignMonitor, new DelegatedAllocationStrategy(assignMonitor));
-						//action.scale();
+						IAction action = new ScaleOutAction(congestedStats.get(congestedComponent), topology, assignMonitor, new DelegatedAllocationStrategy(assignMonitor));
 						this.congested.remove(congestedComponent);
 						try {
 							Thread.sleep(100);
 						} catch (InterruptedException e) {
 							e.printStackTrace();
 						}
-						/*String mostImportantComponent = this.congested.get(0);
-							for(String component : this.congested){
-								if(impactMetric.compute(component) > impactMetric.compute(mostImportantComponent)){
-									mostImportantComponent = component;
-								}
-							}
-							incrParallelism(mostImportantComponent);
-							this.congested.remove(mostImportantComponent);
-							logger.info("Component " + mostImportantComponent + " is being uncongested...");
-							forkAndAssign(mostImportantComponent, cluster, topology);*/
 					}
 				}
 
 			}
-
 
 			/*Then we let the default scheduler balance the load*/
 			EvenScheduler scheduler = new EvenScheduler();
