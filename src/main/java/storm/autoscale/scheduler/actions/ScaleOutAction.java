@@ -19,7 +19,7 @@ import backtype.storm.scheduler.WorkerSlot;
 
 import storm.autoscale.scheduler.allocation.IAllocationStrategy;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
-import storm.autoscale.scheduler.modules.stats.ComponentStats;
+import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 
 /**
  * @author Roland
@@ -27,13 +27,13 @@ import storm.autoscale.scheduler.modules.stats.ComponentStats;
  */
 public class ScaleOutAction implements IAction {
 
-	private ComponentStats stats;
+	private ComponentWindowedStats stats;
 	private TopologyDetails topology;
 	private AssignmentMonitor assignMonitor;
 	private IAllocationStrategy allocStrategy;
 	private Logger logger = Logger.getLogger("ScaleOutAction");
 	
-	public ScaleOutAction(ComponentStats stats, TopologyDetails topology, AssignmentMonitor am, IAllocationStrategy as) {
+	public ScaleOutAction(ComponentWindowedStats stats, TopologyDetails topology, AssignmentMonitor am, IAllocationStrategy as) {
 		this.stats = stats;
 		this.topology = topology;
 		this.assignMonitor = am;

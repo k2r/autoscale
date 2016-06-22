@@ -6,7 +6,7 @@ package storm.autoscale.scheduler.metrics;
 import java.util.ArrayList;
 
 import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
-import storm.autoscale.scheduler.modules.stats.ComponentStats;
+import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
 
 /**
@@ -43,7 +43,7 @@ public class WelfMetric implements IMetric {
 	}
 
 	public Double estimatedLatency(String component){
-		ComponentStats stats = this.cm.getStats(component);
+		ComponentWindowedStats stats = this.cm.getStats(component);
 		Double inputs = stats.getNbInputs();
 		Double selectivity = stats.getSelectivity();
 		Double latency = stats.getAvgLatency();

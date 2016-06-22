@@ -19,7 +19,7 @@ import storm.autoscale.scheduler.actions.ScaleOutAction;
 import storm.autoscale.scheduler.allocation.DelegatedAllocationStrategy;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
-import storm.autoscale.scheduler.modules.stats.ComponentStats;
+import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 import storm.autoscale.scheduler.modules.stats.StatStorageManager;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
 
@@ -81,11 +81,11 @@ public class AutoscaleScheduler implements IScheduler {
 				this.assignMonitor.update();
 				this.compMonitor.getStatistics(explorer);
 				this.congested = this.compMonitor.getCongested();
-				HashMap<String, ComponentStats> congestedStats = new HashMap<>();
+				HashMap<String, ComponentWindowedStats> congestedStats = new HashMap<>();
 				String monitoring = "Current monitoring info (timestamp " + manager.getCurrentTimestamp() + ")\n";
 				logger.info(monitoring);
 				for(String component : this.compMonitor.getRegisteredComponents()){
-					ComponentStats stats = this.compMonitor.getStats(component);
+					ComponentWindowedStats stats = this.compMonitor.getStats(component);
 					congestedStats.put(component, stats);
 					String infos = "Component " + component + " ---> inputs: " + stats.getNbInputs();
 					infos += ", executed: " + stats.getNbExecuted();

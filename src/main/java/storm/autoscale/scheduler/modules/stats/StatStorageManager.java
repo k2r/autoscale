@@ -3,6 +3,7 @@
  */
 package storm.autoscale.scheduler.modules.stats;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -38,13 +39,13 @@ public class StatStorageManager extends Thread{
 	private static StatStorageManager manager = null;
 	private NimbusListener listener;
 	private Integer timestamp;
-	private Integer storedTimestamp;
 	private Integer rate;
 	private HashMap<String, Boolean> topStatus;
 	private final Connection connection;
 	private final static String ALLTIME = ":all-time";
 	private final static String TABLE_SPOUT = "all_time_spouts_stats";
 	private final static String TABLE_BOLT = "all_time_bolts_stats";
+	private final static String TABLE_TOPOLOGY = "topologies_status";
 	private static Logger logger = Logger.getLogger("StatStorageManager");
 	
 	/**
@@ -60,7 +61,6 @@ public class StatStorageManager extends Thread{
 		this.connection = DriverManager.getConnection(dbUrl,user, null);
 		this.listener = NimbusListener.getInstance(nimbusHost, nimbusPort);
 		this.timestamp = 0;
-		this.storedTimestamp = Integer.MIN_VALUE;
 		this.rate = rate;
 		this.topStatus = new HashMap<>();
 	}
@@ -88,10 +88,6 @@ public class StatStorageManager extends Thread{
 		if(StatStorageManager.manager == null){
 			StatStorageManager.manager = new StatStorageManager(dbHost);
 		}
-		/*logger.info("Statistic collector started...");
-		if(!StatStorageManager.manager.isAlive()){
-			StatStorageManager.manager.start();
-		}*/
 		return StatStorageManager.manager;
 	}
 	
@@ -101,10 +97,6 @@ public class StatStorageManager extends Thread{
 	
 	public Integer getCurrentTimestamp(){
 		return this.timestamp;
-	}
-	
-	public Integer getStoredTimestamp(){
-		return this.storedTimestamp;
 	}
 	
 	public Integer getRate(){
@@ -126,8 +118,10 @@ public class StatStorageManager extends Thread{
 			List<TopologySummary> topologies = client.getClusterInfo().get_topologies();
 			for(TopologySummary topSummary : topologies){
 				String topId = topSummary.get_id();
+				this.timestamp = topSummary.get_uptime_secs();
 				boolean isActive = true;
-				if(!topSummary.get_status().equalsIgnoreCase("ACTIVE")){
+				String topStatus = topSummary.get_status();
+				if(!topStatus.equalsIgnoreCase("ACTIVE")){
 					isActive = false;
 				}
 				if(this.topStatus.containsKey(topId)){
@@ -135,8 +129,8 @@ public class StatStorageManager extends Thread{
 				}else{
 					this.topStatus.put(topId, isActive);
 				}
-				if(isActive(topId)){
-					this.timestamp = topSummary.get_uptime_secs();
+				storeTopologyState(this.timestamp, topId, topStatus);
+				if(isActive(topId)){	
 					TopologyInfo topology = client.getTopologyInfo(topId);
 					List<ExecutorSummary> executors = topology.get_executors();
 					for(ExecutorSummary executor : executors){
@@ -185,7 +179,7 @@ public class StatStorageManager extends Thread{
 										sum += completeAvgTime.get(stream);
 										count++;
 									}
-									Double avgLatency = sum / count;
+									Double avgLatency = new BigDecimal(sum / count).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
 									storeSpoutExecutorStats(this.getCurrentTimestamp(), host, port, topology.get_id(), componentId, startTask, endTask, outputs, throughput, losses, avgLatency);
 									//logger.info("Spout stats successfully persisted!");
 								}
@@ -206,9 +200,9 @@ public class StatStorageManager extends Thread{
 										sum += executionAvgTime.get(gs);
 										count++;
 									}
-									Double avgLatency = sum / count;
+									Double avgLatency = new BigDecimal(sum / count).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
 
-									Double selectivity = outputs / (nbExecuted * 1.0);
+									Double selectivity = new BigDecimal(outputs / (nbExecuted * 1.0)).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
 									storeBoltExecutorStats(this.getCurrentTimestamp(), host, port, topology.get_id(), componentId, startTask, endTask, nbExecuted, outputs, avgLatency, selectivity);
 									//logger.info("Bolt stats successfully persisted!");
 								}
@@ -252,178 +246,260 @@ public class StatStorageManager extends Thread{
 		}
 	}
 	
-	public ArrayList<String> getSpoutWorkers(String component, Integer timestamp){
-		ArrayList<String> workers = new ArrayList<>();
-		String querySpouts = "SELECT DISTINCT host, port FROM " + TABLE_SPOUT + " WHERE component = '" + component + "' AND timestamp = '" + timestamp + "';";
+	public void storeTopologyState(Integer timestamp, String topology, String status){
+		String query = "INSERT INTO " + TABLE_TOPOLOGY + " VALUES('" + timestamp + "', '" + topology + "', '" + status + "')";
+		try{
+			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			statement.executeUpdate(query);
+		}  catch (SQLException e) {
+			logger.severe("Unable to store topology state because of " + e);
+		}
+	}
+	
+	public HashMap<Integer, ArrayList<String>> getSpoutWorkers(String component, Integer timestamp, Integer windowSize){
+		HashMap<Integer, ArrayList<String>> records = new HashMap<>();
+		int oldestTimestamp = timestamp - windowSize;
+		String querySpouts = "SELECT DISTINCT timestamp, host, port FROM " + TABLE_SPOUT 
+				+ " WHERE component = '" + component + "' "
+				+ "AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp + " "
+				+ "ORDER BY timestamp;";
 		try {
 			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			ResultSet resultSpouts = statement.executeQuery(querySpouts);
+			int currentTimestamp = 0;
+			ArrayList<String> workers = new ArrayList<>();
 			while(resultSpouts.next()){
+				int readTimestamp = resultSpouts.getInt("timestamp");
+				if(readTimestamp > currentTimestamp){
+					if(!workers.isEmpty()){
+						records.put(currentTimestamp, workers);
+					}
+					currentTimestamp = readTimestamp;
+					workers = new ArrayList<>();
+				}
 				String worker = resultSpouts.getString("host") + "@" + resultSpouts.getString("port");
 				workers.add(worker);
 			}
+			records.put(currentTimestamp, workers);
 			resultSpouts.close();
-			if(workers.isEmpty()){
+			if(records.isEmpty()){
 				logger.warning("Component " +  component + " seems to be unaffected or do not exist in running topologies");
 			}
 		} catch (SQLException e) {
 			logger.severe("Unable to retrieve assignments for component " + component + " because of " + e);
 		}
-		return workers;
+		return records;
 	}
 	
-	public ArrayList<String> getBoltWorkers(String component, Integer timestamp){
-		ArrayList<String> workers = new ArrayList<>();
-		String queryBolts = "SELECT DISTINCT host, port FROM " + TABLE_BOLT + " WHERE component = '" + component + "' AND timestamp = '" + timestamp + "';";
+	public HashMap<Integer, ArrayList<String>> getBoltWorkers(String component, Integer timestamp, Integer windowSize){
+		HashMap<Integer, ArrayList<String>> records = new HashMap<>();
+		int oldestTimestamp =  timestamp - windowSize;
+		String queryBolts = "SELECT DISTINCT timestamp, host, port FROM " + TABLE_BOLT 
+				+ " WHERE component = '" + component + "' "
+				+ "AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp + " "
+				+ "ORDER BY timestamp;";
 		try {
 			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			ResultSet resultBolts = statement.executeQuery(queryBolts);
+			int currentTimestamp = 0;
+			ArrayList<String> workers = new ArrayList<>();
 			while(resultBolts.next()){
+				int readTimestamp = resultBolts.getInt("timestamp");
+				if(readTimestamp > currentTimestamp){
+					if(!workers.isEmpty()){
+						records.put(currentTimestamp, workers);
+					}
+					currentTimestamp = readTimestamp;
+					workers = new ArrayList<>();
+				}
 				String worker = resultBolts.getString("host") + "@" + resultBolts.getString("port");
 				workers.add(worker);
-			}			
+			}
+			records.put(currentTimestamp, workers);
 			resultBolts.close();
-			if(workers.isEmpty()){
+			if(records.isEmpty()){
 				logger.warning("Component " +  component + " seems to be unaffected or do not exist in running topologies");
 			}
 		} catch (SQLException e) {
 			logger.severe("Unable to retrieve assignments for component " + component + " because of " + e);
 		}
-		return workers;
+		return records;
 	}
 	
-	public Long getExecuted(String component, Integer timestamp){
-		Long result = 0L;
+	public HashMap<Integer, Long> getExecuted(String component, Integer timestamp, Integer windowSize){
+		int oldestTimestamp =  timestamp - windowSize;
+		HashMap<Integer, Long> records = new HashMap<>();
 		try {
-			String query  = "SELECT SUM(executed) AS nbExecuted FROM " + TABLE_BOLT + " WHERE component = '" + component + "' AND timestamp = " + timestamp + " GROUP BY component;";
+			String query  = "SELECT timestamp, SUM(executed) AS nbExecuted FROM " + TABLE_BOLT
+					+ " WHERE component = '" + component 
+					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp
+					+ " GROUP BY timestamp, component";
 			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			ResultSet results = statement.executeQuery(query);
 			while(results.next()){
-				result = results.getLong("nbExecuted");
+				Integer readTimestamp = results.getInt("timestamp");
+				Long nbExecuted = results.getLong("nbExecuted");
+				records.put(readTimestamp, nbExecuted);
 			}
 			results.close();
 		} catch (SQLException e) {
 			logger.severe("Unable to compute the number of executed tuples of the component " + component + " because of " + e);
 		}
-		return result;
+		return records;
 	}
 	
-	public Long getSpoutOutputs(String component, Integer timestamp){
-		Long result = 0L;
+	public HashMap<Integer, Long> getSpoutOutputs(String component, Integer timestamp, Integer windowSize){
+		int oldestTimestamp =  timestamp - windowSize;
+		HashMap<Integer, Long> records = new HashMap<>();
 		try {
-			String querySpout  = "SELECT SUM(outputs) AS nbOutputs FROM " + TABLE_SPOUT + " WHERE component = '" + component + "' AND timestamp = " + timestamp + " GROUP BY component;";
-			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			ResultSet resultSpout = statement.executeQuery(querySpout);
-			while(resultSpout.next()){
-				result = resultSpout.getLong("nbOutputs");
-			}	
-			resultSpout.close();
-			if(result == 0L){
-				logger.warning("Component " +  component + " seems to emit no tuples or do not exist in running topologies");
-			}
-		} catch (SQLException e) {
-			logger.severe("Unable to compute the number of executed tuples of the component " + component + " because of " + e);
-		}
-		return result;
-	}
-	
-	public Long getBoltOutputs(String component, Integer timestamp){
-		Long result = 0L;
-		try {
-			String queryBolt  = "SELECT SUM(outputs) AS nbOutputs FROM " + TABLE_BOLT + " WHERE component = '" + component + "' AND timestamp = " + timestamp + " GROUP BY component;";
-			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			ResultSet resultBolt = statement.executeQuery(queryBolt);
-			while(resultBolt.next()){
-				result = resultBolt.getLong("nbOutputs");
-			}
-			resultBolt.close();
-			if(result == 0L){
-				logger.warning("Component " +  component + " seems to emit no tuples or do not exist in running topologies");
-			}
-		} catch (SQLException e) {
-			logger.severe("Unable to compute the number of executed tuples of the component " + component + " because of " + e);
-		}
-		return result;
-	}
-	
-	public Double getAvgLatency(String component, Integer timestamp){
-		Double result = 0.0;
-		try {
-			String query  = "SELECT AVG(execute_ms_avg) AS avgLatency FROM " + TABLE_BOLT + " WHERE component = '" + component + "' AND timestamp = " + timestamp + " GROUP BY component;";
+			String query  = "SELECT timestamp, SUM(outputs) AS nbOutputs FROM " + TABLE_SPOUT 
+					+ " WHERE component = '" + component 
+					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp 
+					+ " GROUP BY timestamp, component;";
 			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			ResultSet results = statement.executeQuery(query);
 			while(results.next()){
-				result = results.getDouble("avgLatency");				
+				Integer readTimestamp = results.getInt("timestamp");
+				Long nbOutput = results.getLong("nbOutputs"); 
+				records.put(readTimestamp, nbOutput);
+			}	
+			results.close();
+		} catch (SQLException e) {
+			logger.severe("Unable to compute the number of executed tuples of the component " + component + " because of " + e);
+		}
+		return records;
+	}
+	
+	public HashMap<Integer, Long> getBoltOutputs(String component, Integer timestamp, Integer windowSize){
+		int oldestTimestamp =  timestamp - windowSize;
+		HashMap<Integer, Long> records = new HashMap<>();
+		try {
+			String query  = "SELECT timestamp, SUM(outputs) AS nbOutputs FROM " + TABLE_BOLT 
+					+ " WHERE component = '" + component 
+					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp 
+					+ " GROUP BY timestamp, component;";
+			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			ResultSet results = statement.executeQuery(query);
+			while(results.next()){
+				Integer readTimestamp = results.getInt("timestamp");
+				Long nbOutput = results.getLong("nbOutputs");
+				records.put(readTimestamp, nbOutput);
+			}
+			results.close();
+		} catch (SQLException e) {
+			logger.severe("Unable to compute the number of executed tuples of the component " + component + " because of " + e);
+		}
+		return records;
+	}
+	
+	public HashMap<Integer, Double> getAvgLatency(String component, Integer timestamp, Integer windowSize){
+		int oldestTimestamp =  timestamp - windowSize;
+		HashMap<Integer, Double> records = new HashMap<>();
+		try {
+			String query  = "SELECT timestamp, AVG(execute_ms_avg) AS avgLatency FROM " + TABLE_BOLT 
+					+ " WHERE component = '" + component 
+					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp 
+					+ " GROUP BY timestamp, component;";
+			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			ResultSet results = statement.executeQuery(query);
+			while(results.next()){
+				Integer readTimestamp = results.getInt("timestamp");
+				Double avgLatency = results.getDouble("avgLatency");
+				records.put(readTimestamp, avgLatency);
 			}
 			results.close();
 		} catch (SQLException e) {
 			logger.severe("Unable to compute the average latency of the component " + component + " because of " + e);
 		}
-		return result;
+		return records;
 	}
 	
-	public Double getSelectivity(String component, Integer timestamp){
-		Double result = 0.0; 
+	public HashMap<Integer, Double> getSelectivity(String component, Integer timestamp, Integer windowSize){
+		int oldestTimestamp =  timestamp - windowSize;
+		HashMap<Integer, Double> records = new HashMap<>();
 		try {
-			String query  = "SELECT AVG(selectivity) AS avgSelectivity FROM " + TABLE_BOLT + " WHERE component = '" + component + "' AND timestamp = " + timestamp + " GROUP BY component;";
+			String query  = "SELECT timestamp, AVG(selectivity) AS avgSelectivity FROM " + TABLE_BOLT 
+					+ " WHERE component = '" + component 
+					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp 
+					+ " GROUP BY timestamp, component;";
 			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			ResultSet results = statement.executeQuery(query);
 			while(results.next()){
-				result = results.getDouble("avgSelectivity");
+				Integer readTimestamp = results.getInt("timestamp");
+				Double avgSelectivity = results.getDouble("avgSelectivity");
+				records.put(readTimestamp, avgSelectivity);
 			}
 			results.close();
 		} catch (SQLException e) {
 			logger.severe("Unable to compute the average selectivity of the component " + component + " because of " + e);
 		}
-		return result;
+		return records;
 	}
 	
-	public Long getTopologyThroughput(String topology, Integer timestamp){
-		Long result = 0L;
+	public HashMap<Integer, Long> getTopologyThroughput(String topology, Integer timestamp, Integer windowSize){
+		int oldestTimestamp =  timestamp - windowSize;
+		HashMap<Integer, Long> records = new HashMap<>();
 		try {
-			String query  = "SELECT SUM(throughput) AS topThroughput FROM " + TABLE_SPOUT + " WHERE topology = '" + topology + "' AND timestamp = " + timestamp + " GROUP BY topology;";
+			String query  = "SELECT timestamp, SUM(throughput) AS topThroughput FROM " + TABLE_SPOUT 
+					+ " WHERE topology = '" + topology 
+					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp 
+					+ " GROUP BY timestamp, topology;";
 			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			ResultSet results = statement.executeQuery(query);
 			while(results.next()){
-				result = results.getLong("topThroughput");
+				Integer readTimestamp = results.getInt("timestamp");
+				Long throughput = results.getLong("topThroughput");
+				records.put(readTimestamp, throughput);
 			}
 			results.close();
 		} catch (SQLException e) {
 			logger.severe("Unable to compute the global throughput of the topology " + topology + " because of " + e);
 		}
-		return result;
+		return records;
 	}
 	
-	public Long getTopologyLosses(String topology, Integer timestamp){
-		Long result = 0L;
+	public HashMap<Integer, Long> getTopologyLosses(String topology, Integer timestamp, Integer windowSize){
+		int oldestTimestamp =  timestamp - windowSize;
+		HashMap<Integer, Long> records = new HashMap<>();
 		try {
-			String query  = "SELECT SUM(losses) AS topLosses FROM " + TABLE_SPOUT + " WHERE topology = '" + topology + "' AND timestamp = " + timestamp + " GROUP BY topology;";
+			String query  = "SELECT timestamp, SUM(losses) AS topLosses FROM " + TABLE_SPOUT 
+					+ " WHERE topology = '" + topology 
+					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp 
+					+ " GROUP BY timestamp, topology;";
 			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			ResultSet results = statement.executeQuery(query);
 			while(results.next()){
-				result = results.getLong("topLosses");
+				Integer readTimestamp = results.getInt("timestamp");
+				Long losses = results.getLong("topLosses");
+				records.put(readTimestamp, losses);
 			}
 			results.close();
 		} catch (SQLException e) {
 			logger.severe("Unable to compute the global losses of the topology " + topology + " because of " + e);
 		}
-		return result;
+		return records;
 	}
 	
-	public Double getTopologyAvgLatency(String topology, Integer timestamp){
-		Double result = 0.0;
+	public HashMap<Integer, Double> getTopologyAvgLatency(String topology, Integer timestamp, Integer windowSize){
+		int oldestTimestamp =  timestamp - windowSize;
+		HashMap<Integer, Double> records = new HashMap<>();
 		try {
-			String query  = "SELECT MAX(complete_ms_avg) AS topLatency FROM " + TABLE_SPOUT + " WHERE topology = '" + topology + "' AND timestamp = " + timestamp + " GROUP BY topology;";
+			String query  = "SELECT timestamp, MAX(complete_ms_avg) AS topLatency FROM " + TABLE_SPOUT 
+					+ " WHERE topology = '" + topology 
+					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp
+					+ " GROUP BY timestamp, topology;";
 			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			ResultSet results = statement.executeQuery(query);
 			while(results.next()){
-				result = results.getDouble("topLatency");
+				Integer readTimestamp = results.getInt("timestamp");
+				Double topLatency = results.getDouble("topLatency");
+				records.put(readTimestamp, topLatency);
 			}
 			results.close();
 		} catch (SQLException e) {
 			logger.severe("Unable to compute the global latency of the topology " + topology + " because of " + e);
 		}
-		return result;
+		return records;
 	}
 	
 	@Override
@@ -432,9 +508,6 @@ public class StatStorageManager extends Thread{
 			try {
 				storeStatistics();
 				Thread.sleep(this.getRate());
-				if(this.getCurrentTimestamp() > 0){
-					this.storedTimestamp = this.getCurrentTimestamp();
-				}
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

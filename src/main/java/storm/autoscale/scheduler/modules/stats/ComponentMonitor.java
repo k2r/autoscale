@@ -17,7 +17,7 @@ import storm.autoscale.scheduler.modules.TopologyExplorer;
  */
 public class ComponentMonitor {
 	
-	private HashMap<String, ComponentStats> stats;
+	private HashMap<String, ComponentWindowedStats> stats;
 	private StatStorageManager manager;
 	private static Logger logger = Logger.getLogger("ComponentMonitor");
 	
@@ -43,7 +43,7 @@ public class ComponentMonitor {
 			Double nbExecuted = 0.0;
 			Double nbOutputs = this.manager.getSpoutOutputs(spout, current) - this.manager.getSpoutOutputs(spout, previous) * 1.0;
 			Double avgTopLatency = this.manager.getTopologyAvgLatency(explorer.getTopologyName(), current) * 1.0;
-			ComponentStats component = new ComponentStats(spout, nbInputs, nbExecuted, nbOutputs, avgTopLatency);
+			ComponentWindowedStats component = new ComponentWindowedStats(spout, nbInputs, nbExecuted, nbOutputs, avgTopLatency);
 			this.stats.put(spout, component);
 		}
 		Set<String> bolts = explorer.getBolts();
@@ -66,7 +66,7 @@ public class ComponentMonitor {
 			Double nbExecuted = this.manager.getExecuted(bolt, current) - this.manager.getExecuted(bolt, previous) * 1.0;
 			Double nbOutputs = this.manager.getBoltOutputs(bolt, current) - this.manager.getBoltOutputs(bolt, previous) * 1.0;
 			Double avgLatency = this.manager.getAvgLatency(bolt, current);
-			ComponentStats component = new ComponentStats(bolt, nbInputs, nbExecuted, nbOutputs, avgLatency);
+			ComponentWindowedStats component = new ComponentWindowedStats(bolt, nbInputs, nbExecuted, nbOutputs, avgLatency);
 			this.stats.put(bolt, component);
 		}
 	}
@@ -75,11 +75,11 @@ public class ComponentMonitor {
 		return this.stats.keySet();
 	}
 	
-	public ComponentStats getStats(String component){
+	public ComponentWindowedStats getStats(String component){
 		return this.stats.get(component);
 	}
 	
-	public void updateStatistics(ComponentStats stats){
+	public void updateStatistics(ComponentWindowedStats stats){
 		if(this.stats.containsKey(stats.getId())){
 			this.stats.replace(stats.getId(), stats);
 		}else{
@@ -89,8 +89,8 @@ public class ComponentMonitor {
 	
 	public boolean isCongested(String component){
 		if(this.stats.containsKey(component)){
-			ComponentStats componentStats = this.stats.get(component);
-			if(componentStats.getNbInputs() > componentStats.getNbExecuted()){
+			ComponentWindowedStats componentWindowedStats = this.stats.get(component);
+			if(componentWindowedStats.getNbInputs() > componentWindowedStats.getNbExecuted()){
 				return true;
 			}else{
 				return false;

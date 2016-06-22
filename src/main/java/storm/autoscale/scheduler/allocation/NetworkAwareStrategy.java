@@ -11,7 +11,7 @@ import backtype.storm.scheduler.WorkerSlot;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
 import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
-import storm.autoscale.scheduler.modules.stats.ComponentStats;
+import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 
 /**
  * @author Roland
@@ -44,10 +44,10 @@ public class NetworkAwareStrategy implements IAllocationStrategy {
 			for(String neighbourComp : neighbourComponents){
 				if(this.explorer.areLinked(component, neighbourComp)){
 					if(this.explorer.getParents(component).contains(neighbourComp)){
-						ComponentStats stats = this.compMonitor.getStats(neighbourComp);
+						ComponentWindowedStats stats = this.compMonitor.getStats(neighbourComp);
 						result += stats.getNbOutputs() / this.assignMonitor.getParallelism(neighbourComp);
 					}else{
-						ComponentStats stats = this.compMonitor.getStats(component);
+						ComponentWindowedStats stats = this.compMonitor.getStats(component);
 						result += stats.getNbOutputs() / this.assignMonitor.getParallelism(component);
 					}
 				}

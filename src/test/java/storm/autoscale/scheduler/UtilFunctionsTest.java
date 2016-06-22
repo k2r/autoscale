@@ -6,16 +6,15 @@ package storm.autoscale.scheduler;
 import java.util.ArrayList;
 
 import junit.framework.TestCase;
-import storm.autoscale.scheduler.actions.UtilFunctions;
 
 /**
- * @author Roland le Divin
+ * @author Roland
  *
  */
 public class UtilFunctionsTest extends TestCase {
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.actions.UtilFunctions#getBuckets(java.util.ArrayList, java.lang.Integer)}.
+	 * Test method for {@link storm.autoscale.scheduler.UtilFunctions#getBuckets(java.util.ArrayList, java.lang.Integer)}.
 	 */
 	public void testGetBuckets() {
 		ArrayList<Integer> tasks = new ArrayList<>();
@@ -104,4 +103,31 @@ public class UtilFunctionsTest extends TestCase {
 		assertEquals(expectedBorder7, borders7);
 	}
 
+	public void testDecreasingIntOrderCompare() {
+		ArrayList<Integer> actual = new ArrayList<>();
+		actual.add(5);
+		actual.add(3);
+		actual.add(8);
+		actual.add(1);
+		actual.add(7);
+		actual.add(3);
+		actual.add(6);
+		actual.add(2);
+		actual.add(5);
+		
+		actual.sort(new UtilFunctions.DecreasingIntOrder());
+		
+		ArrayList<Integer> expected = new ArrayList<>();
+		expected.add(8);
+		expected.add(7);
+		expected.add(6);
+		expected.add(5);
+		expected.add(5);
+		expected.add(3);
+		expected.add(3);
+		expected.add(2);
+		expected.add(1);
+		
+		assertEquals(expected, actual);
+	}
 }

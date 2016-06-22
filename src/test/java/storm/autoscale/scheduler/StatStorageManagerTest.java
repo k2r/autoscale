@@ -3,12 +3,14 @@
  */
 package storm.autoscale.scheduler;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import junit.framework.TestCase;
 import storm.autoscale.scheduler.modules.stats.StatStorageManager;
@@ -170,7 +172,8 @@ public class StatStorageManagerTest extends TestCase {
 		try {
 			
 			StatStorageManager manager = StatStorageManager.getManager("localhost");
-			Integer timestamp = 0;
+			Integer timestamp1 = 1;
+			Integer timestamp2 = 10;
 			String topology = "testTopology";
 			String component = "testComponent";
 			
@@ -192,15 +195,23 @@ public class StatStorageManagerTest extends TestCase {
 			Double avgLatency2 = 60.0;
 			Double selectivity2 = 0.7;
 			
-			manager.storeBoltExecutorStats(timestamp, host1, port1, topology, component, startTask1, endTask1, executed1, outputs1, avgLatency1, selectivity1);
-			manager.storeBoltExecutorStats(timestamp, host2, port2, topology, component, startTask2, endTask2, executed2, outputs2, avgLatency2, selectivity2);
+			manager.storeBoltExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, executed1, outputs1, avgLatency1, selectivity1);
+			manager.storeBoltExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, executed2, outputs2, avgLatency2, selectivity2);
 			
-			ArrayList<String> actualWorkers = manager.getBoltWorkers(component, timestamp);
+			manager.storeBoltExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, executed2, outputs2, avgLatency2, selectivity2);
 			
-			ArrayList<String> expectedWorkers = new ArrayList<>();
-			expectedWorkers.add(host1 + "@" + port1);
-			expectedWorkers.add(host2 + "@" + port2);
+			HashMap<Integer, ArrayList<String>> actualWorkers = manager.getBoltWorkers(component, 11, 10);
 			
+			ArrayList<String> expectedWorkersTimestamp1 = new ArrayList<>();
+			expectedWorkersTimestamp1.add(host1 + "@" + port1);
+			expectedWorkersTimestamp1.add(host2 + "@" + port2);
+			
+			ArrayList<String> expectedWorkersTimestamp2 = new ArrayList<>();
+			expectedWorkersTimestamp2.add(host2 + "@" + port2);
+			
+			HashMap<Integer, ArrayList<String>> expectedWorkers = new HashMap<>();
+			expectedWorkers.put(timestamp1, expectedWorkersTimestamp1);
+			expectedWorkers.put(timestamp2, expectedWorkersTimestamp2);
 			assertEquals(expectedWorkers, actualWorkers);
 			
 			String jdbcDriver = "com.mysql.jdbc.Driver";
@@ -224,7 +235,8 @@ public class StatStorageManagerTest extends TestCase {
 	public void testGetExecuted() {
 		try {
 			StatStorageManager manager = StatStorageManager.getManager("localhost");
-			Integer timestamp = 0;
+			Integer timestamp1 = 1;
+			Integer timestamp2 = 10;
 			String topology = "testTopology";
 			String component = "testComponent";
 			
@@ -241,18 +253,29 @@ public class StatStorageManagerTest extends TestCase {
 			Integer port2 = 0;
 			Integer startTask2 = 11;
 			Integer endTask2 = 20;
-			Long executed2 = 100L;
+			Long executed2 = 95L;
 			Long outputs2 = 70L;
 			Double avgLatency2 = 60.0;
 			Double selectivity2 = 0.7;
 			
-			manager.storeBoltExecutorStats(timestamp, host1, port1, topology, component, startTask1, endTask1, executed1, outputs1, avgLatency1, selectivity1);
-			manager.storeBoltExecutorStats(timestamp, host2, port2, topology, component, startTask2, endTask2, executed2, outputs2, avgLatency2, selectivity2);
+			Long executed3 = 120L;
+			Long executed4 = 90L;
 			
-			Long actualExecuted = manager.getExecuted(component, timestamp);
-			Long expectedExecuted = executed1 + executed2;
+			manager.storeBoltExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, executed1, outputs1, avgLatency1, selectivity1);
+			manager.storeBoltExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, executed2, outputs2, avgLatency2, selectivity2);
 			
-			assertEquals(expectedExecuted, actualExecuted, 0);
+			manager.storeBoltExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, executed3, outputs1, avgLatency1, selectivity1);
+			manager.storeBoltExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, executed4, outputs2, avgLatency2, selectivity2);
+			
+			HashMap<Integer, Long> actualExecuted = manager.getExecuted(component, 11, 10);
+			
+			HashMap<Integer, Long> expectedExecuted = new HashMap<>();
+			Long expectedExecutedTimestamp1 = executed1 + executed2;
+			Long expectedExecutedTimestamp2 = executed3 + executed4;
+			expectedExecuted.put(timestamp1, expectedExecutedTimestamp1);
+			expectedExecuted.put(timestamp2, expectedExecutedTimestamp2);
+			
+			assertEquals(expectedExecuted, actualExecuted);
 			
 			String jdbcDriver = "com.mysql.jdbc.Driver";
 			String dbUrl = "jdbc:mysql://localhost/benchmarks";
@@ -275,7 +298,8 @@ public class StatStorageManagerTest extends TestCase {
 	public void testGetOutputs() {
 		try {
 			StatStorageManager manager = StatStorageManager.getManager("localhost");
-			Integer timestamp = 0;
+			Integer timestamp1 = 1;
+			Integer timestamp2 = 10;
 			String topology = "testTopology";
 			String component = "testComponent";
 			
@@ -297,13 +321,24 @@ public class StatStorageManagerTest extends TestCase {
 			Double avgLatency2 = 60.0;
 			Double selectivity2 = 0.7;
 			
-			manager.storeBoltExecutorStats(timestamp, host1, port1, topology, component, startTask1, endTask1, executed1, outputs1, avgLatency1, selectivity1);
-			manager.storeBoltExecutorStats(timestamp, host2, port2, topology, component, startTask2, endTask2, executed2, outputs2, avgLatency2, selectivity2);
+			Long outputs3 = 100L;
+			Long outputs4 = 75L;
 			
-			Long actualOutputs = manager.getBoltOutputs(component, timestamp);
-			Long expectedOutputs = outputs1 + outputs2;
+			manager.storeBoltExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, executed1, outputs1, avgLatency1, selectivity1);
+			manager.storeBoltExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, executed2, outputs2, avgLatency2, selectivity2);
 			
-			assertEquals(expectedOutputs, actualOutputs, 0);
+			manager.storeBoltExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, executed1, outputs3, avgLatency1, selectivity1);
+			manager.storeBoltExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, executed2, outputs4, avgLatency2, selectivity2);
+			
+			HashMap<Integer, Long> actualOutputs = manager.getBoltOutputs(component, 11, 10);
+			
+			HashMap<Integer, Long> expectedOutputs = new HashMap<>();
+			Long expectedOutputsTimestamp1 = outputs1 + outputs2;
+			Long expectedOutputsTimestamp2 = outputs3 + outputs4;
+			expectedOutputs.put(timestamp1, expectedOutputsTimestamp1);
+			expectedOutputs.put(timestamp2, expectedOutputsTimestamp2);
+			
+			assertEquals(expectedOutputs, actualOutputs);
 			
 			String jdbcDriver = "com.mysql.jdbc.Driver";
 			String dbUrl = "jdbc:mysql://localhost/benchmarks";
@@ -326,7 +361,8 @@ public class StatStorageManagerTest extends TestCase {
 	public void testGetAvgLatency() {
 		try {
 			StatStorageManager manager = StatStorageManager.getManager("localhost");
-			Integer timestamp = 0;
+			Integer timestamp1 = 1;
+			Integer timestamp2 = 10;
 			String topology = "testTopology";
 			String component = "testComponent";
 			
@@ -348,13 +384,24 @@ public class StatStorageManagerTest extends TestCase {
 			Double avgLatency2 = 60.0;
 			Double selectivity2 = 0.7;
 			
-			manager.storeBoltExecutorStats(timestamp, host1, port1, topology, component, startTask1, endTask1, executed1, outputs1, avgLatency1, selectivity1);
-			manager.storeBoltExecutorStats(timestamp, host2, port2, topology, component, startTask2, endTask2, executed2, outputs2, avgLatency2, selectivity2);
+			Double avgLatency3 = 65.0;
+			Double avgLatency4 = 72.0;
 			
-			Double actualAvgLatency = manager.getAvgLatency(component, timestamp);
-			Double expectedAvgLatency = (avgLatency1 + avgLatency2) / 2;
+			manager.storeBoltExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, executed1, outputs1, avgLatency1, selectivity1);
+			manager.storeBoltExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, executed2, outputs2, avgLatency2, selectivity2);
 			
-			assertEquals(expectedAvgLatency, actualAvgLatency, 0);
+			manager.storeBoltExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, executed1, outputs1, avgLatency3, selectivity1);
+			manager.storeBoltExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, executed2, outputs2, avgLatency4, selectivity2);
+			
+			HashMap<Integer, Double> actualAvgLatency = manager.getAvgLatency(component, 11, 10);
+			
+			HashMap<Integer, Double> expectedAvgLatency = new HashMap<>();
+			Double expectedAvgLatencyTimestamp1 = (avgLatency1 + avgLatency2) / 2;
+			Double expectedAvgLatencyTimestamp2 = (avgLatency3 + avgLatency4) / 2;
+			expectedAvgLatency.put(timestamp1, expectedAvgLatencyTimestamp1);
+			expectedAvgLatency.put(timestamp2, expectedAvgLatencyTimestamp2);
+			
+			assertEquals(expectedAvgLatency, actualAvgLatency);
 			
 			String jdbcDriver = "com.mysql.jdbc.Driver";
 			String dbUrl = "jdbc:mysql://localhost/benchmarks";
@@ -377,7 +424,8 @@ public class StatStorageManagerTest extends TestCase {
 	public void testGetSelectivity() {
 		try {
 			StatStorageManager manager = StatStorageManager.getManager("localhost");
-			Integer timestamp = 0;
+			Integer timestamp1 = 1;
+			Integer timestamp2 = 10;
 			String topology = "testTopology";
 			String component = "testComponent";
 			
@@ -399,13 +447,24 @@ public class StatStorageManagerTest extends TestCase {
 			Double avgLatency2 = 60.0;
 			Double selectivity2 = 0.7;
 			
-			manager.storeBoltExecutorStats(timestamp, host1, port1, topology, component, startTask1, endTask1, executed1, outputs1, avgLatency1, selectivity1);
-			manager.storeBoltExecutorStats(timestamp, host2, port2, topology, component, startTask2, endTask2, executed2, outputs2, avgLatency2, selectivity2);
+			Double selectivity3 = 0.76;
+			Double selectivity4 = 0.83;
 			
-			Double actualSelectivity = manager.getSelectivity(component, timestamp);
-			Double expectedSelectivity = (selectivity1 + selectivity2) / 2;
+			manager.storeBoltExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, executed1, outputs1, avgLatency1, selectivity1);
+			manager.storeBoltExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, executed2, outputs2, avgLatency2, selectivity2);
 			
-			assertEquals(expectedSelectivity, actualSelectivity, 0);
+			manager.storeBoltExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, executed1, outputs1, avgLatency1, selectivity3);
+			manager.storeBoltExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, executed2, outputs2, avgLatency2, selectivity4);
+			
+			HashMap<Integer, Double> actualSelectivity = manager.getSelectivity(component, 11, 10);
+			
+			HashMap<Integer, Double> expectedSelectivity = new HashMap<>();
+			Double expectedSelectivityTimestamp1 = new BigDecimal((selectivity1 + selectivity2) / 2).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+			Double expectedSelectivityTimestamp2 = new BigDecimal((selectivity3 + selectivity4) / 2).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+			expectedSelectivity.put(timestamp1, expectedSelectivityTimestamp1);
+			expectedSelectivity.put(timestamp2, expectedSelectivityTimestamp2);
+			
+			assertEquals(expectedSelectivity, actualSelectivity);
 			
 			String jdbcDriver = "com.mysql.jdbc.Driver";
 			String dbUrl = "jdbc:mysql://localhost/benchmarks";
@@ -428,7 +487,8 @@ public class StatStorageManagerTest extends TestCase {
 	public void testGetTopologyThroughput() {
 		try {
 			StatStorageManager manager = StatStorageManager.getManager("localhost");
-			Integer timestamp = 0;
+			Integer timestamp1 = 1;
+			Integer timestamp2 = 10;
 			String topology = "testTopology";
 			String component = "testComponent";
 			
@@ -451,13 +511,24 @@ public class StatStorageManagerTest extends TestCase {
 			Long losses2 = 15L;
 			Double avgLatency2 = 700.0;
 			
-			manager.storeSpoutExecutorStats(timestamp, host1, port1, topology, component, startTask1, endTask1, outputs1, throughput1, losses1, avgLatency1);
-			manager.storeSpoutExecutorStats(timestamp, host2, port2, topology, component, startTask2, endTask2, outputs2, throughput2, losses2, avgLatency2);
+			Long throughput3 = 87L;
+			Long throughput4 = 105L;
 			
-			Long actualThroughput = manager.getTopologyThroughput(topology, timestamp);
-			Long expectedThroughput = throughput1 + throughput2;
+			manager.storeSpoutExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, outputs1, throughput1, losses1, avgLatency1);
+			manager.storeSpoutExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, outputs2, throughput2, losses2, avgLatency2);
 			
-			assertEquals(expectedThroughput, actualThroughput, 0);
+			manager.storeSpoutExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, outputs1, throughput3, losses1, avgLatency1);
+			manager.storeSpoutExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, outputs2, throughput4, losses2, avgLatency2);
+			
+			HashMap<Integer, Long> actualThroughput = manager.getTopologyThroughput(topology, 11, 10);
+			
+			HashMap<Integer, Long> expectedThroughput = new HashMap<>();
+			Long expectedThroughputTimestamp1 = throughput1 + throughput2;
+			Long expectedThroughputTimestamp2 = throughput3 + throughput4;
+			expectedThroughput.put(timestamp1, expectedThroughputTimestamp1);
+			expectedThroughput.put(timestamp2, expectedThroughputTimestamp2);
+			
+			assertEquals(expectedThroughput, actualThroughput);
 			
 			String jdbcDriver = "com.mysql.jdbc.Driver";
 			String dbUrl = "jdbc:mysql://localhost/benchmarks";
@@ -480,7 +551,8 @@ public class StatStorageManagerTest extends TestCase {
 	public void testGetTopologyLosses() {
 		try {
 			StatStorageManager manager = StatStorageManager.getManager("localhost");
-			Integer timestamp = 0;
+			Integer timestamp1 = 1;
+			Integer timestamp2 = 10;
 			String topology = "testTopology";
 			String component = "testComponent";
 			
@@ -503,13 +575,24 @@ public class StatStorageManagerTest extends TestCase {
 			Long losses2 = 15L;
 			Double avgLatency2 = 700.0;
 			
-			manager.storeSpoutExecutorStats(timestamp, host1, port1, topology, component, startTask1, endTask1, outputs1, throughput1, losses1, avgLatency1);
-			manager.storeSpoutExecutorStats(timestamp, host2, port2, topology, component, startTask2, endTask2, outputs2, throughput2, losses2, avgLatency2);
+			Long losses3 = 14L;
+			Long losses4 = 16L;
 			
-			Long actualLosses = manager.getTopologyLosses(topology, timestamp);
-			Long expectedLosses = losses1 + losses2;
+			manager.storeSpoutExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, outputs1, throughput1, losses1, avgLatency1);
+			manager.storeSpoutExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, outputs2, throughput2, losses2, avgLatency2);
 			
-			assertEquals(expectedLosses, actualLosses, 0);
+			manager.storeSpoutExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, outputs1, throughput1, losses3, avgLatency1);
+			manager.storeSpoutExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, outputs2, throughput2, losses4, avgLatency2);
+			
+			HashMap<Integer, Long> actualLosses = manager.getTopologyLosses(topology, 11, 10);
+			
+			HashMap<Integer, Long> expectedLosses = new HashMap<>();
+			Long expectedLossesTimestamp1 = losses1 + losses2;
+			Long expectedLossesTimestamp2 = losses3 + losses4;
+			expectedLosses.put(timestamp1, expectedLossesTimestamp1);
+			expectedLosses.put(timestamp2, expectedLossesTimestamp2);
+			
+			assertEquals(expectedLosses, actualLosses);
 			
 			String jdbcDriver = "com.mysql.jdbc.Driver";
 			String dbUrl = "jdbc:mysql://localhost/benchmarks";
@@ -532,7 +615,8 @@ public class StatStorageManagerTest extends TestCase {
 	public void testGetTopologyAvgLatency() {
 		try {
 			StatStorageManager manager = StatStorageManager.getManager("localhost");
-			Integer timestamp = 0;
+			Integer timestamp1 = 1;
+			Integer timestamp2 = 10;
 			String topology = "testTopology";
 			String component = "testComponent";
 			
@@ -555,13 +639,24 @@ public class StatStorageManagerTest extends TestCase {
 			Long losses2 = 15L;
 			Double avgLatency2 = 700.0;
 			
-			manager.storeSpoutExecutorStats(timestamp, host1, port1, topology, component, startTask1, endTask1, outputs1, throughput1, losses1, avgLatency1);
-			manager.storeSpoutExecutorStats(timestamp, host2, port2, topology, component, startTask2, endTask2, outputs2, throughput2, losses2, avgLatency2);
+			Double avgLatency3 = 460.0;
+			Double avgLatency4 = 332.0;
 			
-			Double actualAvgLatency = manager.getTopologyAvgLatency(topology, timestamp);
-			Double expectedAvgLatency = Math.max(avgLatency1, avgLatency2);
+			manager.storeSpoutExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, outputs1, throughput1, losses1, avgLatency1);
+			manager.storeSpoutExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, outputs2, throughput2, losses2, avgLatency2);
 			
-			assertEquals(expectedAvgLatency, actualAvgLatency, 0);
+			manager.storeSpoutExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, outputs1, throughput1, losses1, avgLatency3);
+			manager.storeSpoutExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, outputs2, throughput2, losses2, avgLatency4);
+			
+			HashMap<Integer, Double> actualAvgLatency = manager.getTopologyAvgLatency(topology, 11, 10);
+			
+			HashMap<Integer, Double> expectedAvgLatency = new HashMap<>();
+			Double expectedAvgLatencyTimestamp1 = Math.max(avgLatency1, avgLatency2);
+			Double expectedAvgLatencyTimestamp2 = Math.max(avgLatency3, avgLatency4);
+			expectedAvgLatency.put(timestamp1, expectedAvgLatencyTimestamp1);
+			expectedAvgLatency.put(timestamp2, expectedAvgLatencyTimestamp2);
+			
+			assertEquals(expectedAvgLatency, actualAvgLatency);
 			
 			String jdbcDriver = "com.mysql.jdbc.Driver";
 			String dbUrl = "jdbc:mysql://localhost/benchmarks";

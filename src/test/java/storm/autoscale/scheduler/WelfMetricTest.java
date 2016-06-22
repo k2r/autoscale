@@ -8,15 +8,15 @@ import junit.framework.TestCase;
 import storm.autoscale.scheduler.metrics.WelfMetric;
 import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
-import storm.autoscale.scheduler.modules.stats.ComponentStats;
+import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 
 public class WelfMetricTest extends TestCase {
 
 	public final void testEstimatedLatency() {
-		ComponentStats statsA = Mockito.mock(ComponentStats.class);
-		ComponentStats statsC = Mockito.mock(ComponentStats.class);
-		ComponentStats statsD = Mockito.mock(ComponentStats.class);
-		ComponentStats statsF = Mockito.mock(ComponentStats.class);
+		ComponentWindowedStats statsA = Mockito.mock(ComponentWindowedStats.class);
+		ComponentWindowedStats statsC = Mockito.mock(ComponentWindowedStats.class);
+		ComponentWindowedStats statsD = Mockito.mock(ComponentWindowedStats.class);
+		ComponentWindowedStats statsF = Mockito.mock(ComponentWindowedStats.class);
 		
 		Mockito.when(statsA.getNbInputs()).thenReturn(1000.0);
 		Mockito.when(statsA.getAvgLatency()).thenReturn(90.0);
@@ -56,10 +56,10 @@ public class WelfMetricTest extends TestCase {
 	}
 
 	public final void testCompute() {
-		ComponentStats statsA = Mockito.mock(ComponentStats.class);
-		ComponentStats statsC = Mockito.mock(ComponentStats.class);
-		ComponentStats statsD = Mockito.mock(ComponentStats.class);
-		ComponentStats statsF = Mockito.mock(ComponentStats.class);
+		ComponentWindowedStats statsA = Mockito.mock(ComponentWindowedStats.class);
+		ComponentWindowedStats statsC = Mockito.mock(ComponentWindowedStats.class);
+		ComponentWindowedStats statsD = Mockito.mock(ComponentWindowedStats.class);
+		ComponentWindowedStats statsF = Mockito.mock(ComponentWindowedStats.class);
 		
 		Mockito.when(statsA.getNbInputs()).thenReturn(1000.0);
 		Mockito.when(statsA.getAvgLatency()).thenReturn(90.0);
