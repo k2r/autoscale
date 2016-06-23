@@ -19,6 +19,10 @@ public class ComponentMonitor {
 	
 	private HashMap<String, ComponentWindowedStats> stats;
 	private StatStorageManager manager;
+	private Integer timestamp;
+	private static final Integer WINDOW_SIZE = 10;
+	private static final Double RECORD_THRESHOLD = 0.7;
+	private static final Double VAR_THRESHOLD = 20.0;
 	private static Logger logger = Logger.getLogger("ComponentMonitor");
 	
 	/**
@@ -26,47 +30,72 @@ public class ComponentMonitor {
 	 */
 	public ComponentMonitor(String dbHost, String nimbusHost, Integer nimbusPort, Integer rate) {
 		this.stats = new HashMap<>();
-		try {
-			this.manager = StatStorageManager.getManager(dbHost, nimbusHost, nimbusPort, rate);
-		} catch (SQLException | ClassNotFoundException e) {
-			e.printStackTrace();
+		if(nimbusHost != null && nimbusPort != null){
+			try {
+				this.manager = StatStorageManager.getManager(dbHost, nimbusHost, nimbusPort, rate);
+				this.timestamp = this.manager.getCurrentTimestamp();
+			} catch (SQLException | ClassNotFoundException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
 	public void getStatistics(TopologyExplorer explorer){
 		this.reset();
-		Integer current = this.manager.getCurrentTimestamp();
-		Integer previous = this.manager.getStoredTimestamp(); 
+		this.timestamp = this.manager.getCurrentTimestamp(); 
 		Set<String> spouts = explorer.getSpouts();
 		for(String spout : spouts){
-			Double nbInputs = 0.0;
-			Double nbExecuted = 0.0;
-			Double nbOutputs = this.manager.getSpoutOutputs(spout, current) - this.manager.getSpoutOutputs(spout, previous) * 1.0;
-			Double avgTopLatency = this.manager.getTopologyAvgLatency(explorer.getTopologyName(), current) * 1.0;
-			ComponentWindowedStats component = new ComponentWindowedStats(spout, nbInputs, nbExecuted, nbOutputs, avgTopLatency);
-			this.stats.put(spout, component);
+			
+			HashMap<Integer, Long> outputRecords = this.manager.getSpoutOutputs(spout, this.timestamp, WINDOW_SIZE);
+			HashMap<Integer, Double> avgTopLatencyRecords = this.manager.getTopologyAvgLatency(explorer.getTopologyName(), this.timestamp, WINDOW_SIZE);
+		
+			HashMap<Integer, Long> inputRecords = new HashMap<>();
+			HashMap<Integer, Long> executedRecords = new HashMap<>();
+			HashMap<Integer, Double> selectivityRecords = new HashMap<>();
+			ArrayList<Integer> recordedTimestamps = ComponentWindowedStats.getRecordedTimestamps(outputRecords);
+			for(Integer timestamp : recordedTimestamps){
+				inputRecords.put(timestamp, 0L);
+				executedRecords.put(timestamp, 0L);
+				selectivityRecords.put(timestamp, 1.0);
+			}
+			
+			ComponentWindowedStats componentRecords = new ComponentWindowedStats(spout, inputRecords, executedRecords, outputRecords, avgTopLatencyRecords, selectivityRecords);
+			this.stats.put(spout, componentRecords);
 		}
 		Set<String> bolts = explorer.getBolts();
 		for(String bolt : bolts){
-			Double nbInputs = 0.0;
+			HashMap<Integer, Long> inputRecords = new HashMap<>();
 			ArrayList<String> parents = explorer.getParents(bolt);
 			for(String parent : parents){
-				Long parentOutput = this.manager.getBoltOutputs(parent, current);
-				Long spoutParentOutputs = this.manager.getSpoutOutputs(parent, previous);
-				Long boltParentOutputs = this.manager.getBoltOutputs(parent, previous);
-				if(spoutParentOutputs > 0){
-					parentOutput = parentOutput - spoutParentOutputs;
+				HashMap<Integer, Long> parentOutputRecords = new HashMap<>();
+				if(this.stats.containsKey(parent)){
+					parentOutputRecords = this.stats.get(parent).getOutputsRecords();
 				}else{
-					if(boltParentOutputs > 0){
-						parentOutput = parentOutput - boltParentOutputs;
+					if(explorer.getSpouts().contains(parent)){
+						parentOutputRecords = this.manager.getSpoutOutputs(parent, this.timestamp, WINDOW_SIZE);
+					}
+					if(explorer.getBolts().contains(parent)){
+						parentOutputRecords = this.manager.getBoltOutputs(parent, this.timestamp, WINDOW_SIZE);
+					}else{
+						logger.warning("The parent component " + parent + " should not belong to the topology!");
 					}
 				}
-				nbInputs += parentOutput;
+				ArrayList<Integer> recordedTimestamps = ComponentWindowedStats.getRecordedTimestamps(parentOutputRecords);
+				for(Integer timestamp : recordedTimestamps){
+					Long inputs = 0L;
+					if(inputRecords.containsKey(timestamp)){
+						inputs += inputRecords.get(timestamp);
+						inputRecords.remove(timestamp);
+					}
+					inputs += parentOutputRecords.get(timestamp);
+					inputRecords.put(timestamp, inputs);
+				}
 			}
-			Double nbExecuted = this.manager.getExecuted(bolt, current) - this.manager.getExecuted(bolt, previous) * 1.0;
-			Double nbOutputs = this.manager.getBoltOutputs(bolt, current) - this.manager.getBoltOutputs(bolt, previous) * 1.0;
-			Double avgLatency = this.manager.getAvgLatency(bolt, current);
-			ComponentWindowedStats component = new ComponentWindowedStats(bolt, nbInputs, nbExecuted, nbOutputs, avgLatency);
+			HashMap<Integer, Long> executedRecords = this.manager.getExecuted(bolt, this.timestamp, WINDOW_SIZE);
+			HashMap<Integer, Long> outputRecords = this.manager.getBoltOutputs(bolt, this.timestamp, WINDOW_SIZE);
+			HashMap<Integer, Double> avgLatencyRecords = this.manager.getAvgLatency(bolt, this.timestamp, WINDOW_SIZE);
+			HashMap<Integer, Double> selectivityRecords = this.manager.getSelectivity(bolt, this.timestamp, WINDOW_SIZE);
+			ComponentWindowedStats component = new ComponentWindowedStats(bolt, inputRecords, executedRecords, outputRecords, avgLatencyRecords, selectivityRecords);
 			this.stats.put(bolt, component);
 		}
 	}
@@ -75,30 +104,103 @@ public class ComponentMonitor {
 		return this.stats.keySet();
 	}
 	
+	
 	public ComponentWindowedStats getStats(String component){
 		return this.stats.get(component);
 	}
 	
-	public void updateStatistics(ComponentWindowedStats stats){
-		if(this.stats.containsKey(stats.getId())){
-			this.stats.replace(stats.getId(), stats);
-		}else{
-			this.stats.put(stats.getId(), stats);
+	public void updateStats(String component, ComponentWindowedStats cws){
+		if(this.stats.containsKey(component)){
+			this.stats.remove(component);
 		}
+		this.stats.put(component, cws);
+	}
+	
+	public boolean isInputDecreasing(String component){
+		boolean result = false;
+		HashMap<Integer, Long> inputRecords = this.getStats(component).getInputRecords();
+		ArrayList<Double> variations = ComponentWindowedStats.getVariations(inputRecords);
+		int count = 0;
+		int nbVectors = variations.size();
+		double threshold = nbVectors * RECORD_THRESHOLD;
+		for(int i = 0; i < nbVectors; i++){
+			if(variations.get(i) < -VAR_THRESHOLD){
+				count++;
+			}
+		}
+		if(count >= threshold){
+			result = true;
+		}
+		return result;
+	}
+	
+	public boolean isInputStable(String component){
+		boolean result = false;
+		HashMap<Integer, Long> inputRecords = this.getStats(component).getInputRecords();
+		ArrayList<Double> variations = ComponentWindowedStats.getVariations(inputRecords);
+		int count = 0;
+		int nbVectors = variations.size();
+		double threshold = nbVectors * RECORD_THRESHOLD;
+		for(int i = 0; i < nbVectors; i++){
+			if(variations.get(i) > -VAR_THRESHOLD && variations.get(i) < VAR_THRESHOLD){
+				count++;
+			}
+		}
+		if(count >= threshold){
+			result = true;
+		}
+		return result;
+	}
+	
+	public boolean isInputIncreasing(String component){
+		boolean result = false;
+		HashMap<Integer, Long> inputRecords = this.getStats(component).getInputRecords();
+		ArrayList<Double> variations = ComponentWindowedStats.getVariations(inputRecords);
+		int count = 0;
+		int nbVectors = variations.size();
+		double threshold = nbVectors * RECORD_THRESHOLD;
+		for(int i = 0; i < nbVectors; i++){
+			if(variations.get(i) > VAR_THRESHOLD){
+				count++;
+			}
+		}
+		if(count >= threshold){
+			result = true;
+		}
+		return result;
 	}
 	
 	public boolean isCongested(String component){
+		boolean result = false;
 		if(this.stats.containsKey(component)){
-			ComponentWindowedStats componentWindowedStats = this.stats.get(component);
-			if(componentWindowedStats.getNbInputs() > componentWindowedStats.getNbExecuted()){
-				return true;
-			}else{
-				return false;
+			ComponentWindowedStats cws = this.stats.get(component);
+			if(!isInputDecreasing(component)){
+				HashMap<Integer, Long> inputRecords = cws.getInputRecords();
+				HashMap<Integer, Long> executedRecords = cws.getExecutedRecords();
+				ArrayList<Integer> recordedTimestamps = ComponentWindowedStats.getRecordedTimestamps(inputRecords);
+				int count = 0;
+				int nbRecords = recordedTimestamps.size();
+				double threshold = nbRecords * RECORD_THRESHOLD;
+				
+				int i = 0;
+				while(i < nbRecords){
+					if(count >= threshold){
+						result = true;
+						break;
+					}
+					Integer timestamp = recordedTimestamps.get(i);
+					Long input = inputRecords.get(timestamp);
+					Long executed = executedRecords.get(timestamp);
+					if(input != null && executed != null && input > executed){
+						count++;
+					}
+					i++;
+				}
 			}
 		}else{
 			logger.warning("Looking for an non-existing component " + component);
-			return false;
 		}
+		return result;
 	}
 	
 	public boolean couldCongest(String component){

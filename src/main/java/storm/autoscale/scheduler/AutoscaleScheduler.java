@@ -87,11 +87,12 @@ public class AutoscaleScheduler implements IScheduler {
 				for(String component : this.compMonitor.getRegisteredComponents()){
 					ComponentWindowedStats stats = this.compMonitor.getStats(component);
 					congestedStats.put(component, stats);
-					String infos = "Component " + component + " ---> inputs: " + stats.getNbInputs();
+					//TODO Find an expressive but not too heavy way to show component stats on the last window
+					/*String infos = "Component " + component + " ---> inputs: " + stats.getNbInputs();
 					infos += ", executed: " + stats.getNbExecuted();
 					infos += ", outputs: " + stats.getNbOutputs(); 
 					infos += ", latency: " + stats.getAvgLatency() + "\n";
-					logger.info(infos);
+					logger.info(infos);*/
 				}
 				if(this.congested.isEmpty()){
 					this.isScaled = true;
