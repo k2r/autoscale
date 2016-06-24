@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import storm.autoscale.scheduler.UtilFunctions;
 
@@ -19,9 +20,11 @@ public class ComponentWindowedStats {
 	private final String id;
 	private final HashMap<Integer, Long> inputRecords;
 	private final HashMap<Integer, Long> executedRecords;
-	private final HashMap<Integer, Long> outputsRecords;
+	private final HashMap<Integer, Long> outputRecords;
 	private final HashMap<Integer, Double> avgLatencyRecords;
 	private final HashMap<Integer, Double> selectivityRecords;
+	@SuppressWarnings("unused")
+	private static Logger logger = Logger.getLogger("ComponentWindowedStats");
 	
 	/**
 	 * 
@@ -30,7 +33,7 @@ public class ComponentWindowedStats {
 		this.id = id;
 		this.inputRecords = inputs;
 		this.executedRecords = executed;
-		this.outputsRecords = outputs;
+		this.outputRecords = outputs;
 		this.avgLatencyRecords = avgLatency;
 		this.selectivityRecords = selectivity;
 	}
@@ -52,23 +55,35 @@ public class ComponentWindowedStats {
 		return orderedTimestamps;
 	}
 	
-	public static <T> T getRecord(HashMap<Integer, T> records, Integer rank){
+	public static <T extends Number> Double getRecord(HashMap<Integer, T> records, Integer rank){
 		ArrayList<Integer> timestamps = ComponentWindowedStats.getRecordedTimestamps(records);
-		Integer timestamp = timestamps.get(rank);
-		return records.get(timestamp);
+		Integer timestamp = -1;
+		try{
+			timestamp = timestamps.get(rank);
+		}catch(IndexOutOfBoundsException e){
+			//logger.warning("The rank " + rank + " passed in argument does not match with any timestamp/record pair");
+		}
+		Double result = 0.0;
+		try{
+			T record = records.get(timestamp);
+			result = new BigDecimal(record.toString()).doubleValue();
+		}catch(NullPointerException e){
+			//logger.warning("There is not record for the given timestamp.");
+		}
+		return result;
 	}
 	
-	public static <T> T getLastRecord(HashMap<Integer, T> records){
+	public static <T extends Number> Double getLastRecord(HashMap<Integer, T> records){
 		return ComponentWindowedStats.getRecord(records, 0);
 	}
 	
-	public static <T> T getOldestRecord(HashMap<Integer, T> records){
+	public static <T extends Number> Double getOldestRecord(HashMap<Integer, T> records){
 		int oldestRank = ComponentWindowedStats.getRecordedTimestamps(records).size() - 1;
 		return ComponentWindowedStats.getRecord(records, oldestRank);
 	}
 
 
-	//TODO define a method which takes records of a dimension and computes the list of variations 
+	//define a method which takes records of a dimension and computes the list of variations 
 	//for example let consider records R={700, 690, 560, 500} according to decreasing order of timestamps
 	//we want to get the list {10, 130, 60} which define variations
 	
@@ -100,10 +115,10 @@ public class ComponentWindowedStats {
 	}
 
 	/**
-	 * @return the outputsRecords
+	 * @return the outputRecords
 	 */
-	public HashMap<Integer, Long> getOutputsRecords() {
-		return outputsRecords;
+	public HashMap<Integer, Long> getOutputRecords() {
+		return outputRecords;
 	}
 
 	/**

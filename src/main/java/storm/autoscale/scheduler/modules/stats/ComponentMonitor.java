@@ -20,9 +20,9 @@ public class ComponentMonitor {
 	private HashMap<String, ComponentWindowedStats> stats;
 	private StatStorageManager manager;
 	private Integer timestamp;
-	private static final Integer WINDOW_SIZE = 10;
-	private static final Double RECORD_THRESHOLD = 0.7;
-	private static final Double VAR_THRESHOLD = 20.0;
+	public static final Integer WINDOW_SIZE = 10;
+	public static final Double RECORD_THRESHOLD = 0.7;
+	public static final Double VAR_THRESHOLD = 20.0;
 	private static Logger logger = Logger.getLogger("ComponentMonitor");
 	
 	/**
@@ -69,7 +69,7 @@ public class ComponentMonitor {
 			for(String parent : parents){
 				HashMap<Integer, Long> parentOutputRecords = new HashMap<>();
 				if(this.stats.containsKey(parent)){
-					parentOutputRecords = this.stats.get(parent).getOutputsRecords();
+					parentOutputRecords = this.stats.get(parent).getOutputRecords();
 				}else{
 					if(explorer.getSpouts().contains(parent)){
 						parentOutputRecords = this.manager.getSpoutOutputs(parent, this.timestamp, WINDOW_SIZE);

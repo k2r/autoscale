@@ -45,10 +45,10 @@ public class NetworkAwareStrategy implements IAllocationStrategy {
 				if(this.explorer.areLinked(component, neighbourComp)){
 					if(this.explorer.getParents(component).contains(neighbourComp)){
 						ComponentWindowedStats stats = this.compMonitor.getStats(neighbourComp);
-						result += ComponentWindowedStats.getLastRecord(stats.getOutputsRecords()) / this.assignMonitor.getParallelism(neighbourComp);
+						result += ComponentWindowedStats.getLastRecord(stats.getOutputRecords()) / this.assignMonitor.getParallelism(neighbourComp);
 					}else{
 						ComponentWindowedStats stats = this.compMonitor.getStats(component);
-						result += ComponentWindowedStats.getLastRecord(stats.getOutputsRecords()) / this.assignMonitor.getParallelism(component);
+						result += ComponentWindowedStats.getLastRecord(stats.getOutputRecords()) / this.assignMonitor.getParallelism(component);
 					}
 				}
 			}

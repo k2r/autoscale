@@ -52,9 +52,9 @@ public class ComponentWindowedStatsTest extends TestCase {
 		records1.put(5, 95L);
 		records1.put(6, 78L);
 		
-		Long actual1 = ComponentWindowedStats.getRecord(records1, 0);
-		Long actual2 = ComponentWindowedStats.getRecord(records1, 2);
-		Long actual3 = ComponentWindowedStats.getRecord(records1, 5);
+		Double actual1 = ComponentWindowedStats.getRecord(records1, 0);
+		Double actual2 = ComponentWindowedStats.getRecord(records1, 2);
+		Double actual3 = ComponentWindowedStats.getRecord(records1, 5);
 		
 		HashMap<Integer, Double> records2 = new HashMap<>();
 		records2.put(1, 100.0);
@@ -68,12 +68,23 @@ public class ComponentWindowedStatsTest extends TestCase {
 		Double actual5 = ComponentWindowedStats.getRecord(records2, 2);
 		Double actual6 = ComponentWindowedStats.getRecord(records2, 5);
 		
-		assertEquals(78L, actual1, 0);
-		assertEquals(110L, actual2, 0);
-		assertEquals(100L, actual3, 0);
+		HashMap<Integer, Long> records3 = new HashMap<>();
+		
+		Double actual7 = ComponentWindowedStats.getRecord(records3, 0);
+		Double actual8 = ComponentWindowedStats.getRecord(records3, 2);
+		Double actual9 = ComponentWindowedStats.getRecord(records3, 5);
+		Double actual10 = ComponentWindowedStats.getRecord(records3, 128);
+		
+		assertEquals(78.0, actual1, 0);
+		assertEquals(110.0, actual2, 0);
+		assertEquals(100.0, actual3, 0);
 		assertEquals(78.0, actual4, 0);
 		assertEquals(110.0, actual5, 0);
 		assertEquals(100.0, actual6, 0);
+		assertEquals(0.0, actual7, 0);
+		assertEquals(0.0, actual8, 0);
+		assertEquals(0.0, actual9, 0);
+		assertEquals(0.0, actual10, 0);
 	}
 
 	/**
@@ -88,7 +99,7 @@ public class ComponentWindowedStatsTest extends TestCase {
 		records1.put(5, 95L);
 		records1.put(6, 78L);
 		
-		Long actual1 = ComponentWindowedStats.getLastRecord(records1);
+		Double actual1 = ComponentWindowedStats.getLastRecord(records1);
 		
 		HashMap<Integer, Double> records2 = new HashMap<>();
 		records2.put(1, 100.0);
@@ -100,8 +111,13 @@ public class ComponentWindowedStatsTest extends TestCase {
 		
 		Double actual2 = ComponentWindowedStats.getLastRecord(records2);
 		
-		assertEquals(78L, actual1, 0);
+		HashMap<Integer, Long> records3 = new HashMap<>();
+		
+		Double actual3 = ComponentWindowedStats.getOldestRecord(records3);
+		
+		assertEquals(78.0, actual1, 0);
 		assertEquals(78.0, actual2, 0);
+		assertEquals(0.0, actual3);
 	}
 
 	/**
@@ -116,7 +132,7 @@ public class ComponentWindowedStatsTest extends TestCase {
 		records1.put(5, 95L);
 		records1.put(6, 78L);
 		
-		Long actual1 = ComponentWindowedStats.getOldestRecord(records1);
+		Double actual1 = ComponentWindowedStats.getOldestRecord(records1);
 		
 		HashMap<Integer, Double> records2 = new HashMap<>();
 		records2.put(1, 100.0);
@@ -128,8 +144,13 @@ public class ComponentWindowedStatsTest extends TestCase {
 		
 		Double actual2 = ComponentWindowedStats.getOldestRecord(records2);
 		
-		assertEquals(100L, actual1, 0);
+		HashMap<Integer, Long> records3 = new HashMap<>();
+		
+		Double actual3 = ComponentWindowedStats.getOldestRecord(records3);
+				
+		assertEquals(100.0, actual1, 0);
 		assertEquals(100.0, actual2, 0);
+		assertEquals(0.0, actual3);
 	}
 
 	/**

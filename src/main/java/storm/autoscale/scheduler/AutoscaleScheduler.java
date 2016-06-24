@@ -80,45 +80,77 @@ public class AutoscaleScheduler implements IScheduler {
 				this.explorer = new TopologyExplorer(topology.getName(), topology.getTopology());
 				this.assignMonitor.update();
 				this.compMonitor.getStatistics(explorer);
-				this.congested = this.compMonitor.getCongested();
-				HashMap<String, ComponentWindowedStats> congestedStats = new HashMap<>();
-				String monitoring = "Current monitoring info (timestamp " + manager.getCurrentTimestamp() + ")\n";
-				logger.info(monitoring);
-				for(String component : this.compMonitor.getRegisteredComponents()){
-					ComponentWindowedStats stats = this.compMonitor.getStats(component);
-					congestedStats.put(component, stats);
-					//TODO Find an expressive but not too heavy way to show component stats on the last window
-					/*String infos = "Component " + component + " ---> inputs: " + stats.getNbInputs();
-					infos += ", executed: " + stats.getNbExecuted();
-					infos += ", outputs: " + stats.getNbOutputs(); 
-					infos += ", latency: " + stats.getAvgLatency() + "\n";
-					logger.info(infos);*/
-				}
-				if(this.congested.isEmpty()){
-					this.isScaled = true;
-					logger.info("No component to scale out!");
-				}else{
-					this.isScaled = false;
-					String congestInfo = "Congested components: ";
-					for(String component : this.congested){
-						congestInfo += component + " ";
-						
+				Integer timestamp = manager.getCurrentTimestamp();
+				if(timestamp >= ComponentMonitor.WINDOW_SIZE){
+					this.congested = this.compMonitor.getCongested();
+					HashMap<String, ComponentWindowedStats> congestedStats = new HashMap<>();
+					int oldestTimestamp = Math.max(0, timestamp - ComponentMonitor.WINDOW_SIZE);
+					String monitoring = "Current monitoring info (from timestamp " + oldestTimestamp + " to timestamp " + timestamp + ")\n";
+					logger.info(monitoring);
+					for(String component : this.compMonitor.getRegisteredComponents()){
+						ComponentWindowedStats stats = this.compMonitor.getStats(component);
+						congestedStats.put(component, stats);
+
+						boolean decreasing = this.compMonitor.isInputDecreasing(component);
+						boolean stable = this.compMonitor.isInputStable(component);
+						boolean increasing = this.compMonitor.isInputIncreasing(component);
+						String growth = "undefined";
+						if(decreasing){
+							growth = "decreasing";
+						}else{
+							if(stable){
+								growth = "stable";
+							}else{
+								if(increasing){
+									growth = "increasing";
+								}
+							}
+						}
+						Double lastInputRecord = ComponentWindowedStats.getLastRecord(stats.getInputRecords());
+						Double oldestInputRecord = ComponentWindowedStats.getOldestRecord(stats.getInputRecords());
+						Double globalInputVar = lastInputRecord - oldestInputRecord;
+						Double lastOutputRecord = ComponentWindowedStats.getLastRecord(stats.getOutputRecords());
+						Double oldestOutputRecord = ComponentWindowedStats.getOldestRecord(stats.getOutputRecords());
+						Double globalOutputVar = lastOutputRecord - oldestOutputRecord;
+						Double lastExecutedRecord = ComponentWindowedStats.getLastRecord(stats.getExecutedRecords());
+						Double oldestExecutedRecord = ComponentWindowedStats.getOldestRecord(stats.getExecutedRecords());
+						Double globalExecutedVar = lastExecutedRecord - oldestTimestamp;
+						Double lastAvgLatencyRecord = ComponentWindowedStats.getLastRecord(stats.getAvgLatencyRecords());
+						Double lastSelectivityRecord = ComponentWindowedStats.getLastRecord(stats.getSelectivityRecords());
+
+						String infos = "Component " + component + " : \n";
+						infos += "\t input : " + lastInputRecord + " (" + growth + "), variation on window: " + globalInputVar + " tuple(s) \n";
+						infos += "\t executed : " + lastExecutedRecord + ", variation on window: " + globalExecutedVar + " tuple(s) \n";
+						infos += "\t output : " + lastOutputRecord + ", variation on window: " + globalOutputVar + " tuple(s) \n";
+						infos += "\t latency : " + lastAvgLatencyRecord + " milliseconds per tuple \n";
+						infos += "\t selectivity : " + lastSelectivityRecord + "\n";
+						logger.info(infos);
 					}
-					congestInfo += "have been detected!";
-					logger.info(congestInfo);
-				}
-				while(!isScaled){
 					if(this.congested.isEmpty()){
 						this.isScaled = true;
-						break;
+						logger.info("No component to scale out!");
 					}else{
-						String congestedComponent = this.congested.get(0);
-						IAction action = new ScaleOutAction(congestedStats.get(congestedComponent), topology, assignMonitor, new DelegatedAllocationStrategy(assignMonitor));
-						this.congested.remove(congestedComponent);
-						try {
-							Thread.sleep(100);
-						} catch (InterruptedException e) {
-							e.printStackTrace();
+						this.isScaled = false;
+						String congestInfo = "Congested components: ";
+						for(String component : this.congested){
+							congestInfo += component + " ";
+						}
+						congestInfo += "have been detected!";
+						logger.info(congestInfo);
+					}
+					while(!isScaled){
+						if(this.congested.isEmpty()){
+							this.isScaled = true;
+							break;
+						}else{
+							String congestedComponent = this.congested.get(0);
+							IAction action = new ScaleOutAction(congestedStats.get(congestedComponent), topology, assignMonitor, new DelegatedAllocationStrategy(assignMonitor));
+							this.congested.remove(congestedComponent);
+							try {
+								Thread.sleep(100);
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							}
 						}
 					}
 				}

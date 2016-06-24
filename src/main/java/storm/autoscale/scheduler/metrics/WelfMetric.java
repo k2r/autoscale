@@ -44,7 +44,7 @@ public class WelfMetric implements IMetric {
 
 	public Double estimatedLatency(String component){
 		ComponentWindowedStats stats = this.cm.getStats(component);
-		Long inputs = ComponentWindowedStats.getLastRecord(stats.getInputRecords());
+		Double inputs = ComponentWindowedStats.getLastRecord(stats.getInputRecords());
 		Double selectivity = ComponentWindowedStats.getLastRecord(stats.getSelectivityRecords());
 		Double latency = ComponentWindowedStats.getLastRecord(stats.getAvgLatencyRecords());
 		return inputs * selectivity * latency;

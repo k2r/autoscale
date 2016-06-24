@@ -34,7 +34,7 @@ import storm.autoscale.scheduler.modules.listener.NimbusListener;
  * @author Roland
  *
  */
-public class StatStorageManager extends Thread{
+public class StatStorageManager implements Runnable{
 
 	private static StatStorageManager manager = null;
 	private NimbusListener listener;
@@ -46,6 +46,7 @@ public class StatStorageManager extends Thread{
 	private final static String TABLE_SPOUT = "all_time_spouts_stats";
 	private final static String TABLE_BOLT = "all_time_bolts_stats";
 	private final static String TABLE_TOPOLOGY = "topologies_status";
+	private Thread thread;
 	private static Logger logger = Logger.getLogger("StatStorageManager");
 	
 	/**
@@ -63,6 +64,13 @@ public class StatStorageManager extends Thread{
 		this.timestamp = 0;
 		this.rate = rate;
 		this.topStatus = new HashMap<>();
+		this.thread = new Thread(this);
+		try {
+			thread.start();
+			logger.info("Statistic manager started successfully!");
+		} catch (IllegalThreadStateException e) {
+			logger.warning("Statistic storage manager has met an issue, restarting in few seconds...");
+		}
 	}
 	
 	private StatStorageManager(String dbHost) throws ClassNotFoundException, SQLException{
@@ -77,10 +85,19 @@ public class StatStorageManager extends Thread{
 		if(StatStorageManager.manager == null){
 			StatStorageManager.manager = new StatStorageManager(dbHost, nimbusHost, nimbusPort, rate);
 		}
-		//logger.info("Statistic collector started...");
-		if(!StatStorageManager.manager.isAlive()){
-			StatStorageManager.manager.start();
+		if(!manager.thread.isAlive()){
+			//TODO find some way to maintain the thread alive without stopping and restarting it.
+			manager.thread = new Thread(manager);// might be the good trick, to test!
+			manager.thread.start();
 		}
+		//logger.info("Statistic collector is starting...");
+		/*if(!StatStorageManager.manager.isAlive()){
+			try{
+				StatStorageManager.manager.start();
+			}catch(IllegalThreadStateException e){
+				logger.warning("Statistic storage manager has met an issue, restarting in few seconds...");
+			}
+		}*/
 		return StatStorageManager.manager;
 	}
 	
@@ -104,7 +121,13 @@ public class StatStorageManager extends Thread{
 	}
 	
 	public Boolean isActive(String topId){
-		return this.topStatus.get(topId);
+		boolean active = false;
+		try{
+			active = this.topStatus.get(topId);
+		}catch(NullPointerException e){
+			logger.warning("Topology " + topId + " has never been activated yet!");
+		}
+		return active;
 	}
 	
 	public void storeStatistics(){
@@ -114,7 +137,7 @@ public class StatStorageManager extends Thread{
 			if(!tTransport.isOpen()){
 				tTransport.open();
 			}
-			//logger.info("Listening to the Nimbus...");
+			logger.info("Listening to the Nimbus...");
 			List<TopologySummary> topologies = client.getClusterInfo().get_topologies();
 			for(TopologySummary topSummary : topologies){
 				String topId = topSummary.get_id();
@@ -209,7 +232,7 @@ public class StatStorageManager extends Thread{
 							}
 							
 						}else{
-							logger.warning("Unable to identify the type of the operator");
+							//logger.warning("Unable to identify the type of the operator");
 						}
 					}
 				}
@@ -506,7 +529,7 @@ public class StatStorageManager extends Thread{
 	public void run() {
 		while(true){
 			try {
-				storeStatistics();
+				this.storeStatistics();
 				Thread.sleep(this.getRate());
 			} catch (InterruptedException e) {
 				e.printStackTrace();
