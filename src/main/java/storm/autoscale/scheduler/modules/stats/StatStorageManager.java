@@ -86,7 +86,6 @@ public class StatStorageManager implements Runnable{
 			StatStorageManager.manager = new StatStorageManager(dbHost, nimbusHost, nimbusPort, rate);
 		}
 		if(!manager.thread.isAlive()){
-			//TODO find some way to maintain the thread alive without stopping and restarting it.
 			manager.thread = new Thread(manager);// might be the good trick, to test!
 			manager.thread.start();
 		}

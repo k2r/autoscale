@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuite tests="10" failures="0" name="storm.autoscale.scheduler.StatStorageManagerTest" time="2.459" errors="0" skipped="0">
+<testsuite tests="10" failures="0" name="storm.autoscale.scheduler.StatStorageManagerTest" time="2.933" errors="0" skipped="0">
   <properties>
     <property name="java.runtime.name" value="Java(TM) SE Runtime Environment"/>
     <property name="sun.boot.library.path" value="C:\Java8\jre\bin"/>
@@ -62,14 +62,14 @@
     <property name="sun.desktop" value="windows"/>
     <property name="sun.cpu.isalist" value="amd64"/>
   </properties>
-  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetWorkers" time="0.812"/>
-  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetExecuted" time="0.283"/>
-  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetOutputs" time="0.199"/>
-  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testStoreSpoutExecutorStats" time="0.129"/>
-  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testStoreBoltExecutorStats" time="0.08"/>
-  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetAvgLatency" time="0.184"/>
-  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetSelectivity" time="0.174"/>
-  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetTopologyThroughput" time="0.18"/>
-  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetTopologyLosses" time="0.178"/>
-  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetTopologyAvgLatency" time="0.226"/>
+  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetWorkers" time="1.232"/>
+  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetExecuted" time="0.219"/>
+  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetOutputs" time="0.187"/>
+  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testStoreSpoutExecutorStats" time="0.109"/>
+  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testStoreBoltExecutorStats" time="0.094"/>
+  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetAvgLatency" time="0.171"/>
+  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetSelectivity" time="0.25"/>
+  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetTopologyThroughput" time="0.203"/>
+  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetTopologyLosses" time="0.187"/>
+  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetTopologyAvgLatency" time="0.281"/>
 </testsuite>
