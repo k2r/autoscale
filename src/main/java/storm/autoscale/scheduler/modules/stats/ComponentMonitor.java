@@ -184,6 +184,7 @@ public class ComponentMonitor {
 				
 				int i = 0;
 				while(i < nbRecords){
+					//TODO Declare congest also if a max_var_threshold between executed and inputs is reached
 					if(count >= threshold){
 						result = true;
 						break;

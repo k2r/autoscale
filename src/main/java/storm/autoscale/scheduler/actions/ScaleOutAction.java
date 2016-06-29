@@ -70,26 +70,30 @@ public class ScaleOutAction implements IAction {
 		int currentParallelism = this.assignMonitor.getParallelism(component);
 		int newParallelism = Math.min(tasks.size(), currentParallelism + nbExecToAdd);
 		
-		RebalanceOptions options = new RebalanceOptions();
-		options.put_to_num_executors(component, newParallelism);
-		options.set_num_workers(this.assignMonitor.getNbWorkers());
-		options.set_wait_secs(1);
-		
-		TSocket tsocket = new TSocket("localhost", 6627);
-		TFramedTransport tTransport = new TFramedTransport(tsocket);
-		TBinaryProtocol tBinaryProtocol = new TBinaryProtocol(tTransport);
-		Nimbus.Client client = new Nimbus.Client(tBinaryProtocol);
-		
-		logger.info("Changing parallelism degree of component " + component + " from " + currentParallelism + " to " + newParallelism + "...");
-		try {
-			if(!tTransport.isOpen()){
-				tTransport.open();
+		if(newParallelism > currentParallelism){
+			RebalanceOptions options = new RebalanceOptions();
+			options.put_to_num_executors(component, newParallelism);
+			options.set_num_workers(this.assignMonitor.getNbWorkers());
+			options.set_wait_secs(1);
+
+			TSocket tsocket = new TSocket("localhost", 6627);
+			TFramedTransport tTransport = new TFramedTransport(tsocket);
+			TBinaryProtocol tBinaryProtocol = new TBinaryProtocol(tTransport);
+			Nimbus.Client client = new Nimbus.Client(tBinaryProtocol);
+
+			logger.info("Changing parallelism degree of component " + component + " from " + currentParallelism + " to " + newParallelism + "...");
+			try {
+				if(!tTransport.isOpen()){
+					tTransport.open();
+				}
+				client.rebalance(topology.getName(), options);
+				logger.info("Parallelism of component " + component + " increased successfully!");
+				tTransport.close();
+			} catch (TException e) {
+				logger.severe("Unable to scale topology " + topology.getName() + " because of " + e);
 			}
-			client.rebalance(topology.getName(), options);
-			logger.info("Parallelism of component " + component + " increased successfully!");
-			tTransport.close();
-		} catch (TException e) {
-			logger.severe("Unable to scale topology " + topology.getName() + " because of " + e);
+		}else{
+			logger.info("This scale-out will not improve the distribution of the operator");
 		}
 	}
 }
