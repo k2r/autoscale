@@ -23,6 +23,7 @@ public class ComponentMonitor {
 	public static final Integer WINDOW_SIZE = 10;
 	public static final Double RECORD_THRESHOLD = 0.7;
 	public static final Double VAR_THRESHOLD = 20.0;
+	public static final Double CRITIC_VAR_THRESHOLD = 100.0;
 	private static Logger logger = Logger.getLogger("ComponentMonitor");
 	
 	/**
@@ -184,7 +185,6 @@ public class ComponentMonitor {
 				
 				int i = 0;
 				while(i < nbRecords){
-					//TODO Declare congest also if a max_var_threshold between executed and inputs is reached
 					if(count >= threshold){
 						result = true;
 						break;
@@ -193,6 +193,11 @@ public class ComponentMonitor {
 					Long input = inputRecords.get(timestamp);
 					Long executed = executedRecords.get(timestamp);
 					if(input != null && executed != null && input > executed){
+						Long variation = input - executed;
+						if(variation > CRITIC_VAR_THRESHOLD){
+							result = true;
+							break;
+						}
 						count++;
 					}
 					i++;

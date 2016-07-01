@@ -224,7 +224,7 @@ public class StatStorageManager implements Runnable{
 									}
 									Double avgLatency = new BigDecimal(sum / count).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
 
-									Double selectivity = new BigDecimal(outputs / (nbExecuted * 1.0)).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+									Double selectivity = new BigDecimal(outputs / nbExecuted).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
 									storeBoltExecutorStats(this.getCurrentTimestamp(), host, port, topology.get_id(), componentId, startTask, endTask, nbExecuted, outputs, avgLatency, selectivity);
 									//logger.info("Bolt stats successfully persisted!");
 								}
@@ -448,7 +448,7 @@ public class StatStorageManager implements Runnable{
 			ResultSet results = statement.executeQuery(query);
 			while(results.next()){
 				Integer readTimestamp = results.getInt("timestamp");
-				Double avgSelectivity = results.getDouble("avgSelectivity");
+				Double avgSelectivity = new BigDecimal(results.getDouble("avgSelectivity")).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
 				records.put(readTimestamp, avgSelectivity);
 			}
 			results.close();

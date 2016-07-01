@@ -27,13 +27,13 @@ import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
  */
 public class ScaleOutAction implements IAction {
 
-	private ComponentWindowedStats stats;
+	private HashMap<String, ComponentWindowedStats> stats;
 	private TopologyDetails topology;
 	private AssignmentMonitor assignMonitor;
 	private IAllocationStrategy allocStrategy;
 	private Logger logger = Logger.getLogger("ScaleOutAction");
 	
-	public ScaleOutAction(ComponentWindowedStats stats, TopologyDetails topology, AssignmentMonitor am, IAllocationStrategy as) {
+	public ScaleOutAction(HashMap<String, ComponentWindowedStats> stats, TopologyDetails topology, AssignmentMonitor am, IAllocationStrategy as) {
 		this.stats = stats;
 		this.topology = topology;
 		this.assignMonitor = am;
@@ -46,54 +46,63 @@ public class ScaleOutAction implements IAction {
 	 * @see storm.autoscale.scheduler.actions.IAction#getBestLocation()
 	 */
 	@Override
-	public WorkerSlot getBestLocation() {
-		WorkerSlot result = null;
-		Double bestScore = Double.NEGATIVE_INFINITY;
-		HashMap<WorkerSlot, Double> scores = this.allocStrategy.getScores(this.stats.getId());
-		for(WorkerSlot ws : scores.keySet()){
-			Double score = scores.get(ws);
-			if(score > bestScore){
-				result = ws;
-				bestScore = score;
+	public HashMap<String, WorkerSlot> getBestLocation() {
+		HashMap<String, WorkerSlot> result = new HashMap<>();
+		for(String component : this.stats.keySet()){
+			ComponentWindowedStats componentStats = this.stats.get(component);
+			WorkerSlot bestWorker = null;
+			Double bestScore = Double.NEGATIVE_INFINITY;
+			HashMap<WorkerSlot, Double> scores = this.allocStrategy.getScores(componentStats.getId());
+			for(WorkerSlot ws : scores.keySet()){
+				Double score = scores.get(ws);
+				if(score > bestScore){
+					bestWorker = ws;
+					bestScore = score;
+				}
 			}
+			result.put(componentStats.getId(), bestWorker);
 		}
 		return result;
 	}
 
 	@Override
 	public void run() {
-		String component = this.stats.getId();
-		Double inputs = ComponentWindowedStats.getLastRecord(this.stats.getInputRecords());
-		Double executed = ComponentWindowedStats.getLastRecord(this.stats.getExecutedRecords());
-		int nbExecToAdd = (int) Math.round((inputs - executed) / executed); 
-		ArrayList<Integer> tasks = this.assignMonitor.getAllSortedTasks(component);
-		int currentParallelism = this.assignMonitor.getParallelism(component);
-		int newParallelism = Math.min(tasks.size(), currentParallelism + nbExecToAdd);
-		
-		if(newParallelism > currentParallelism){
-			RebalanceOptions options = new RebalanceOptions();
-			options.put_to_num_executors(component, newParallelism);
-			options.set_num_workers(this.assignMonitor.getNbWorkers());
-			options.set_wait_secs(1);
-
-			TSocket tsocket = new TSocket("localhost", 6627);
-			TFramedTransport tTransport = new TFramedTransport(tsocket);
-			TBinaryProtocol tBinaryProtocol = new TBinaryProtocol(tTransport);
-			Nimbus.Client client = new Nimbus.Client(tBinaryProtocol);
-
-			logger.info("Changing parallelism degree of component " + component + " from " + currentParallelism + " to " + newParallelism + "...");
-			try {
-				if(!tTransport.isOpen()){
-					tTransport.open();
-				}
-				client.rebalance(topology.getName(), options);
-				logger.info("Parallelism of component " + component + " increased successfully!");
-				tTransport.close();
-			} catch (TException e) {
-				logger.severe("Unable to scale topology " + topology.getName() + " because of " + e);
+		TSocket tsocket = new TSocket("localhost", 6627);
+		TFramedTransport tTransport = new TFramedTransport(tsocket);
+		TBinaryProtocol tBinaryProtocol = new TBinaryProtocol(tTransport);
+		Nimbus.Client client = new Nimbus.Client(tBinaryProtocol);
+		try {
+			if(!tTransport.isOpen()){
+				tTransport.open();
 			}
-		}else{
-			logger.info("This scale-out will not improve the distribution of the operator");
+			for(String component : this.stats.keySet()){
+				ComponentWindowedStats componentStats = this.stats.get(component);
+				Double inputs = ComponentWindowedStats.getLastRecord(componentStats.getInputRecords());
+				Double executed = ComponentWindowedStats.getLastRecord(componentStats.getExecutedRecords());
+				int nbExecToAdd = (int) Math.round((inputs - executed) / executed); 
+				ArrayList<Integer> tasks = this.assignMonitor.getAllSortedTasks(component);
+				int currentParallelism = this.assignMonitor.getParallelism(component);
+				int newParallelism = Math.min(tasks.size(), currentParallelism + nbExecToAdd);
+
+				if(newParallelism > currentParallelism){
+					RebalanceOptions options = new RebalanceOptions();
+					options.put_to_num_executors(component, newParallelism);
+					options.set_num_workers(this.assignMonitor.getNbWorkers());
+					options.set_wait_secs(0);
+
+					logger.info("Changing parallelism degree of component " + component + " from " + currentParallelism + " to " + newParallelism + "...");
+
+					client.rebalance(topology.getName(), options);
+					logger.info("Parallelism of component " + component + " increased successfully!");
+					Thread.sleep(100);
+				}else{
+					logger.info("This scale-out will not improve the distribution of the operator");
+				}
+			}
+			tTransport.close();
+		} catch (TException | InterruptedException e) {
+			logger.severe("Unable to scale topology " + topology.getName() + " because of " + e);
 		}
+
 	}
 }

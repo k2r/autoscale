@@ -4,7 +4,6 @@
 package storm.autoscale.scheduler;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -14,51 +13,38 @@ import backtype.storm.scheduler.EvenScheduler;
 import backtype.storm.scheduler.IScheduler;
 import backtype.storm.scheduler.Topologies;
 import backtype.storm.scheduler.TopologyDetails;
-import storm.autoscale.scheduler.actions.IAction;
-import storm.autoscale.scheduler.actions.ScaleOutAction;
-import storm.autoscale.scheduler.allocation.DelegatedAllocationStrategy;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
+import storm.autoscale.scheduler.modules.TopologyExplorer;
 import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 import storm.autoscale.scheduler.modules.stats.StatStorageManager;
-import storm.autoscale.scheduler.modules.TopologyExplorer;
 
 /**
  * @author Roland
  *
  */
+public class MonitoredEvenScheduler implements IScheduler{
 
-public class AutoscaleScheduler implements IScheduler {
-	
 	private ComponentMonitor compMonitor;
 	private AssignmentMonitor assignMonitor;
 	private TopologyExplorer explorer;
-	private ArrayList<String> congested;
 	private String nimbusHost;
 	private Integer nimbusPort;
-	private static Logger logger = Logger.getLogger("AutoscaleScheduler");
-
+	private static Logger logger = Logger.getLogger("MonitoredEvenScheduler");
 	/**
 	 * 
 	 */
-	public AutoscaleScheduler() {
-		logger.info("The auto-scaling scheduler for Storm is starting...");
+	public MonitoredEvenScheduler() {
+		logger.info("Monitoring the storm even scheduler...");
 	}
-
-	/* (non-Javadoc)
-	 * @see backtype.storm.scheduler.IScheduler#prepare(java.util.Map)
-	 */
+	
 	@SuppressWarnings("rawtypes")
 	@Override
 	public void prepare(Map conf) {
 		this.nimbusHost = (String) conf.get("nimbus.host");
-		this.nimbusPort = (Integer) conf.get("nimbus.thrift.port");
+		this.nimbusPort = (Integer) conf.get("nimbus.thrift.port");	
 	}
 	
-	/* (non-Javadoc)
-	 * @see backtype.storm.scheduler.IScheduler#schedule(backtype.storm.scheduler.Topologies, backtype.storm.scheduler.Cluster)
-	 */
-	@SuppressWarnings("unused")
 	@Override
 	public void schedule(Topologies topologies, Cluster cluster) {
 		StatStorageManager manager = null;
@@ -67,8 +53,6 @@ public class AutoscaleScheduler implements IScheduler {
 		} catch (ClassNotFoundException | SQLException e1) {
 			logger.severe("Unable to start the StatStorageManage because of " + e1);
 		}
-
-		/*In a first time, we take all scaling decisions*/
 		for(TopologyDetails topology : topologies.getTopologies()){
 			if(!manager.isActive(topology.getId())){
 				logger.info("Topology " + topology.getName() + " is being rebalanced...");
@@ -80,7 +64,6 @@ public class AutoscaleScheduler implements IScheduler {
 				this.compMonitor.getStatistics(explorer);
 				Integer timestamp = manager.getCurrentTimestamp();
 				if(timestamp >= ComponentMonitor.WINDOW_SIZE){
-					this.congested = this.compMonitor.getCongested();
 					HashMap<String, ComponentWindowedStats> congestedStats = new HashMap<>();
 					int oldestTimestamp = Math.max(0, timestamp - ComponentMonitor.WINDOW_SIZE);
 					String monitoring = "Current monitoring info (from timestamp " + oldestTimestamp + " to timestamp " + timestamp + ")\n";
@@ -124,22 +107,10 @@ public class AutoscaleScheduler implements IScheduler {
 						infos += "\t selectivity : " + lastSelectivityRecord + "\n";
 						logger.info(infos);
 					}
-					if(this.congested.isEmpty()){
-						logger.info("No component to scale out!");
-					}else{
-						String congestInfo = "Congested components: ";
-						for(String component : this.congested){
-							congestInfo += component + " ";
-						}
-						congestInfo += "have been detected!";
-						logger.info(congestInfo);
-						IAction action = new ScaleOutAction(congestedStats, topology, assignMonitor, new DelegatedAllocationStrategy(assignMonitor));
-					}
 				}
 			}
-			/*Then we let the default scheduler balance the load*/
-			EvenScheduler scheduler = new EvenScheduler();
-			scheduler.schedule(topologies, cluster);
 		}
+		EvenScheduler scheduler = new EvenScheduler();
+		scheduler.schedule(topologies, cluster);
 	}
 }

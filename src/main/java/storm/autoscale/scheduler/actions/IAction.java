@@ -3,6 +3,8 @@
  */
 package storm.autoscale.scheduler.actions;
 
+import java.util.HashMap;
+
 import backtype.storm.scheduler.WorkerSlot;
 
 /**
@@ -11,5 +13,5 @@ import backtype.storm.scheduler.WorkerSlot;
  */
 public interface IAction extends Runnable{
 	
-	public WorkerSlot getBestLocation();
+	public HashMap<String, WorkerSlot> getBestLocation();
 }

@@ -13,5 +13,6 @@ storm\autoscale\scheduler\actions\IAction.class
 storm\autoscale\scheduler\modules\stats\StatStorageManager.class
 storm\autoscale\scheduler\modules\TopologyExplorer.class
 storm\autoscale\scheduler\modules\AssignmentMonitor.class
+storm\autoscale\scheduler\MonitoredEvenScheduler.class
 storm\autoscale\scheduler\AutoscaleScheduler.class
 storm\autoscale\scheduler\metrics\IMetric.class

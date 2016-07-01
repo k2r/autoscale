@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuite tests="7" failures="0" name="storm.autoscale.scheduler.ComponentMonitorTest" time="0.078" errors="0" skipped="0">
+<testsuite tests="7" failures="0" name="storm.autoscale.scheduler.ComponentMonitorTest" time="0.046" errors="0" skipped="0">
   <properties>
     <property name="java.runtime.name" value="Java(TM) SE Runtime Environment"/>
-    <property name="sun.boot.library.path" value="C:\Java8\jre\bin"/>
-    <property name="java.vm.version" value="25.92-b14"/>
+    <property name="sun.boot.library.path" value="C:\Program Files\Java\jdk1.8.0_45\jre\bin"/>
+    <property name="java.vm.version" value="25.45-b02"/>
     <property name="java.vm.vendor" value="Oracle Corporation"/>
+    <property name="maven.multiModuleProjectDirectory" value="C:\These\D2\Depots\Storm Scheduler\storm-scheduler"/>
     <property name="java.vendor.url" value="http://java.oracle.com/"/>
     <property name="path.separator" value=";"/>
     <property name="guice.disable.misplaced.annotation.check" value="true"/>
@@ -15,45 +16,45 @@
     <property name="sun.java.launcher" value="SUN_STANDARD"/>
     <property name="sun.os.patch.level" value=""/>
     <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
-    <property name="user.dir" value="C:\These\D2\Depots\storm-scheduler"/>
-    <property name="java.runtime.version" value="1.8.0_92-b14"/>
+    <property name="user.dir" value="C:\These\D2\Depots\Storm Scheduler\storm-scheduler"/>
+    <property name="java.runtime.version" value="1.8.0_45-b15"/>
     <property name="java.awt.graphicsenv" value="sun.awt.Win32GraphicsEnvironment"/>
-    <property name="java.endorsed.dirs" value="C:\Java8\jre\lib\endorsed"/>
+    <property name="java.endorsed.dirs" value="C:\Program Files\Java\jdk1.8.0_45\jre\lib\endorsed"/>
     <property name="os.arch" value="amd64"/>
-    <property name="java.io.tmpdir" value="C:\Users\ROLAND~1\AppData\Local\Temp\"/>
+    <property name="java.io.tmpdir" value="C:\Users\Roland\AppData\Local\Temp\"/>
     <property name="line.separator" value="
 "/>
     <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
     <property name="user.variant" value=""/>
-    <property name="os.name" value="Windows 7"/>
-    <property name="classworlds.conf" value="C:\Cours\M1\SPL\apache-maven-3.0.5\bin\m2.conf"/>
+    <property name="os.name" value="Windows 8.1"/>
+    <property name="classworlds.conf" value="C:\maven\apache-maven-3.3.9\bin\..\bin\m2.conf"/>
     <property name="sun.jnu.encoding" value="Cp1252"/>
-    <property name="java.library.path" value="C:\Java8\bin;C:\Windows\Sun\Java\bin;C:\Windows\system32;C:\Windows;C:\ProgramData\Oracle\Java\javapath;C:\Program Files (x86)\OpenMPI_v1.6.2-x64\bin\;C:\MinGW\bin\;C:\Java8\bin;C:\Program Files\Common Files\Microsoft Shared\Windows Live;C:\Program Files (x86)\Common Files\Microsoft Shared\Windows Live;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;c:\Program Files (x86)\Common Files\Ulead Systems\MPEG;C:\Program Files (x86)\ATI Technologies\ATI.ACE\Core-Static;C:\Program Files\Broadcom\Broadcom 802.11\Driver;C:\Program Files\WIDCOMM\Bluetooth Software\;C:\Program Files\WIDCOMM\Bluetooth Software\syswow64;C:\Program Files (x86)\Windows Live\Shared;C:\Program Files (x86)\Common Files\Roxio Shared\DLLShared\;C:\Program Files (x86)\Common Files\Roxio Shared\9.0\DLLShared\;c:\Program Files (x86)\Microsoft SQL Server\90\Tools\binn\;C:\Program Files (x86)\Mozilla Firefox;C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Common7\IDE;C:\Program Files (x86)\OpenMPI_v1.6.2-x64\include\;C:\Cours\M1\Form AFT\NuSMV\2.5.4\bin\;C:\Program Files\nodejs\;C:\Program Files (x86)\IBM\ILOG\CPLEX_Studio125\opl\bin\x86_win32;C:\Program Files (x86)\IBM\ILOG\CPLEX_Studio125\opl\oplide\;C:\Program Files (x86)\IBM\ILOG\CPLEX_Studio125\cplex\bin\x86_win32;C:\Program Files (x86)\IBM\ILOG\CPLEX_Studio125\cpoptimizer\bin\x86_win32;C:\Cours\M1\SPL\apache-maven-3.0.5\bin;C:\Program Files\TortoiseHg\;C:\Program Files (x86)\MiKTeX 2.9\miktex\bin\;C:\These\D1\Programmes\ProtocolBuffer 2.5.0\;C:\Program Files\Microsoft SDKs\Windows\v7.0\Bin\;C:\Windows\Microsoft.NET\Framework64\v4.0.30319\;C:\cygwin64\bin\;C:\Program Files\TortoiseSVN\bin;C:\Program Files\TortoiseGit\bin;C:\Program Files (x86)\Windows Kits\8.0\Windows Performance Toolkit\;C:\Program Files (x86)\Git\cmd;C:\Program Files (x86)\CMake 2.8\bin\;C:\cygwin64\bin;C:\These\D2\Programmes\Storm\apache-storm-0.10.0\bin;C:\These\D2\Programmes\Apache Zookeeper\zookeeper-3.4.6\bin;C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\;C:\Python27;C:\Python27\Scripts;C:\Program Files (x86)\OpenMPI_v1.6.2-x64\bin\;C:\Cours\M1\Génie Logiciel\apache-ant-1.8.4\bin\;C:\MinGW\bin\;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Common7\IDE\;C:\Cours\M1\Form AFT\NuSMV\2.5.4\bin;C:\Users\Roland le Divin\AppData\Roaming\npm;C:\Cours\M1\ProgRep;C:\Cours\M1\SPL\apache-maven-3.0.5\bin;."/>
+    <property name="java.library.path" value="C:\Program Files\Java\jdk1.8.0_45\bin;C:\WINDOWS\Sun\Java\bin;C:\WINDOWS\system32;C:\WINDOWS;c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\BIN\amd64;C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319;C:\WINDOWS\Microsoft.NET\Framework64\v3.5;c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\VCPackages;c:\Program Files (x86)\Microsoft Visual Studio 10.0\Common7\IDE;c:\Program Files (x86)\Microsoft Visual Studio 10.0\Common7\Tools;C:\Program Files (x86)\HTML Help Workshop;c:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Performance Tools\x64;c:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Performance Tools;C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\NETFX 4.0 Tools\x64;C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\x64;C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin;C:\Python27\;C:\Python27\Scripts;C:\Perl64\site\bin;C:\Perl64\bin;C:\ProgramData\Oracle\Java\javapath;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Program Files (x86)\Windows Kits\8.1\Windows Performance Toolkit\;C:\Program Files\TortoiseSVN\bin;C:\Program Files\TortoiseGit\bin;C:\Program Files (x86)\MiKTeX 2.9\miktex\bin\;C:\MinGW\bin\;C:\These\D1\Programmes\ProtocolBuffer 2.5.0\;C:\maven\apache-maven-3.3.9\bin\;C:\hdc\hadoop-2.4.1\bin\;C:\spark\spark-1.1.0-bin-hadoop2.4\bin\;C:\Program Files\Java\jdk1.8.0_45\bin\;C:\Program Files\Java\jdk1.7.0_79\bin\;C:\Program Files\Java\jdk1.6.0_45\bin\;C:\hdc\bin\;C:\Program Files (x86)\Skype\Phone\;c:\Program Files (x86)\Microsoft SQL Server\100\Tools\Binn\;c:\Program Files\Microsoft SQL Server\100\Tools\Binn\;c:\Program Files\Microsoft SQL Server\100\DTS\Binn\;C:\Program Files (x86)\CMake\bin;C:\Program Files (x86)\GnuWin32\bin;C:\Program Files\TortoiseHg\;C:\Tomcat\apache-tomcat-6.0.44\bin;C:\Program Files\Git\cmd;C:\Program Files\Git\mingw64\bin;C:\Program Files\Git\usr\bin;C:\hdc\hadoop-dist\target\hadoop-2.7.0;C:\These\D2\Programmes\Sigar\hyperic-sigar-1.6.4\sigar-bin\lib;C:\These\D2\Programmes\Storm\apache-storm-0.10.0\bin;C:\These\D2\Programmes\Apache Zookeeper\zookeeper-3.4.6\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\These\D2\Programmes\.lein\bin;."/>
     <property name="java.specification.name" value="Java Platform API Specification"/>
     <property name="java.class.version" value="52.0"/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
-    <property name="os.version" value="6.1"/>
-    <property name="user.home" value="C:\Users\Roland le Divin"/>
+    <property name="os.version" value="6.3"/>
+    <property name="user.home" value="C:\Users\Roland"/>
     <property name="user.timezone" value="Europe/Paris"/>
     <property name="java.awt.printerjob" value="sun.awt.windows.WPrinterJob"/>
     <property name="java.specification.version" value="1.8"/>
     <property name="file.encoding" value="Cp1252"/>
-    <property name="user.name" value="Roland le Divin"/>
-    <property name="java.class.path" value="C:\Cours\M1\SPL\apache-maven-3.0.5\boot\plexus-classworlds-2.4.jar"/>
+    <property name="user.name" value="Roland"/>
+    <property name="java.class.path" value="C:\maven\apache-maven-3.3.9\bin\..\boot\plexus-classworlds-2.5.2.jar"/>
     <property name="java.vm.specification.version" value="1.8"/>
     <property name="sun.arch.data.model" value="64"/>
-    <property name="java.home" value="C:\Java8\jre"/>
+    <property name="java.home" value="C:\Program Files\Java\jdk1.8.0_45\jre"/>
     <property name="sun.java.command" value="org.codehaus.plexus.classworlds.launcher.Launcher assembly:assembly"/>
     <property name="java.specification.vendor" value="Oracle Corporation"/>
     <property name="user.language" value="fr"/>
     <property name="awt.toolkit" value="sun.awt.windows.WToolkit"/>
     <property name="java.vm.info" value="mixed mode"/>
-    <property name="java.version" value="1.8.0_92"/>
-    <property name="java.ext.dirs" value="C:\Java8\jre\lib\ext;C:\Windows\Sun\Java\lib\ext"/>
-    <property name="sun.boot.class.path" value="C:\Java8\jre\lib\resources.jar;C:\Java8\jre\lib\rt.jar;C:\Java8\jre\lib\sunrsasign.jar;C:\Java8\jre\lib\jsse.jar;C:\Java8\jre\lib\jce.jar;C:\Java8\jre\lib\charsets.jar;C:\Java8\jre\lib\jfr.jar;C:\Java8\jre\classes"/>
+    <property name="java.version" value="1.8.0_45"/>
+    <property name="java.ext.dirs" value="C:\Program Files\Java\jdk1.8.0_45\jre\lib\ext;C:\WINDOWS\Sun\Java\lib\ext"/>
+    <property name="sun.boot.class.path" value="C:\Program Files\Java\jdk1.8.0_45\jre\lib\resources.jar;C:\Program Files\Java\jdk1.8.0_45\jre\lib\rt.jar;C:\Program Files\Java\jdk1.8.0_45\jre\lib\sunrsasign.jar;C:\Program Files\Java\jdk1.8.0_45\jre\lib\jsse.jar;C:\Program Files\Java\jdk1.8.0_45\jre\lib\jce.jar;C:\Program Files\Java\jdk1.8.0_45\jre\lib\charsets.jar;C:\Program Files\Java\jdk1.8.0_45\jre\lib\jfr.jar;C:\Program Files\Java\jdk1.8.0_45\jre\classes"/>
     <property name="sun.stderr.encoding" value="cp850"/>
     <property name="java.vendor" value="Oracle Corporation"/>
-    <property name="maven.home" value="C:\Cours\M1\SPL\apache-maven-3.0.5"/>
+    <property name="maven.home" value="C:\maven\apache-maven-3.3.9\bin\.."/>
     <property name="file.separator" value="\"/>
     <property name="java.vendor.url.bug" value="http://bugreport.sun.com/bugreport/"/>
     <property name="sun.cpu.endian" value="little"/>
@@ -62,11 +63,11 @@
     <property name="sun.desktop" value="windows"/>
     <property name="sun.cpu.isalist" value="amd64"/>
   </properties>
-  <testcase classname="storm.autoscale.scheduler.ComponentMonitorTest" name="testIsInputDecreasing" time="0.031"/>
+  <testcase classname="storm.autoscale.scheduler.ComponentMonitorTest" name="testIsInputDecreasing" time="0.045"/>
+  <testcase classname="storm.autoscale.scheduler.ComponentMonitorTest" name="testIsInputStable" time="0"/>
   <testcase classname="storm.autoscale.scheduler.ComponentMonitorTest" name="testIsInputIncreasing" time="0"/>
   <testcase classname="storm.autoscale.scheduler.ComponentMonitorTest" name="testGetPotentialCongested" time="0"/>
-  <testcase classname="storm.autoscale.scheduler.ComponentMonitorTest" name="testIsInputStable" time="0"/>
-  <testcase classname="storm.autoscale.scheduler.ComponentMonitorTest" name="testIsCongested" time="0"/>
+  <testcase classname="storm.autoscale.scheduler.ComponentMonitorTest" name="testGetCongested" time="0"/>
   <testcase classname="storm.autoscale.scheduler.ComponentMonitorTest" name="testCouldCongest" time="0"/>
-  <testcase classname="storm.autoscale.scheduler.ComponentMonitorTest" name="testGetCongested" time="0.015"/>
+  <testcase classname="storm.autoscale.scheduler.ComponentMonitorTest" name="testIsCongested" time="0.001"/>
 </testsuite>
