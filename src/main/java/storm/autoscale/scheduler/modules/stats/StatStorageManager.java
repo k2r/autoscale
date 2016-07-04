@@ -67,7 +67,7 @@ public class StatStorageManager implements Runnable{
 		this.thread = new Thread(this);
 		try {
 			thread.start();
-			logger.info("Statistic manager started successfully!");
+			logger.fine("Statistic manager started successfully!");
 		} catch (IllegalThreadStateException e) {
 			logger.warning("Statistic storage manager has met an issue, restarting in few seconds...");
 		}
@@ -86,17 +86,9 @@ public class StatStorageManager implements Runnable{
 			StatStorageManager.manager = new StatStorageManager(dbHost, nimbusHost, nimbusPort, rate);
 		}
 		if(!manager.thread.isAlive()){
-			manager.thread = new Thread(manager);// might be the good trick, to test!
+			manager.thread = new Thread(manager);
 			manager.thread.start();
 		}
-		//logger.info("Statistic collector is starting...");
-		/*if(!StatStorageManager.manager.isAlive()){
-			try{
-				StatStorageManager.manager.start();
-			}catch(IllegalThreadStateException e){
-				logger.warning("Statistic storage manager has met an issue, restarting in few seconds...");
-			}
-		}*/
 		return StatStorageManager.manager;
 	}
 	
@@ -124,7 +116,7 @@ public class StatStorageManager implements Runnable{
 		try{
 			active = this.topStatus.get(topId);
 		}catch(NullPointerException e){
-			logger.warning("Topology " + topId + " has never been activated yet!");
+			logger.fine("Topology " + topId + " has never been activated yet!");
 		}
 		return active;
 	}
@@ -136,7 +128,7 @@ public class StatStorageManager implements Runnable{
 			if(!tTransport.isOpen()){
 				tTransport.open();
 			}
-			logger.info("Listening to the Nimbus...");
+			logger.finest("Listening to the Nimbus...");
 			List<TopologySummary> topologies = client.getClusterInfo().get_topologies();
 			for(TopologySummary topSummary : topologies){
 				String topId = topSummary.get_id();
@@ -161,7 +153,7 @@ public class StatStorageManager implements Runnable{
 						if(!componentId.contains("acker")){ //avoiding to catch acker which are unsplittable
 							String host = executor.get_host();
 							Integer port = executor.get_port();
-							//logger.info("Retrieving data of component " + componentId + " on worker " + host + "@" + port + "...");
+							logger.finest("Retrieving data of component " + componentId + " on worker " + host + "@" + port + "...");
 
 							ExecutorInfo info = executor.get_executor_info();
 							Integer startTask = info.get_task_start();
@@ -203,7 +195,7 @@ public class StatStorageManager implements Runnable{
 									}
 									Double avgLatency = new BigDecimal(sum / count).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
 									storeSpoutExecutorStats(this.getCurrentTimestamp(), host, port, topology.get_id(), componentId, startTask, endTask, outputs, throughput, losses, avgLatency);
-									//logger.info("Spout stats successfully persisted!");
+									logger.finest("Spout stats successfully persisted!");
 								}
 
 
@@ -224,14 +216,14 @@ public class StatStorageManager implements Runnable{
 									}
 									Double avgLatency = new BigDecimal(sum / count).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
 
-									Double selectivity = new BigDecimal(outputs / nbExecuted).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+									Double selectivity = new BigDecimal(outputs / (nbExecuted * 1.0)).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
 									storeBoltExecutorStats(this.getCurrentTimestamp(), host, port, topology.get_id(), componentId, startTask, endTask, nbExecuted, outputs, avgLatency, selectivity);
-									//logger.info("Bolt stats successfully persisted!");
+									logger.finest("Bolt stats successfully persisted!");
 								}
 							}
 							
 						}else{
-							//logger.warning("Unable to identify the type of the operator");
+							logger.fine("Unable to identify the type of the operator");
 						}
 					}
 				}

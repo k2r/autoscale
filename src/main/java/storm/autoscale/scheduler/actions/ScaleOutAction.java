@@ -31,13 +31,17 @@ public class ScaleOutAction implements IAction {
 	private TopologyDetails topology;
 	private AssignmentMonitor assignMonitor;
 	private IAllocationStrategy allocStrategy;
+	private String nimbusHost;
+	private Integer nimbusPort;
 	private Logger logger = Logger.getLogger("ScaleOutAction");
 	
-	public ScaleOutAction(HashMap<String, ComponentWindowedStats> stats, TopologyDetails topology, AssignmentMonitor am, IAllocationStrategy as) {
+	public ScaleOutAction(HashMap<String, ComponentWindowedStats> stats, TopologyDetails topology, AssignmentMonitor am, IAllocationStrategy as, String nh, Integer np) {
 		this.stats = stats;
 		this.topology = topology;
 		this.assignMonitor = am;
 		this.allocStrategy = as;
+		this.nimbusHost = nh;
+		this.nimbusPort = np;
 		Thread thread = new Thread(this);
 		thread.start();
 	}
@@ -67,7 +71,7 @@ public class ScaleOutAction implements IAction {
 
 	@Override
 	public void run() {
-		TSocket tsocket = new TSocket("localhost", 6627);
+		TSocket tsocket = new TSocket(this.nimbusHost, this.nimbusPort);
 		TFramedTransport tTransport = new TFramedTransport(tsocket);
 		TBinaryProtocol tBinaryProtocol = new TBinaryProtocol(tTransport);
 		Nimbus.Client client = new Nimbus.Client(tBinaryProtocol);
@@ -90,16 +94,15 @@ public class ScaleOutAction implements IAction {
 					options.set_num_workers(this.assignMonitor.getNbWorkers());
 					options.set_wait_secs(0);
 
-					logger.info("Changing parallelism degree of component " + component + " from " + currentParallelism + " to " + newParallelism + "...");
+					logger.fine("Changing parallelism degree of component " + component + " from " + currentParallelism + " to " + newParallelism + "...");
 
 					client.rebalance(topology.getName(), options);
-					logger.info("Parallelism of component " + component + " increased successfully!");
-					Thread.sleep(100);
+					logger.fine("Parallelism of component " + component + " increased successfully!");
 				}else{
-					logger.info("This scale-out will not improve the distribution of the operator");
+					logger.fine("This scale-out will not improve the distribution of the operator");
 				}
+				Thread.sleep(2000);
 			}
-			tTransport.close();
 		} catch (TException | InterruptedException e) {
 			logger.severe("Unable to scale topology " + topology.getName() + " because of " + e);
 		}

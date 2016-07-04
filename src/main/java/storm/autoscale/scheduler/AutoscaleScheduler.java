@@ -3,6 +3,12 @@
  */
 package storm.autoscale.scheduler;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,11 +43,23 @@ public class AutoscaleScheduler implements IScheduler {
 	private String nimbusHost;
 	private Integer nimbusPort;
 	private static Logger logger = Logger.getLogger("AutoscaleScheduler");
+	private FileWriter writer;
 
 	/**
 	 * 
 	 */
 	public AutoscaleScheduler() {
+		try {
+			Path path = Paths.get("logs/autoscaleLogs.csv");
+			if(!Files.exists(path)){
+				Files.createFile(path);				
+			}
+			File file = path.toFile();
+			this.writer = new FileWriter(file);
+			this.writer.write("timestamp;component;input;variation;executed;output;latency;congested;\n");
+			} catch (SecurityException | IOException e) {
+			logger.severe("Unable to initialize the log file because " + e);
+		}
 		logger.info("The auto-scaling scheduler for Storm is starting...");
 	}
 
@@ -71,7 +89,7 @@ public class AutoscaleScheduler implements IScheduler {
 		/*In a first time, we take all scaling decisions*/
 		for(TopologyDetails topology : topologies.getTopologies()){
 			if(!manager.isActive(topology.getId())){
-				logger.info("Topology " + topology.getName() + " is being rebalanced...");
+				logger.fine("Topology " + topology.getName() + " is inactive, killed or being rebalanced...");
 			}else{
 				this.compMonitor = new ComponentMonitor("localhost", this.nimbusHost, this.nimbusPort, 2000);
 				this.assignMonitor = new AssignmentMonitor(cluster, topology);
@@ -84,7 +102,7 @@ public class AutoscaleScheduler implements IScheduler {
 					HashMap<String, ComponentWindowedStats> congestedStats = new HashMap<>();
 					int oldestTimestamp = Math.max(0, timestamp - ComponentMonitor.WINDOW_SIZE);
 					String monitoring = "Current monitoring info (from timestamp " + oldestTimestamp + " to timestamp " + timestamp + ")\n";
-					logger.info(monitoring);
+					logger.fine(monitoring);
 					for(String component : this.compMonitor.getRegisteredComponents()){
 						ComponentWindowedStats stats = this.compMonitor.getStats(component);
 						congestedStats.put(component, stats);
@@ -122,18 +140,28 @@ public class AutoscaleScheduler implements IScheduler {
 						infos += "\t output : " + lastOutputRecord + ", variation on window: " + globalOutputVar + " tuple(s) \n";
 						infos += "\t latency : " + lastAvgLatencyRecord + " milliseconds per tuple \n";
 						infos += "\t selectivity : " + lastSelectivityRecord + "\n";
-						logger.info(infos);
+						logger.fine(infos);
+						
+						boolean isCongested = false;
+						if(this.congested.contains(component)){
+							isCongested = true;
+						}
+						try {
+							this.writer.write(timestamp + ";" + component + ";" + globalInputVar + ";" + growth + ";" + globalExecutedVar + ";" + globalOutputVar + ";" + lastAvgLatencyRecord + ";" + isCongested + "\n");
+						} catch (IOException e) {
+							logger.warning("Unable to log component logs because" + e);
+						} 
 					}
 					if(this.congested.isEmpty()){
-						logger.info("No component to scale out!");
+						logger.fine("No component to scale out!");
 					}else{
 						String congestInfo = "Congested components: ";
 						for(String component : this.congested){
 							congestInfo += component + " ";
 						}
 						congestInfo += "have been detected!";
-						logger.info(congestInfo);
-						IAction action = new ScaleOutAction(congestedStats, topology, assignMonitor, new DelegatedAllocationStrategy(assignMonitor));
+						logger.fine(congestInfo);
+						IAction action = new ScaleOutAction(congestedStats, topology, assignMonitor, new DelegatedAllocationStrategy(assignMonitor), this.nimbusHost, this.nimbusPort);
 					}
 				}
 			}
