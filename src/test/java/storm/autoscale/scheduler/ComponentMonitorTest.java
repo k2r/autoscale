@@ -16,33 +16,35 @@ import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
  */
 public class ComponentMonitorTest extends TestCase {
 
+	Long scaleFactor = 5L;
+	
 	/**
 	 * Test method for {@link storm.autoscale.scheduler.modules.stats.ComponentMonitor#isInputDecreasing(java.lang.String)}.
 	 */
 	public void testIsInputDecreasing() {
 		HashMap<Integer, Long> inputRecords1 = new HashMap<>();
-		inputRecords1.put(10, 50L);
-		inputRecords1.put(9, 52L);
-		inputRecords1.put(8, 85L);
-		inputRecords1.put(7, 106L);
-		inputRecords1.put(6, 142L);
-		inputRecords1.put(5, 156L);
-		inputRecords1.put(4, 191L);
-		inputRecords1.put(3, 219L);
-		inputRecords1.put(2, 245L);
-		inputRecords1.put(1, 270L);
+		inputRecords1.put(10, 250L / this.scaleFactor);
+		inputRecords1.put(9, 260L / this.scaleFactor);
+		inputRecords1.put(8, 425L / this.scaleFactor);
+		inputRecords1.put(7, 530L / this.scaleFactor);
+		inputRecords1.put(6, 710L / this.scaleFactor);
+		inputRecords1.put(5, 780L / this.scaleFactor);
+		inputRecords1.put(4, 955L / this.scaleFactor);
+		inputRecords1.put(3, 1095L / this.scaleFactor);
+		inputRecords1.put(2, 1225L / this.scaleFactor);
+		inputRecords1.put(1, 1350L / this.scaleFactor);
 	
 		HashMap<Integer, Long> inputRecords2 = new HashMap<>();
-		inputRecords2.put(10, 50L);
-		inputRecords2.put(9, 52L);
-		inputRecords2.put(8, 85L);
-		inputRecords2.put(7, 91L);
-		inputRecords2.put(6, 142L);
-		inputRecords2.put(5, 156L);
-		inputRecords2.put(4, 160L);
-		inputRecords2.put(3, 219L);
-		inputRecords2.put(2, 235L);
-		inputRecords2.put(1, 260L);
+		inputRecords2.put(10, 250L / this.scaleFactor);
+		inputRecords2.put(9, 260L / this.scaleFactor);
+		inputRecords2.put(8, 425L / this.scaleFactor);
+		inputRecords2.put(7, 455L / this.scaleFactor);
+		inputRecords2.put(6, 710L / this.scaleFactor);
+		inputRecords2.put(5, 780L / this.scaleFactor);
+		inputRecords2.put(4, 800L / this.scaleFactor);
+		inputRecords2.put(3, 1095L / this.scaleFactor);
+		inputRecords2.put(2, 1225L / this.scaleFactor);
+		inputRecords2.put(1, 1350L / this.scaleFactor);
 		
 		ComponentWindowedStats cws1 = new ComponentWindowedStats("component1", inputRecords1, null, null, null, null);
 		ComponentWindowedStats cws2 = new ComponentWindowedStats("component2", inputRecords2, null, null, null, null);
@@ -60,28 +62,28 @@ public class ComponentMonitorTest extends TestCase {
 	 */
 	public void testIsInputStable() {
 		HashMap<Integer, Long> inputRecords1 = new HashMap<>();
-		inputRecords1.put(10, 270L);
-		inputRecords1.put(9, 245L);
-		inputRecords1.put(8, 219L);
-		inputRecords1.put(7, 191L);
-		inputRecords1.put(6, 156L);
-		inputRecords1.put(5, 142L);
-		inputRecords1.put(4, 106L);
-		inputRecords1.put(3, 85L);
-		inputRecords1.put(2, 52L);
-		inputRecords1.put(1, 50L);
+		inputRecords1.put(10, 1350L / this.scaleFactor);
+		inputRecords1.put(9, 1225L / this.scaleFactor);
+		inputRecords1.put(8, 1095L / this.scaleFactor);
+		inputRecords1.put(7, 955L / this.scaleFactor);
+		inputRecords1.put(6, 780L / this.scaleFactor);
+		inputRecords1.put(5, 710L / this.scaleFactor);
+		inputRecords1.put(4, 530L / this.scaleFactor);
+		inputRecords1.put(3, 425L / this.scaleFactor);
+		inputRecords1.put(2, 260L / this.scaleFactor);
+		inputRecords1.put(1, 250L / this.scaleFactor);
 	
 		HashMap<Integer, Long> inputRecords2 = new HashMap<>();
-		inputRecords2.put(10, 220L);
-		inputRecords2.put(9, 215L);
-		inputRecords2.put(8, 209L);
-		inputRecords2.put(7, 198L);
-		inputRecords2.put(6, 116L);
-		inputRecords2.put(5, 102L);
-		inputRecords2.put(4, 91L);
-		inputRecords2.put(3, 85L);
-		inputRecords2.put(2, 52L);
-		inputRecords2.put(1, 50L);
+		inputRecords2.put(10, 220L / this.scaleFactor);
+		inputRecords2.put(9, 215L / this.scaleFactor);
+		inputRecords2.put(8, 209L / this.scaleFactor);
+		inputRecords2.put(7, 198L / this.scaleFactor);
+		inputRecords2.put(6, 116L / this.scaleFactor);
+		inputRecords2.put(5, 102L / this.scaleFactor);
+		inputRecords2.put(4, 455L / this.scaleFactor);
+		inputRecords2.put(3, 425L / this.scaleFactor);
+		inputRecords2.put(2, 260L / this.scaleFactor);
+		inputRecords2.put(1, 250L / this.scaleFactor);
 		
 		ComponentWindowedStats cws1 = new ComponentWindowedStats("component1", inputRecords1, null, null, null, null);
 		ComponentWindowedStats cws2 = new ComponentWindowedStats("component2", inputRecords2, null, null, null, null);
@@ -99,28 +101,28 @@ public class ComponentMonitorTest extends TestCase {
 	 */
 	public void testIsInputIncreasing() {
 		HashMap<Integer, Long> inputRecords1 = new HashMap<>();
-		inputRecords1.put(10, 270L);
-		inputRecords1.put(9, 245L);
-		inputRecords1.put(8, 219L);
-		inputRecords1.put(7, 191L);
-		inputRecords1.put(6, 156L);
-		inputRecords1.put(5, 142L);
-		inputRecords1.put(4, 106L);
-		inputRecords1.put(3, 85L);
-		inputRecords1.put(2, 52L);
-		inputRecords1.put(1, 50L);
+		inputRecords1.put(10, 1350L / this.scaleFactor);
+		inputRecords1.put(9, 1225L / this.scaleFactor);
+		inputRecords1.put(8, 1095L / this.scaleFactor);
+		inputRecords1.put(7, 955L / this.scaleFactor);
+		inputRecords1.put(6, 780L / this.scaleFactor);
+		inputRecords1.put(5, 710L / this.scaleFactor);
+		inputRecords1.put(4, 530L / this.scaleFactor);
+		inputRecords1.put(3, 425L / this.scaleFactor);
+		inputRecords1.put(2, 260L / this.scaleFactor);
+		inputRecords1.put(1, 250L / this.scaleFactor);
 	
 		HashMap<Integer, Long> inputRecords2 = new HashMap<>();
-		inputRecords2.put(10, 260L);
-		inputRecords2.put(9, 235L);
-		inputRecords2.put(8, 219L);
-		inputRecords2.put(7, 160L);
-		inputRecords2.put(6, 156L);
-		inputRecords2.put(5, 142L);
-		inputRecords2.put(4, 91L);
-		inputRecords2.put(3, 85L);
-		inputRecords2.put(2, 52L);
-		inputRecords2.put(1, 50L);
+		inputRecords2.put(10, 260L / this.scaleFactor);
+		inputRecords2.put(9, 235L / this.scaleFactor);
+		inputRecords2.put(8, 1095L / this.scaleFactor);
+		inputRecords2.put(7, 160L / this.scaleFactor);
+		inputRecords2.put(6, 780L / this.scaleFactor);
+		inputRecords2.put(5, 710L / this.scaleFactor);
+		inputRecords2.put(4, 455L / this.scaleFactor);
+		inputRecords2.put(3, 425L / this.scaleFactor);
+		inputRecords2.put(2, 260L / this.scaleFactor);
+		inputRecords2.put(1, 250L / this.scaleFactor);
 		
 		ComponentWindowedStats cws1 = new ComponentWindowedStats("component1", inputRecords1, null, null, null, null);
 		ComponentWindowedStats cws2 = new ComponentWindowedStats("component2", inputRecords2, null, null, null, null);
@@ -138,52 +140,52 @@ public class ComponentMonitorTest extends TestCase {
 	 */
 	public void testIsCongested() {
 		HashMap<Integer, Long> inputRecords1 = new HashMap<>();
-		inputRecords1.put(10, 270L);
-		inputRecords1.put(9, 245L);
-		inputRecords1.put(8, 219L);
-		inputRecords1.put(7, 191L);
-		inputRecords1.put(6, 156L);
-		inputRecords1.put(5, 142L);
-		inputRecords1.put(4, 106L);
-		inputRecords1.put(3, 85L);
-		inputRecords1.put(2, 52L);
-		inputRecords1.put(1, 50L);
+		inputRecords1.put(10, 1350L / this.scaleFactor);
+		inputRecords1.put(9, 1225L / this.scaleFactor);
+		inputRecords1.put(8, 1095L / this.scaleFactor);
+		inputRecords1.put(7, 955L / this.scaleFactor);
+		inputRecords1.put(6, 780L / this.scaleFactor);
+		inputRecords1.put(5, 710L / this.scaleFactor);
+		inputRecords1.put(4, 530L / this.scaleFactor);
+		inputRecords1.put(3, 425L / this.scaleFactor);
+		inputRecords1.put(2, 260L / this.scaleFactor);
+		inputRecords1.put(1, 250L / this.scaleFactor);
 		
 		HashMap<Integer, Long> inputRecords2 = new HashMap<>();
-		inputRecords2.put(10, 50L);
-		inputRecords2.put(9, 52L);
-		inputRecords2.put(8, 85L);
-		inputRecords2.put(7, 106L);
-		inputRecords2.put(6, 142L);
-		inputRecords2.put(5, 156L);
-		inputRecords2.put(4, 191L);
-		inputRecords2.put(3, 219L);
-		inputRecords2.put(2, 245L);
-		inputRecords2.put(1, 270L);
+		inputRecords2.put(10, 250L / this.scaleFactor);
+		inputRecords2.put(9, 260L / this.scaleFactor);
+		inputRecords2.put(8, 425L / this.scaleFactor);
+		inputRecords2.put(7, 530L / this.scaleFactor);
+		inputRecords2.put(6, 710L / this.scaleFactor);
+		inputRecords2.put(5, 780L / this.scaleFactor);
+		inputRecords2.put(4, 955L / this.scaleFactor);
+		inputRecords2.put(3, 1095L / this.scaleFactor);
+		inputRecords2.put(2, 1225L / this.scaleFactor);
+		inputRecords2.put(1, 1350L / this.scaleFactor);
 		
 		HashMap<Integer, Long> executedRecords1 = new HashMap<>();
-		executedRecords1.put(10, 59L);
-		executedRecords1.put(9, 61L);
-		executedRecords1.put(8, 64L);
-		executedRecords1.put(7, 59L);
-		executedRecords1.put(6, 62L);
-		executedRecords1.put(5, 60L);
-		executedRecords1.put(4, 61L);
-		executedRecords1.put(3, 58L);
-		executedRecords1.put(2, 56L);
-		executedRecords1.put(1, 55L);
+		executedRecords1.put(10, 295L / this.scaleFactor);
+		executedRecords1.put(9, 305L / this.scaleFactor);
+		executedRecords1.put(8, 320L / this.scaleFactor);
+		executedRecords1.put(7, 295L / this.scaleFactor);
+		executedRecords1.put(6, 310L / this.scaleFactor);
+		executedRecords1.put(5, 300L / this.scaleFactor);
+		executedRecords1.put(4, 305L / this.scaleFactor);
+		executedRecords1.put(3, 290L / this.scaleFactor);
+		executedRecords1.put(2, 280L / this.scaleFactor);
+		executedRecords1.put(1, 275L / this.scaleFactor);
 		
 		HashMap<Integer, Long> executedRecords2 = new HashMap<>();
-		executedRecords2.put(10, 230L);
-		executedRecords2.put(9, 227L);
-		executedRecords2.put(8, 232L);
-		executedRecords2.put(7, 165L);
-		executedRecords2.put(6, 159L);
-		executedRecords2.put(5, 143L);
-		executedRecords2.put(4, 118L);
-		executedRecords2.put(3, 58L);
-		executedRecords2.put(2, 56L);
-		executedRecords2.put(1, 55L);
+		executedRecords2.put(10, 1150L / this.scaleFactor);
+		executedRecords2.put(9, 1135L / this.scaleFactor);
+		executedRecords2.put(8, 1160L / this.scaleFactor);
+		executedRecords2.put(7, 825L / this.scaleFactor);
+		executedRecords2.put(6, 795L / this.scaleFactor);
+		executedRecords2.put(5, 715L / this.scaleFactor);
+		executedRecords2.put(4, 590L / this.scaleFactor);
+		executedRecords2.put(3, 290L / this.scaleFactor);
+		executedRecords2.put(2, 280L / this.scaleFactor);
+		executedRecords2.put(1, 275L / this.scaleFactor);
 		
 		ComponentWindowedStats cws1 = new ComponentWindowedStats("component1", inputRecords1, executedRecords1, null, null, null);
 		ComponentWindowedStats cws2 = new ComponentWindowedStats("component2", inputRecords1, executedRecords2, null, null, null);
@@ -213,52 +215,52 @@ public class ComponentMonitorTest extends TestCase {
 	 */
 	public void testGetCongested() {
 		HashMap<Integer, Long> inputRecords1 = new HashMap<>();
-		inputRecords1.put(10, 270L);
-		inputRecords1.put(9, 245L);
-		inputRecords1.put(8, 219L);
-		inputRecords1.put(7, 191L);
-		inputRecords1.put(6, 156L);
-		inputRecords1.put(5, 142L);
-		inputRecords1.put(4, 106L);
-		inputRecords1.put(3, 85L);
-		inputRecords1.put(2, 52L);
-		inputRecords1.put(1, 50L);
+		inputRecords1.put(10, 1350L / this.scaleFactor);
+		inputRecords1.put(9, 1225L / this.scaleFactor);
+		inputRecords1.put(8, 1095L / this.scaleFactor);
+		inputRecords1.put(7, 955L / this.scaleFactor);
+		inputRecords1.put(6, 780L / this.scaleFactor);
+		inputRecords1.put(5, 710L / this.scaleFactor);
+		inputRecords1.put(4, 530L / this.scaleFactor);
+		inputRecords1.put(3, 425L / this.scaleFactor);
+		inputRecords1.put(2, 260L / this.scaleFactor);
+		inputRecords1.put(1, 250L / this.scaleFactor);
 		
 		HashMap<Integer, Long> inputRecords2 = new HashMap<>();
-		inputRecords2.put(10, 50L);
-		inputRecords2.put(9, 52L);
-		inputRecords2.put(8, 85L);
-		inputRecords2.put(7, 106L);
-		inputRecords2.put(6, 142L);
-		inputRecords2.put(5, 156L);
-		inputRecords2.put(4, 191L);
-		inputRecords2.put(3, 219L);
-		inputRecords2.put(2, 245L);
-		inputRecords2.put(1, 270L);
+		inputRecords2.put(10, 250L / this.scaleFactor);
+		inputRecords2.put(9, 260L / this.scaleFactor);
+		inputRecords2.put(8, 425L / this.scaleFactor);
+		inputRecords2.put(7, 530L / this.scaleFactor);
+		inputRecords2.put(6, 710L / this.scaleFactor);
+		inputRecords2.put(5, 780L / this.scaleFactor);
+		inputRecords2.put(4, 955L / this.scaleFactor);
+		inputRecords2.put(3, 1095L / this.scaleFactor);
+		inputRecords2.put(2, 1225L / this.scaleFactor);
+		inputRecords2.put(1, 1350L / this.scaleFactor);
 		
 		HashMap<Integer, Long> executedRecords1 = new HashMap<>();
-		executedRecords1.put(10, 59L);
-		executedRecords1.put(9, 61L);
-		executedRecords1.put(8, 64L);
-		executedRecords1.put(7, 59L);
-		executedRecords1.put(6, 62L);
-		executedRecords1.put(5, 60L);
-		executedRecords1.put(4, 61L);
-		executedRecords1.put(3, 58L);
-		executedRecords1.put(2, 56L);
-		executedRecords1.put(1, 55L);
+		executedRecords1.put(10, 295L / this.scaleFactor);
+		executedRecords1.put(9, 305L / this.scaleFactor);
+		executedRecords1.put(8, 320L / this.scaleFactor);
+		executedRecords1.put(7, 295L / this.scaleFactor);
+		executedRecords1.put(6, 310L / this.scaleFactor);
+		executedRecords1.put(5, 300L / this.scaleFactor);
+		executedRecords1.put(4, 305L / this.scaleFactor);
+		executedRecords1.put(3, 290L / this.scaleFactor);
+		executedRecords1.put(2, 280L / this.scaleFactor);
+		executedRecords1.put(1, 275L / this.scaleFactor);
 		
 		HashMap<Integer, Long> executedRecords2 = new HashMap<>();
-		executedRecords2.put(10, 230L);
-		executedRecords2.put(9, 227L);
-		executedRecords2.put(8, 232L);
-		executedRecords2.put(7, 165L);
-		executedRecords2.put(6, 159L);
-		executedRecords2.put(5, 143L);
-		executedRecords2.put(4, 118L);
-		executedRecords2.put(3, 58L);
-		executedRecords2.put(2, 56L);
-		executedRecords2.put(1, 55L);
+		executedRecords2.put(10, 1150L / this.scaleFactor);
+		executedRecords2.put(9, 1135L / this.scaleFactor);
+		executedRecords2.put(8, 1160L / this.scaleFactor);
+		executedRecords2.put(7, 825L / this.scaleFactor);
+		executedRecords2.put(6, 795L / this.scaleFactor);
+		executedRecords2.put(5, 715L / this.scaleFactor);
+		executedRecords2.put(4, 590L / this.scaleFactor);
+		executedRecords2.put(3, 290L / this.scaleFactor);
+		executedRecords2.put(2, 280L / this.scaleFactor);
+		executedRecords2.put(1, 275L / this.scaleFactor);
 		
 		ComponentWindowedStats cws1 = new ComponentWindowedStats("component1", inputRecords1, executedRecords1, null, null, null);
 		ComponentWindowedStats cws2 = new ComponentWindowedStats("component2", inputRecords1, executedRecords2, null, null, null);

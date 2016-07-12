@@ -46,6 +46,7 @@ public class StatStorageManager implements Runnable{
 	private final static String TABLE_SPOUT = "all_time_spouts_stats";
 	private final static String TABLE_BOLT = "all_time_bolts_stats";
 	private final static String TABLE_TOPOLOGY = "topologies_status";
+	private final static Integer LARGE_WINDOW_SIZE = 50;
 	private Thread thread;
 	private static Logger logger = Logger.getLogger("StatStorageManager");
 	
@@ -167,24 +168,30 @@ public class StatStorageManager implements Runnable{
 								for(String stream : emitted.keySet()){
 									outputs += emitted.get(stream);
 								}
+								//We must explicitly test both cases
+								Long outputsUpdate = outputs - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "spout", "outputs");
+								outputsUpdate = outputsUpdate - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "bolt", "outputs");
 
 								ExecutorSpecificStats specStats = stats.get_specific();
 
 								/*Try to look if it is a spout*/
 
 								if(specStats.is_set_spout()){
+									
 									SpoutStats spoutStats = specStats.get_spout();
 									Map<String, Long> acked = spoutStats.get_acked().get(ALLTIME);
 									Long throughput = 0L;
 									for(String stream : acked.keySet()){
 										throughput += acked.get(stream);
 									}
-
+									Long throughputUpdate = throughput - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "spout", "throughput");
+									
 									Map<String, Long> failed = spoutStats.get_failed().get(ALLTIME);
 									Long losses = 0L;
 									for(String stream : failed.keySet()){
 										losses += failed.get(stream);
 									}
+									Long lossesUpdate = losses - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "spout", "losses");
 
 									Map<String, Double> completeAvgTime = spoutStats.get_complete_ms_avg().get(ALLTIME);
 									Double sum = 0.0;
@@ -194,7 +201,7 @@ public class StatStorageManager implements Runnable{
 										count++;
 									}
 									Double avgLatency = new BigDecimal(sum / count).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
-									storeSpoutExecutorStats(this.getCurrentTimestamp(), host, port, topology.get_id(), componentId, startTask, endTask, outputs, throughput, losses, avgLatency);
+									storeSpoutExecutorStats(this.getCurrentTimestamp(), host, port, topology.get_id(), componentId, startTask, endTask, outputsUpdate, throughputUpdate, lossesUpdate, avgLatency);
 									logger.finest("Spout stats successfully persisted!");
 								}
 
@@ -206,6 +213,7 @@ public class StatStorageManager implements Runnable{
 									for(GlobalStreamId gs : executed.keySet()){
 										nbExecuted += executed.get(gs);
 									}
+									Long executedUpdate = nbExecuted - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "bolt", "executed");
 
 									Map<GlobalStreamId, Double> executionAvgTime = boltStats.get_execute_ms_avg().get(ALLTIME);
 									Double sum = 0.0;
@@ -216,8 +224,8 @@ public class StatStorageManager implements Runnable{
 									}
 									Double avgLatency = new BigDecimal(sum / count).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
 
-									Double selectivity = new BigDecimal(outputs / (nbExecuted * 1.0)).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
-									storeBoltExecutorStats(this.getCurrentTimestamp(), host, port, topology.get_id(), componentId, startTask, endTask, nbExecuted, outputs, avgLatency, selectivity);
+									Double selectivity = new BigDecimal(outputsUpdate / (executedUpdate * 1.0)).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+									storeBoltExecutorStats(this.getCurrentTimestamp(), host, port, topology.get_id(), componentId, startTask, endTask, executedUpdate, outputsUpdate, avgLatency, selectivity);
 									logger.finest("Bolt stats successfully persisted!");
 								}
 							}
@@ -514,6 +522,41 @@ public class StatStorageManager implements Runnable{
 			logger.severe("Unable to compute the global latency of the topology " + topology + " because of " + e);
 		}
 		return records;
+	}
+	
+	public Long getFormerValue(String component, Integer startTask, Integer endTask, Integer timestamp, String componentType, String attribute){
+		Long result = 0L;
+		Integer oldestTimestamp = timestamp - LARGE_WINDOW_SIZE;
+		Integer previousTimestamp = timestamp - 1;
+		if(componentType.equalsIgnoreCase("spout")){
+			String query = "SELECT " + attribute + " FROM " + TABLE_SPOUT +
+					" WHERE timestamp BETWEEN " + oldestTimestamp + " AND " + previousTimestamp + 
+					" AND start_task = " + startTask + " AND end_task = " + endTask;
+			try {
+				Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+				ResultSet results = statement.executeQuery(query);
+				if(results.last()){
+					result = results.getLong(attribute);
+				}
+			} catch (SQLException e) {
+				logger.severe("Unable to recover former value for executor associated to component " + component + "[tasks " + startTask + " to " + endTask + "] because " + e);
+			}
+		}
+		if(componentType.equalsIgnoreCase("bolt")){
+			String query = "SELECT " + attribute + " FROM " + TABLE_BOLT +
+					" WHERE timestamp BETWEEN " + oldestTimestamp + " AND " + previousTimestamp + 
+					" AND start_task = " + startTask + " AND end_task = " + endTask;
+			try {
+				Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+				ResultSet results = statement.executeQuery(query);
+				if(results.last()){
+					result = results.getLong(attribute);
+				}
+			} catch (SQLException e) {
+				logger.severe("Unable to recover former value for executor associated to component " + component + "[tasks " + startTask + " to " + endTask + "] because " + e);
+			}
+		}
+		return result;
 	}
 	
 	@Override

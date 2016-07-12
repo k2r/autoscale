@@ -20,12 +20,12 @@ public class ComponentWindowedStatsTest extends TestCase {
 	 */
 	public void testGetRecordedTimestamps() {
 		HashMap<Integer, Long> records = new HashMap<>();
-		records.put(1, 100L);
-		records.put(2, 120L);
-		records.put(3, 135L);
-		records.put(4, 110L);
-		records.put(5, 95L);
-		records.put(6, 78L);
+		records.put(1, 500L);
+		records.put(2, 600L);
+		records.put(3, 675L);
+		records.put(4, 550L);
+		records.put(5, 475L);
+		records.put(6, 390L);
 		
 		ArrayList<Integer> actual = ComponentWindowedStats.getRecordedTimestamps(records);
 		
@@ -45,24 +45,24 @@ public class ComponentWindowedStatsTest extends TestCase {
 	 */
 	public void testGetRecord() {
 		HashMap<Integer, Long> records1 = new HashMap<>();
-		records1.put(1, 100L);
-		records1.put(2, 120L);
-		records1.put(3, 135L);
-		records1.put(4, 110L);
-		records1.put(5, 95L);
-		records1.put(6, 78L);
+		records1.put(1, 500L);
+		records1.put(2, 600L);
+		records1.put(3, 675L);
+		records1.put(4, 550L);
+		records1.put(5, 475L);
+		records1.put(6, 390L);
 		
 		Double actual1 = ComponentWindowedStats.getRecord(records1, 0);
 		Double actual2 = ComponentWindowedStats.getRecord(records1, 2);
 		Double actual3 = ComponentWindowedStats.getRecord(records1, 5);
 		
 		HashMap<Integer, Double> records2 = new HashMap<>();
-		records2.put(1, 100.0);
-		records2.put(2, 120.0);
-		records2.put(3, 135.0);
-		records2.put(4, 110.0);
-		records2.put(5, 95.0);
-		records2.put(6, 78.0);
+		records2.put(1, 500.0);
+		records2.put(2, 600.0);
+		records2.put(3, 390.0);
+		records2.put(4, 550.0);
+		records2.put(5, 475.0);
+		records2.put(6, 390.0);
 		
 		Double actual4 = ComponentWindowedStats.getRecord(records2, 0);
 		Double actual5 = ComponentWindowedStats.getRecord(records2, 2);
@@ -75,12 +75,12 @@ public class ComponentWindowedStatsTest extends TestCase {
 		Double actual9 = ComponentWindowedStats.getRecord(records3, 5);
 		Double actual10 = ComponentWindowedStats.getRecord(records3, 128);
 		
-		assertEquals(78.0, actual1, 0);
-		assertEquals(110.0, actual2, 0);
-		assertEquals(100.0, actual3, 0);
-		assertEquals(78.0, actual4, 0);
-		assertEquals(110.0, actual5, 0);
-		assertEquals(100.0, actual6, 0);
+		assertEquals(390.0, actual1, 0);
+		assertEquals(550.0, actual2, 0);
+		assertEquals(500.0, actual3, 0);
+		assertEquals(390.0, actual4, 0);
+		assertEquals(550.0, actual5, 0);
+		assertEquals(500.0, actual6, 0);
 		assertEquals(0.0, actual7, 0);
 		assertEquals(0.0, actual8, 0);
 		assertEquals(0.0, actual9, 0);

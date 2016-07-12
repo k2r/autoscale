@@ -23,7 +23,7 @@ public class ComponentMonitor {
 	public static final Integer WINDOW_SIZE = 10;
 	public static final Double RECORD_THRESHOLD = 0.7;
 	public static final Double VAR_THRESHOLD = 20.0;
-	public static final Double CRITIC_VAR_THRESHOLD = 100.0;
+	public static final Double CRITIC_VAR_THRESHOLD = 60.0;
 	private static Logger logger = Logger.getLogger("ComponentMonitor");
 	
 	/**

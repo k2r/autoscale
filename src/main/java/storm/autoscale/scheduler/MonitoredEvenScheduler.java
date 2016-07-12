@@ -3,14 +3,14 @@
  */
 package storm.autoscale.scheduler;
 
-import java.io.File;
+/*import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.Paths;*/
 import java.sql.SQLException;
-import java.util.ArrayList;
+//import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -35,17 +35,17 @@ public class MonitoredEvenScheduler implements IScheduler{
 	private ComponentMonitor compMonitor;
 	private AssignmentMonitor assignMonitor;
 	private TopologyExplorer explorer;
-	private ArrayList<String> congested;
+	//private ArrayList<String> congested;
 	private String nimbusHost;
 	private Integer nimbusPort;
 	private static Logger logger = Logger.getLogger("MonitoredEvenScheduler");
-	private FileWriter writer;
+	//private FileWriter writer;
 	/**
 	 * 
 	 */
 	public MonitoredEvenScheduler() {
-		try {
-			Path path = Paths.get("logs/evenLogs.csv");
+		/*try {
+			Path path = Paths.get("evenLogs.csv");
 			if(!Files.exists(path)){
 				Files.createFile(path);				
 			}
@@ -54,7 +54,7 @@ public class MonitoredEvenScheduler implements IScheduler{
 			this.writer.write("timestamp;component;input;variation;executed;output;latency;congested;\n");
 			} catch (SecurityException | IOException e) {
 			logger.severe("Unable to initialize the log file because " + e);
-		}
+		}*/
 		logger.info("Monitoring the storm even scheduler...");
 	}
 	
@@ -83,12 +83,12 @@ public class MonitoredEvenScheduler implements IScheduler{
 				this.assignMonitor.update();
 				this.compMonitor.getStatistics(explorer);
 				Integer timestamp = manager.getCurrentTimestamp();
-				if(timestamp >= ComponentMonitor.WINDOW_SIZE){
-					this.congested = this.compMonitor.getCongested();
+				//if(timestamp >= ComponentMonitor.WINDOW_SIZE){
+					//this.congested = this.compMonitor.getCongested();
 					HashMap<String, ComponentWindowedStats> congestedStats = new HashMap<>();
 					int oldestTimestamp = Math.max(0, timestamp - ComponentMonitor.WINDOW_SIZE);
 					String monitoring = "Current monitoring info (from timestamp " + oldestTimestamp + " to timestamp " + timestamp + ")\n";
-					logger.info(monitoring);
+					logger.fine(monitoring);
 					for(String component : this.compMonitor.getRegisteredComponents()){
 						ComponentWindowedStats stats = this.compMonitor.getStats(component);
 						congestedStats.put(component, stats);
@@ -128,7 +128,7 @@ public class MonitoredEvenScheduler implements IScheduler{
 						infos += "\t selectivity : " + lastSelectivityRecord + "\n";
 						logger.fine(infos);
 						
-						boolean isCongested = false;
+						/*boolean isCongested = false;
 						if(this.congested.contains(component)){
 							isCongested = true;
 						}
@@ -136,9 +136,9 @@ public class MonitoredEvenScheduler implements IScheduler{
 							this.writer.write(timestamp + ";" + component + ";" + globalInputVar + ";" + growth + ";" + globalExecutedVar + ";" + globalOutputVar + ";" + lastAvgLatencyRecord + ";" + isCongested + "\n");
 						} catch (IOException e) {
 							logger.warning("Unable to log component logs because" + e);
-						} 
+						}*/ 
 					}
-				}
+				//}
 			}
 		}
 		EvenScheduler scheduler = new EvenScheduler();

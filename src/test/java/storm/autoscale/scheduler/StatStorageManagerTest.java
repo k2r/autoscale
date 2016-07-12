@@ -673,4 +673,66 @@ public class StatStorageManagerTest extends TestCase {
 		}
 	}
 
+	public void testGetFormerValue(){
+		try {
+			StatStorageManager manager = StatStorageManager.getManager("localhost");
+		
+		Integer timestamp1 = 1;
+		Integer timestamp2 = 10;
+		Integer timestamp3 = 51;
+		Integer timestamp4 = 52; 
+		String topology = "testTopology";
+		String component = "testComponent";
+		
+		String host1 = "testHost1";
+		Integer port = 0;
+		Integer startTask = 11;
+		Integer endTask = 20;
+		Long outputs1 = 100L;
+		Long throughput1 = 75L;
+		Long losses1 = 10L;
+		Double avgLatency1 = 500.0;
+		
+		Long outputs2 = 120L;
+		Long throughput2 = 90L;
+		Long losses2 = 15L;
+		Double avgLatency2 = 700.0;
+		
+		String host2 = "testHost2";
+		Long outputs3 = 150L;
+		Long throughput3 = 90L;
+		Long losses3 = 15L;
+		Double avgLatency3 = 700.0;
+		
+		manager.storeSpoutExecutorStats(timestamp1, host1, port, topology, component, startTask, endTask, outputs1, throughput1, losses1, avgLatency1);
+		manager.storeSpoutExecutorStats(timestamp2, host1, port, topology, component, startTask, endTask, outputs2, throughput2, losses2, avgLatency2);
+		manager.storeSpoutExecutorStats(timestamp3, host2, port, topology, component, startTask, endTask, outputs3, throughput3, losses3, avgLatency3);
+		
+		Long actual1 = manager.getFormerValue(component, startTask, endTask, timestamp1, "spout", "outputs");
+		Long actual2 = manager.getFormerValue(component, startTask, endTask, timestamp2, "spout", "outputs");
+		Long actual3 = manager.getFormerValue(component, startTask, endTask, timestamp3, "spout", "outputs");
+		Long actual4 = manager.getFormerValue(component, startTask, endTask, timestamp4, "spout", "outputs");
+		Long actual5 = manager.getFormerValue(component, startTask, endTask, timestamp4, "spout", "losses");
+		
+		assertEquals(0L, actual1, 0);
+		assertEquals(100L, actual2, 0);
+		assertEquals(120L, actual3, 0);
+		assertEquals(150L, actual4, 0);
+		assertEquals(15L, actual5, 0);
+		
+		String jdbcDriver = "com.mysql.jdbc.Driver";
+		String dbUrl = "jdbc:mysql://localhost/benchmarks";
+		String user = "root";
+		Class.forName(jdbcDriver);
+		
+		Connection connection = DriverManager.getConnection(dbUrl,user, null);
+		Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+		
+		String testCleanQuery = "DELETE FROM all_time_spouts_stats";
+		statement.executeUpdate(testCleanQuery);
+		} catch (ClassNotFoundException | SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
 }
