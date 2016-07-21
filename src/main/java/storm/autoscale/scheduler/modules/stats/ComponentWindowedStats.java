@@ -134,4 +134,20 @@ public class ComponentWindowedStats {
 	public HashMap<Integer, Double> getSelectivityRecords() {
 		return selectivityRecords;
 	}
+	
+	public Double getTotalInput(){
+		Double result = 0.0;
+		for(Integer timestamp : this.getInputRecords().keySet()){
+			result += this.getInputRecords().get(timestamp);
+		}
+		return result;
+	}
+	
+	public Double getTotalExecuted(){
+		Double result = 0.0;
+		for(Integer timestamp : this.getExecutedRecords().keySet()){
+			result += this.getExecutedRecords().get(timestamp);
+		}
+		return result;
+	}
 }

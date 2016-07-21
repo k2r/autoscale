@@ -136,7 +136,7 @@ public class ComponentMonitorTest extends TestCase {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.stats.ComponentMonitor#isCongested(java.lang.String)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.stats.ComponentMonitor#needScaleOut(java.lang.String)}.
 	 */
 	public void testIsCongested() {
 		HashMap<Integer, Long> inputRecords1 = new HashMap<>();
@@ -198,10 +198,10 @@ public class ComponentMonitorTest extends TestCase {
 		cm.updateStats(cws3.getId(), cws3);
 		cm.updateStats(cws4.getId(), cws4);
 		
-		assertEquals(true, cm.isCongested("component1"));
-		assertEquals(false, cm.isCongested("component2"));
-		assertEquals(false, cm.isCongested("component3"));
-		assertEquals(false, cm.isCongested("component4"));
+		assertEquals(true, cm.needScaleOut("component1"));
+		assertEquals(false, cm.needScaleOut("component2"));
+		assertEquals(false, cm.needScaleOut("component3"));
+		assertEquals(false, cm.needScaleOut("component4"));
 	}
 
 	/**
@@ -211,7 +211,7 @@ public class ComponentMonitorTest extends TestCase {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.stats.ComponentMonitor#getCongested()}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.stats.ComponentMonitor#getScaleOutDecisions()}.
 	 */
 	public void testGetCongested() {
 		HashMap<Integer, Long> inputRecords1 = new HashMap<>();
@@ -275,11 +275,11 @@ public class ComponentMonitorTest extends TestCase {
 		
 		ArrayList<String> expected = new ArrayList<>();
 		expected.add("component1");
-		assertEquals(expected, cm.getCongested());
+		assertEquals(expected, cm.getScaleOutDecisions());
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.stats.ComponentMonitor#getPotentialCongested()}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.stats.ComponentMonitor#getScaleInDecisions()}.
 	 */
 	public void testGetPotentialCongested() {
 	}

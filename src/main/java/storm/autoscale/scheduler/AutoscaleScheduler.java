@@ -98,7 +98,7 @@ public class AutoscaleScheduler implements IScheduler {
 				this.compMonitor.getStatistics(explorer);
 				Integer timestamp = manager.getCurrentTimestamp();
 				//if(timestamp >= ComponentMonitor.WINDOW_SIZE){
-					this.congested = this.compMonitor.getCongested();
+					this.congested = this.compMonitor.getScaleOutDecisions();
 					HashMap<String, ComponentWindowedStats> congestedStats = new HashMap<>();
 					int oldestTimestamp = Math.max(0, timestamp - ComponentMonitor.WINDOW_SIZE);
 					String monitoring = "Current monitoring info (from timestamp " + oldestTimestamp + " to timestamp " + timestamp + ")\n";

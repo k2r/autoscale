@@ -57,7 +57,7 @@ public class WelfMetric implements IMetric {
 		ArrayList<String> children = this.te.getChildren(component);
 		if(!children.isEmpty()){
 			for(String child : children){
-				if(!this.cm.isCongested(child)){
+				if(!this.cm.needScaleOut(child)){
 					pathLatency += computePathLatency(child);
 				}
 			}

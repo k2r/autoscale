@@ -18,12 +18,12 @@ import storm.autoscale.scheduler.modules.TopologyExplorer;
 public class ComponentMonitor {
 	
 	private HashMap<String, ComponentWindowedStats> stats;
+	private HashMap<String, Double> tprValues;
 	private StatStorageManager manager;
 	private Integer timestamp;
 	public static final Integer WINDOW_SIZE = 10;
 	public static final Double RECORD_THRESHOLD = 0.7;
 	public static final Double VAR_THRESHOLD = 20.0;
-	public static final Double CRITIC_VAR_THRESHOLD = 60.0;
 	private static Logger logger = Logger.getLogger("ComponentMonitor");
 	
 	/**
@@ -31,6 +31,7 @@ public class ComponentMonitor {
 	 */
 	public ComponentMonitor(String dbHost, String nimbusHost, Integer nimbusPort, Integer rate) {
 		this.stats = new HashMap<>();
+		this.tprValues = new HashMap<>();
 		if(nimbusHost != null && nimbusPort != null){
 			try {
 				this.manager = StatStorageManager.getManager(dbHost, nimbusHost, nimbusPort, rate);
@@ -105,7 +106,6 @@ public class ComponentMonitor {
 		return this.stats.keySet();
 	}
 	
-	
 	public ComponentWindowedStats getStats(String component){
 		return this.stats.get(component);
 	}
@@ -170,38 +170,28 @@ public class ComponentMonitor {
 		}
 		return result;
 	}
+
+	public Double computeTPR(String component){
+		if(!this.getRegisteredComponents().contains(component)){
+			return -1.0;
+		}else{
+			ComponentWindowedStats cws = this.getStats(component);
+			Double tpr = (cws.getTotalInput() * ComponentWindowedStats.getLastRecord(cws.getAvgLatencyRecords()) / (WINDOW_SIZE * 1000));//because latencies are given in milliseconds
+			return tpr;
+		}
+	}
 	
-	public boolean isCongested(String component){
+	public void computeAllTPR(){
+		for(String component : this.getRegisteredComponents()){
+			this.tprValues.put(component, this.computeTPR(component));
+		}
+	}
+	
+	public boolean needScaleOut(String component){
 		boolean result = false;
-		if(this.stats.containsKey(component)){
-			ComponentWindowedStats cws = this.stats.get(component);
-			if(!isInputDecreasing(component)){
-				HashMap<Integer, Long> inputRecords = cws.getInputRecords();
-				HashMap<Integer, Long> executedRecords = cws.getExecutedRecords();
-				ArrayList<Integer> recordedTimestamps = ComponentWindowedStats.getRecordedTimestamps(inputRecords);
-				int count = 0;
-				int nbRecords = recordedTimestamps.size();
-				double threshold = nbRecords * RECORD_THRESHOLD;
-				
-				int i = 0;
-				while(i < nbRecords){
-					if(count >= threshold){
-						result = true;
-						break;
-					}
-					Integer timestamp = recordedTimestamps.get(i);
-					Long input = inputRecords.get(timestamp);
-					Long executed = executedRecords.get(timestamp);
-					if(input != null && executed != null && input > executed){
-						Long variation = input - executed;
-						if(variation > CRITIC_VAR_THRESHOLD){
-							result = true;
-							break;
-						}
-						count++;
-					}
-					i++;
-				}
+		if(this.tprValues.containsKey(component)){
+			if(tprValues.get(component) > 1 && !this.isInputDecreasing(component)){
+				result = true;
 			}
 		}else{
 			logger.warning("Looking for an non-existing component " + component);
@@ -209,25 +199,32 @@ public class ComponentMonitor {
 		return result;
 	}
 	
-	public boolean couldCongest(String component){
-		//TODO Anticipate a congestion thanks to the condition: CPU usage of supervisor > threshold & inputs growing up
-		return false;
+	public boolean needScaleIn(String component){
+		boolean result = false;
+		if(this.tprValues.containsKey(component)){
+			if(tprValues.get(component) < 1 && this.isInputDecreasing(component)){
+				result = true;
+			}
+		}else{
+			logger.warning("Looking for an non-existing component " + component);
+		}
+		return result;
 	}
 	
-	public ArrayList<String> getCongested(){
+	public ArrayList<String> getScaleOutDecisions(){
 		ArrayList<String> result = new ArrayList<>();
 		for(String component : this.stats.keySet()){
-			if(isCongested(component)){
+			if(needScaleOut(component)){
 				result.add(component);
 			}
 		}
 		return result;
 	}
 	
-	public ArrayList<String> getPotentialCongested(){
+	public ArrayList<String> getScaleInDecisions(){
 		ArrayList<String> result = new ArrayList<>();
 		for(String component : this.stats.keySet()){
-			if(couldCongest(component)){
+			if(needScaleIn(component)){
 				result.add(component);
 			}
 		}
