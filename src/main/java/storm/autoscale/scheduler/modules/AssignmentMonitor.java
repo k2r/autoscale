@@ -5,6 +5,7 @@ package storm.autoscale.scheduler.modules;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +39,7 @@ public class AssignmentMonitor {
 		this.support = new HashMap<>();
 		List<WorkerSlot> slots = cluster.getAssignableSlots();
 		for(WorkerSlot ws : slots){
-			this.assignments.put(ws, new ArrayList<>());
+			this.assignments.put(ws, new ArrayList<String>());
 			
 			SupervisorDetails supervisor = this.cluster.getSupervisorById(ws.getNodeId());
 			if(!this.support.containsKey(supervisor)){
@@ -48,7 +49,8 @@ public class AssignmentMonitor {
 			}else{
 				ArrayList<WorkerSlot> managedSlots = this.support.get(supervisor);
 				managedSlots.add(ws);
-				this.support.replace(supervisor, managedSlots);
+				this.support.remove(supervisor);
+				this.support.put(supervisor, managedSlots);
 			}
 		}
 		
@@ -64,7 +66,8 @@ public class AssignmentMonitor {
 				ArrayList<String> affectedComponents = this.assignments.get(slot);
 				if(!affectedComponents.contains(component)){
 					affectedComponents.add(component);
-					this.assignments.replace(slot, affectedComponents);
+					this.assignments.remove(slot);
+					this.assignments.put(slot, affectedComponents);
 				}
 			}
 		}
@@ -175,7 +178,7 @@ public class AssignmentMonitor {
 				}
 			}
 		}
-		result.sort(null);
+		Collections.sort(result);
 		return result;
 	}
 	

@@ -5,6 +5,7 @@ package storm.autoscale.scheduler.modules.stats;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -51,7 +52,7 @@ public class ComponentWindowedStats {
 		for(Integer timestamp : timestamps){
 			orderedTimestamps.add(timestamp);
 		}
-		orderedTimestamps.sort(new UtilFunctions.DecreasingIntOrder());
+		Collections.sort(orderedTimestamps, new UtilFunctions.DecreasingIntOrder());
 		return orderedTimestamps;
 	}
 	

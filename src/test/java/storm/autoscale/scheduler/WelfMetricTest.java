@@ -149,8 +149,8 @@ public class WelfMetricTest extends TestCase {
 
 		Mockito.when(mockTe.getChildren("A")).thenReturn(childrenA);
 		Mockito.when(mockTe.getChildren("C")).thenReturn(childrenC);
-		Mockito.when(mockTe.getChildren("D")).thenReturn(new ArrayList<>());
-		Mockito.when(mockTe.getChildren("F")).thenReturn(new ArrayList<>());
+		Mockito.when(mockTe.getChildren("D")).thenReturn(new ArrayList<String>());
+		Mockito.when(mockTe.getChildren("F")).thenReturn(new ArrayList<String>());
 
 		WelfMetric wm = new WelfMetric(mockTe, mockCm);
 		Double welfA = wm.compute("A");

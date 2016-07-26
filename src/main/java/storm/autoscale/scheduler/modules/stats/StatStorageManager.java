@@ -140,10 +140,9 @@ public class StatStorageManager implements Runnable{
 					isActive = false;
 				}
 				if(this.topStatus.containsKey(topId)){
-					this.topStatus.replace(topId, isActive);
-				}else{
-					this.topStatus.put(topId, isActive);
+					this.topStatus.remove(topId);
 				}
+				this.topStatus.put(topId, isActive);
 				storeTopologyState(this.timestamp, topId, topStatus);
 				if(isActive(topId)){	
 					TopologyInfo topology = client.getTopologyInfo(topId);

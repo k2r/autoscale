@@ -4,6 +4,7 @@
 package storm.autoscale.scheduler;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 import junit.framework.TestCase;
 
@@ -115,7 +116,7 @@ public class UtilFunctionsTest extends TestCase {
 		actual.add(2);
 		actual.add(5);
 		
-		actual.sort(new UtilFunctions.DecreasingIntOrder());
+		Collections.sort(actual, new UtilFunctions.DecreasingIntOrder());
 		
 		ArrayList<Integer> expected = new ArrayList<>();
 		expected.add(8);
