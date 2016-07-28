@@ -81,9 +81,9 @@ public class ScaleOutAction implements IAction {
 			}
 			for(String component : this.stats.keySet()){
 				ComponentWindowedStats componentStats = this.stats.get(component);
-				Double inputs = componentStats.getTotalInput();
-				Double executed = componentStats.getTotalExecuted();
-				int nbExecToAdd = (int) Math.round((inputs - executed) / executed); 
+				Long inputs = componentStats.getTotalInput();
+				Long executed = componentStats.getTotalExecuted();
+				int nbExecToAdd = (int) Math.round((inputs - executed) / (1.0 * executed)); 
 				ArrayList<Integer> tasks = this.assignMonitor.getAllSortedTasks(component);
 				int currentParallelism = this.assignMonitor.getParallelism(component);
 				int newParallelism = Math.min(tasks.size(), currentParallelism + nbExecToAdd);

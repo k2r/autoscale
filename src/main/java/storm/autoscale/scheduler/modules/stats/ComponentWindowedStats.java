@@ -136,16 +136,16 @@ public class ComponentWindowedStats {
 		return selectivityRecords;
 	}
 	
-	public Double getTotalInput(){
-		Double result = 0.0;
+	public Long getTotalInput(){
+		Long result = 0L;
 		for(Integer timestamp : this.getInputRecords().keySet()){
 			result += this.getInputRecords().get(timestamp);
 		}
 		return result;
 	}
 	
-	public Double getTotalExecuted(){
-		Double result = 0.0;
+	public Long getTotalExecuted(){
+		Long result = 0L;
 		for(Integer timestamp : this.getExecutedRecords().keySet()){
 			result += this.getExecutedRecords().get(timestamp);
 		}

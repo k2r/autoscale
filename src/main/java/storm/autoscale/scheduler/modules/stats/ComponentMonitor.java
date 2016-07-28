@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import storm.autoscale.scheduler.metrics.EPRMetric;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
 
 /**
@@ -18,9 +19,11 @@ import storm.autoscale.scheduler.modules.TopologyExplorer;
 public class ComponentMonitor {
 	
 	private HashMap<String, ComponentWindowedStats> stats;
-	private HashMap<String, Double> tprValues;
 	private StatStorageManager manager;
 	private Integer timestamp;
+	private Integer samplingRate;
+	private ArrayList<String> scaleOutRequirements;
+	private ArrayList<String> scaleInRequirements;
 	public static final Integer WINDOW_SIZE = 10;
 	public static final Double RECORD_THRESHOLD = 0.7;
 	public static final Double VAR_THRESHOLD = 20.0;
@@ -31,7 +34,7 @@ public class ComponentMonitor {
 	 */
 	public ComponentMonitor(String dbHost, String nimbusHost, Integer nimbusPort, Integer rate) {
 		this.stats = new HashMap<>();
-		this.tprValues = new HashMap<>();
+		this.samplingRate = rate; 
 		if(nimbusHost != null && nimbusPort != null){
 			try {
 				this.manager = StatStorageManager.getManager(dbHost, nimbusHost, nimbusPort, rate);
@@ -117,6 +120,10 @@ public class ComponentMonitor {
 		this.stats.put(component, cws);
 	}
 	
+	public Integer getSamplingRate(){
+		return this.samplingRate;
+	}
+	
 	public boolean isInputDecreasing(String component){
 		boolean result = false;
 		HashMap<Integer, Long> inputRecords = this.getStats(component).getInputRecords();
@@ -170,65 +177,32 @@ public class ComponentMonitor {
 		}
 		return result;
 	}
-
-	public Double computeTPR(String component){
-		if(!this.getRegisteredComponents().contains(component)){
-			return -1.0;
-		}else{
-			ComponentWindowedStats cws = this.getStats(component);
-			Double tpr = (cws.getTotalInput() * ComponentWindowedStats.getLastRecord(cws.getAvgLatencyRecords()) / (WINDOW_SIZE * 1000));//because latencies are given in milliseconds
-			return tpr;
-		}
-	}
 	
-	public void computeAllTPR(){
-		for(String component : this.getRegisteredComponents()){
-			this.tprValues.put(component, this.computeTPR(component));
-		}
-	}
-	
-	public boolean needScaleOut(String component){
-		boolean result = false;
-		if(this.tprValues.containsKey(component)){
-			if(tprValues.get(component) > 1 && !this.isInputDecreasing(component)){
-				result = true;
-			}
-		}else{
-			logger.warning("Looking for an non-existing component " + component);
+	public HashMap<String, Long> getFormerRemainingTuples(){
+		HashMap<String, Long> result = new HashMap<>();
+		for(String component : this.stats.keySet()){
+			result.put(component, this.manager.getFormerRemainingTuples(component));
 		}
 		return result;
 	}
 	
-	public boolean needScaleIn(String component){
-		boolean result = false;
-		if(this.tprValues.containsKey(component)){
-			if(tprValues.get(component) < 1 && this.isInputDecreasing(component)){
-				result = true;
-			}
-		}else{
-			logger.warning("Looking for an non-existing component " + component);
+	public void trackRequirements(TopologyExplorer explorer){
+		EPRMetric metric = new EPRMetric(explorer, this);
+		for(String component : this.stats.keySet()){
+			//TODO
+			//store the info
+			//compute the epr
+			//apply rules defined in the proposition
+			//fulfill scale out and scale in lists
 		}
-		return result;
 	}
 	
 	public ArrayList<String> getScaleOutDecisions(){
-		ArrayList<String> result = new ArrayList<>();
-		for(String component : this.stats.keySet()){
-			if(needScaleOut(component)){
-				result.add(component);
-			}
-		}
-		return result;
+		return this.scaleOutRequirements;
 	}
 	
 	public ArrayList<String> getScaleInDecisions(){
-		ArrayList<String> result = new ArrayList<>();
-		for(String component : this.stats.keySet()){
-			if(needScaleIn(component)){
-				result.add(component);
-			}
-		}
-		return result;
+		return this.scaleInRequirements;
 	}
 	
 	public void reset(){

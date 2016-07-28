@@ -46,6 +46,7 @@ public class StatStorageManager implements Runnable{
 	private final static String TABLE_SPOUT = "all_time_spouts_stats";
 	private final static String TABLE_BOLT = "all_time_bolts_stats";
 	private final static String TABLE_TOPOLOGY = "topologies_status";
+	private final static String TABLE_EPR = "operators_epr";
 	private final static Integer LARGE_WINDOW_SIZE = 50;
 	private Thread thread;
 	private static Logger logger = Logger.getLogger("StatStorageManager");
@@ -274,6 +275,17 @@ public class StatStorageManager implements Runnable{
 			statement.executeUpdate(query);
 		}  catch (SQLException e) {
 			logger.severe("Unable to store topology state because of " + e);
+		}
+	}
+	
+	public void storeEPRInfo(Integer timestamp, String topology, String component, Double epr, Integer remaining, Double procRate){
+		String query = "INSERT INTO " + TABLE_EPR + " VALUES ('" + timestamp + "', '"
+				+ topology + "', '" + component + "', '" + epr + "', '" + remaining + "', '" + procRate + "')";
+		try{
+			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			statement.executeQuery(query);
+		} catch (SQLException e){
+			logger.severe("Unable to store epr info because of " + e);
 		}
 	}
 	
@@ -529,7 +541,8 @@ public class StatStorageManager implements Runnable{
 		Integer previousTimestamp = timestamp - 1;
 		if(componentType.equalsIgnoreCase("spout")){
 			String query = "SELECT " + attribute + " FROM " + TABLE_SPOUT +
-					" WHERE timestamp BETWEEN " + oldestTimestamp + " AND " + previousTimestamp + 
+					" WHERE component = " + component +
+					" AND timestamp BETWEEN " + oldestTimestamp + " AND " + previousTimestamp + 
 					" AND start_task = " + startTask + " AND end_task = " + endTask;
 			try {
 				Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
@@ -543,7 +556,8 @@ public class StatStorageManager implements Runnable{
 		}
 		if(componentType.equalsIgnoreCase("bolt")){
 			String query = "SELECT " + attribute + " FROM " + TABLE_BOLT +
-					" WHERE timestamp BETWEEN " + oldestTimestamp + " AND " + previousTimestamp + 
+					" WHERE component = " + component +
+					" AND timestamp BETWEEN " + oldestTimestamp + " AND " + previousTimestamp + 
 					" AND start_task = " + startTask + " AND end_task = " + endTask;
 			try {
 				Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
@@ -554,6 +568,24 @@ public class StatStorageManager implements Runnable{
 			} catch (SQLException e) {
 				logger.severe("Unable to recover former value for executor associated to component " + component + "[tasks " + startTask + " to " + endTask + "] because " + e);
 			}
+		}
+		return result;
+	}
+	
+	public Long getFormerRemainingTuples(String component){
+		Long result = 0L;
+		Integer oldestTimestamp = this.getCurrentTimestamp() - LARGE_WINDOW_SIZE;
+		String query = "SELECT remaining_tuples" + 
+					" WHERE component = " + component +
+					" AND timestamp BETWEEN " + oldestTimestamp + " AND " + this.getCurrentTimestamp();
+		try {
+			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			ResultSet results = statement.executeQuery(query);
+			if(results.last()){
+				result = results.getLong("remaining_tuples");
+			}
+		} catch (SQLException e) {
+			logger.severe("Unable to retrieve former value of remaining tuples to process because of " + e);
 		}
 		return result;
 	}
