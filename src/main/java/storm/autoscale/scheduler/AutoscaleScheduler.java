@@ -81,6 +81,8 @@ public class AutoscaleScheduler implements IScheduler {
 				this.assignMonitor.update();
 				this.compMonitor.getStatistics(explorer);
 				Integer timestamp = manager.getCurrentTimestamp();
+				this.compMonitor.trackRequirements(explorer);
+				
 				this.needScaleOut = this.compMonitor.getScaleOutDecisions();
 				this.needScaleIn = this.compMonitor.getScaleInDecisions();
 				HashMap<String, ComponentWindowedStats> needScaleOutStats = new HashMap<>();

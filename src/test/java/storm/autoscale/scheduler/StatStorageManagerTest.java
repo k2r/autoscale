@@ -34,11 +34,14 @@ public class StatStorageManagerTest extends TestCase {
 			String component = "testComponent";
 			Integer startTask = 0;
 			Integer endTask = 10;
-			Long outputs = 100L;
-			Long throughput = 50L;
-			Long losses = 5L;
+			Long totalOutputs = 100L;
+			Long totalThroughput = 50L;
+			Long totalLosses = 5L;
+			Long updateOutputs = 10L;
+			Long updateThroughput = 8L;
+			Long updateLosses = 0L;
 			Double avgLatency = 500.0; 
-			manager.storeSpoutExecutorStats(timestamp, host, port, topology, component, startTask, endTask, outputs, throughput, losses, avgLatency);
+			manager.storeSpoutExecutorStats(timestamp, host, port, topology, component, startTask, endTask, totalOutputs, updateOutputs, totalThroughput, updateThroughput, totalLosses, updateLosses, avgLatency);
 			
 			String jdbcDriver = "com.mysql.jdbc.Driver";
 			String dbUrl = "jdbc:mysql://localhost/benchmarks";
@@ -57,9 +60,12 @@ public class StatStorageManagerTest extends TestCase {
 			String actualComponent = null;
 			Integer actualStartTask = null;
 			Integer actualEndTask = null;
-			Long actualOutputs = null;
-			Long actualThroughput = null;
-			Long actualLosses = null;
+			Long actualTotalOutputs = null;
+			Long actualTotalThroughput = null;
+			Long actualTotalLosses = null;
+			Long actualUpdateOutputs = null;
+			Long actualUpdateThroughput = null;
+			Long actualUpdateLosses = null;
 			Double actualAvgLatency = null;
 			if(result.next()){
 				actualTimestamp = result.getInt("timestamp");
@@ -69,9 +75,12 @@ public class StatStorageManagerTest extends TestCase {
 				actualComponent = result.getString("component");
 				actualStartTask = result.getInt("start_task");
 				actualEndTask = result.getInt("end_task");
-				actualOutputs = result.getLong("outputs");
-				actualThroughput = result.getLong("throughput");
-				actualLosses = result.getLong("losses");
+				actualTotalOutputs = result.getLong("total_outputs");
+				actualTotalThroughput = result.getLong("total_throughput");
+				actualTotalLosses = result.getLong("total_losses");
+				actualUpdateOutputs = result.getLong("update_outputs");
+				actualUpdateThroughput = result.getLong("update_throughput");
+				actualUpdateLosses = result.getLong("update_losses");
 				actualAvgLatency = result.getDouble("complete_ms_avg");
 			}
 			assertEquals(timestamp, actualTimestamp, 0);
@@ -81,9 +90,12 @@ public class StatStorageManagerTest extends TestCase {
 			assertEquals(component, actualComponent);
 			assertEquals(startTask, actualStartTask, 0);
 			assertEquals(endTask, actualEndTask, 0);
-			assertEquals(outputs, actualOutputs, 0);
-			assertEquals(throughput, actualThroughput, 0);
-			assertEquals(losses, actualLosses, 0);
+			assertEquals(totalOutputs, actualTotalOutputs, 0);
+			assertEquals(totalThroughput, actualTotalThroughput, 0);
+			assertEquals(totalLosses, actualTotalLosses, 0);
+			assertEquals(updateOutputs, actualUpdateOutputs, 0);
+			assertEquals(updateThroughput, actualUpdateThroughput, 0);
+			assertEquals(updateLosses, actualUpdateLosses, 0);
 			assertEquals(avgLatency, actualAvgLatency, 0);
 			
 			String testCleanQuery = "DELETE FROM all_time_spouts_stats";
@@ -106,11 +118,13 @@ public class StatStorageManagerTest extends TestCase {
 			String component = "testComponent";
 			Integer startTask = 0;
 			Integer endTask = 10;
-			Long executed = 100L;
-			Long outputs = 80L;
+			Long totalExecuted = 100L;
+			Long totalOutputs = 80L;
+			Long updateExecuted = 10L;
+			Long updateOutputs = 8L;
 			Double avgLatency = 500.0;
 			Double selectivity = 0.8;
-			manager.storeBoltExecutorStats(timestamp, host, port, topology, component, startTask, endTask, executed, outputs, avgLatency, selectivity);
+			manager.storeBoltExecutorStats(timestamp, host, port, topology, component, startTask, endTask, totalExecuted, updateExecuted, totalOutputs, updateOutputs, avgLatency, selectivity);
 
 			String jdbcDriver = "com.mysql.jdbc.Driver";
 			String dbUrl = "jdbc:mysql://localhost/benchmarks";
@@ -129,8 +143,10 @@ public class StatStorageManagerTest extends TestCase {
 			String actualComponent = null;
 			Integer actualStartTask = null;
 			Integer actualEndTask = null;
-			Long actualExecuted = null;
-			Long actualOutputs = null;
+			Long actualTotalExecuted = null;
+			Long actualTotalOutputs = null;
+			Long actualUpdateExecuted = null;
+			Long actualUpdateOutputs = null;
 			Double actualAvgLatency = null;
 			Double actualSelectivity = null;
 			if(result.next()){
@@ -141,8 +157,10 @@ public class StatStorageManagerTest extends TestCase {
 				actualComponent = result.getString("component");
 				actualStartTask = result.getInt("start_task");
 				actualEndTask = result.getInt("end_task");
-				actualExecuted = result.getLong("executed");
-				actualOutputs = result.getLong("outputs");
+				actualTotalExecuted = result.getLong("total_executed");
+				actualTotalOutputs = result.getLong("total_outputs");
+				actualUpdateExecuted = result.getLong("update_executed");
+				actualUpdateOutputs = result.getLong("update_outputs");
 				actualAvgLatency = result.getDouble("execute_ms_avg");
 				actualSelectivity = result.getDouble("selectivity");
 			}
@@ -153,8 +171,10 @@ public class StatStorageManagerTest extends TestCase {
 			assertEquals(component, actualComponent);
 			assertEquals(startTask, actualStartTask, 0);
 			assertEquals(endTask, actualEndTask, 0);
-			assertEquals(executed, actualExecuted, 0);
-			assertEquals(outputs, actualOutputs, 0);
+			assertEquals(totalExecuted, actualTotalExecuted, 0);
+			assertEquals(totalOutputs, actualTotalOutputs, 0);
+			assertEquals(updateExecuted, actualUpdateExecuted, 0);
+			assertEquals(updateOutputs, actualUpdateOutputs, 0);
 			assertEquals(avgLatency, actualAvgLatency, 0);
 			assertEquals(selectivity, actualSelectivity, 0);
 
@@ -165,6 +185,60 @@ public class StatStorageManagerTest extends TestCase {
 		}
 	}
 
+	/**
+	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#storeEPRInfo(java.lang.Integer, java.lang.String, java.lang.String, java.lang.String, java.lang.Double, java.lang.Integer, java.lang.Double)}.
+	 */
+	public void testStoreEPRInfo() {
+		try {
+			StatStorageManager manager = StatStorageManager.getManager("localhost");
+			Integer timestamp = 1;
+			String topology = "testTopology";
+			String component = "testComponent";
+			Double eprValue = 0.85;
+			Integer remaining = 50;
+			Double processingRate = 30.0;
+			
+			manager.storeEPRInfo(timestamp, topology, component, eprValue, remaining, processingRate);
+			
+			String jdbcDriver = "com.mysql.jdbc.Driver";
+			String dbUrl = "jdbc:mysql://localhost/benchmarks";
+			String user = "root";
+			Class.forName(jdbcDriver);
+
+			Connection connection = DriverManager.getConnection(dbUrl,user, null);
+			Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			String testEPRStorageQuery = "SELECT * FROM operators_epr";
+			ResultSet result = statement.executeQuery(testEPRStorageQuery);
+			
+			Integer actualTimestamp = null;
+			String actualTopology = null;
+			String actualComponent = null;
+			Double actualEPRValue = null;
+			Integer actualRemaining = null;
+			Double actualProcessingRate = null;
+			if(result.next()){
+				actualTimestamp = result.getInt("timestamp");
+				actualTopology = result.getString("topology");
+				actualComponent = result.getString("component");
+				actualEPRValue = result.getDouble("epr");
+				actualRemaining = result.getInt("remaining_tuples");
+				actualProcessingRate = result.getDouble("processing_rate");
+			}
+			
+			assertEquals(timestamp, actualTimestamp);
+			assertEquals(topology, actualTopology);
+			assertEquals(component, actualComponent);
+			assertEquals(eprValue, actualEPRValue);
+			assertEquals(remaining, actualRemaining);
+			assertEquals(processingRate, actualProcessingRate);
+			
+			String testCleanQuery = "DELETE FROM operators_epr";
+			statement.executeUpdate(testCleanQuery);
+		} catch (ClassNotFoundException | SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	/**
 	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#getWorkers(java.lang.String, java.lang.Integer)}.
 	 */
@@ -181,8 +255,10 @@ public class StatStorageManagerTest extends TestCase {
 			Integer port1 = 0;
 			Integer startTask1 = 0;
 			Integer endTask1 = 10;
-			Long executed1 = 100L;
-			Long outputs1 = 80L;
+			Long totalExecuted1 = 100L;
+			Long totalOutputs1 = 80L;
+			Long updateExecuted1 = 10L;
+			Long updateOutputs1 = 8L;
 			Double avgLatency1 = 50.0;
 			Double selectivity1 = 0.8;
 			
@@ -190,15 +266,17 @@ public class StatStorageManagerTest extends TestCase {
 			Integer port2 = 0;
 			Integer startTask2 = 11;
 			Integer endTask2 = 20;
-			Long executed2 = 100L;
-			Long outputs2 = 70L;
+			Long totalExecuted2 = 100L;
+			Long totalOutputs2 = 70L;
+			Long updateExecuted2 = 10L;
+			Long updateOutputs2 = 7L;
 			Double avgLatency2 = 60.0;
 			Double selectivity2 = 0.7;
 			
-			manager.storeBoltExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, executed1, outputs1, avgLatency1, selectivity1);
-			manager.storeBoltExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, executed2, outputs2, avgLatency2, selectivity2);
+			manager.storeBoltExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted1, totalOutputs1, updateOutputs1, avgLatency1, selectivity1);
+			manager.storeBoltExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs2, avgLatency2, selectivity2);
 			
-			manager.storeBoltExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, executed2, outputs2, avgLatency2, selectivity2);
+			manager.storeBoltExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs2, avgLatency2, selectivity2);
 			
 			HashMap<Integer, ArrayList<String>> actualWorkers = manager.getBoltWorkers(component, 11, 10);
 			
@@ -244,8 +322,10 @@ public class StatStorageManagerTest extends TestCase {
 			Integer port1 = 0;
 			Integer startTask1 = 0;
 			Integer endTask1 = 10;
-			Long executed1 = 100L;
-			Long outputs1 = 80L;
+			Long totalExecuted1 = 100L;
+			Long totalOutputs1 = 80L;
+			Long updateExecuted1 = 10L;
+			Long updateOutputs1 = 8L;
 			Double avgLatency1 = 50.0;
 			Double selectivity1 = 0.8;
 			
@@ -253,25 +333,27 @@ public class StatStorageManagerTest extends TestCase {
 			Integer port2 = 0;
 			Integer startTask2 = 11;
 			Integer endTask2 = 20;
-			Long executed2 = 95L;
-			Long outputs2 = 70L;
+			Long totalExecuted2 = 100L;
+			Long totalOutputs2 = 70L;
+			Long updateExecuted2 = 10L;
+			Long updateOutputs2 = 7L;
 			Double avgLatency2 = 60.0;
 			Double selectivity2 = 0.7;
 			
-			Long executed3 = 120L;
-			Long executed4 = 90L;
+			Long updateExecuted3 = 12L;
+			Long updateExecuted4 = 7L;
 			
-			manager.storeBoltExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, executed1, outputs1, avgLatency1, selectivity1);
-			manager.storeBoltExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, executed2, outputs2, avgLatency2, selectivity2);
+			manager.storeBoltExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted1, totalOutputs1, updateOutputs1, avgLatency1, selectivity1);
+			manager.storeBoltExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs2, avgLatency2, selectivity2);
 			
-			manager.storeBoltExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, executed3, outputs1, avgLatency1, selectivity1);
-			manager.storeBoltExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, executed4, outputs2, avgLatency2, selectivity2);
+			manager.storeBoltExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted3, totalOutputs1, updateOutputs1, avgLatency1, selectivity1);
+			manager.storeBoltExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted4, totalOutputs2, updateOutputs2, avgLatency2, selectivity2);
 			
 			HashMap<Integer, Long> actualExecuted = manager.getExecuted(component, 11, 10);
 			
 			HashMap<Integer, Long> expectedExecuted = new HashMap<>();
-			Long expectedExecutedTimestamp1 = executed1 + executed2;
-			Long expectedExecutedTimestamp2 = executed3 + executed4;
+			Long expectedExecutedTimestamp1 = updateExecuted1 + updateExecuted2;
+			Long expectedExecutedTimestamp2 = updateExecuted3 + updateExecuted4;
 			expectedExecuted.put(timestamp1, expectedExecutedTimestamp1);
 			expectedExecuted.put(timestamp2, expectedExecutedTimestamp2);
 			
@@ -307,8 +389,10 @@ public class StatStorageManagerTest extends TestCase {
 			Integer port1 = 0;
 			Integer startTask1 = 0;
 			Integer endTask1 = 10;
-			Long executed1 = 100L;
-			Long outputs1 = 80L;
+			Long totalExecuted1 = 100L;
+			Long totalOutputs1 = 80L;
+			Long updateExecuted1 = 10L;
+			Long updateOutputs1 = 8L;
 			Double avgLatency1 = 50.0;
 			Double selectivity1 = 0.8;
 			
@@ -316,25 +400,27 @@ public class StatStorageManagerTest extends TestCase {
 			Integer port2 = 0;
 			Integer startTask2 = 11;
 			Integer endTask2 = 20;
-			Long executed2 = 100L;
-			Long outputs2 = 70L;
+			Long totalExecuted2 = 100L;
+			Long totalOutputs2 = 70L;
+			Long updateExecuted2 = 10L;
+			Long updateOutputs2 = 7L;
 			Double avgLatency2 = 60.0;
 			Double selectivity2 = 0.7;
 			
-			Long outputs3 = 100L;
-			Long outputs4 = 75L;
+			Long updateOutputs3 = 100L;
+			Long updateOutputs4 = 75L;
 			
-			manager.storeBoltExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, executed1, outputs1, avgLatency1, selectivity1);
-			manager.storeBoltExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, executed2, outputs2, avgLatency2, selectivity2);
+			manager.storeBoltExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted1, totalOutputs1, updateOutputs1, avgLatency1, selectivity1);
+			manager.storeBoltExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs2, avgLatency2, selectivity2);
 			
-			manager.storeBoltExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, executed1, outputs3, avgLatency1, selectivity1);
-			manager.storeBoltExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, executed2, outputs4, avgLatency2, selectivity2);
+			manager.storeBoltExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted1, totalOutputs1, updateOutputs3, avgLatency1, selectivity1);
+			manager.storeBoltExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs4, avgLatency2, selectivity2);
 			
 			HashMap<Integer, Long> actualOutputs = manager.getBoltOutputs(component, 11, 10);
 			
 			HashMap<Integer, Long> expectedOutputs = new HashMap<>();
-			Long expectedOutputsTimestamp1 = outputs1 + outputs2;
-			Long expectedOutputsTimestamp2 = outputs3 + outputs4;
+			Long expectedOutputsTimestamp1 = updateOutputs1 + updateOutputs2;
+			Long expectedOutputsTimestamp2 = updateOutputs3 + updateOutputs4;
 			expectedOutputs.put(timestamp1, expectedOutputsTimestamp1);
 			expectedOutputs.put(timestamp2, expectedOutputsTimestamp2);
 			
@@ -354,7 +440,7 @@ public class StatStorageManagerTest extends TestCase {
 			e.printStackTrace();
 		}
 	}
-
+	
 	/**
 	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#getAvgLatency(java.lang.String, java.lang.Integer)}.
 	 */
@@ -370,8 +456,10 @@ public class StatStorageManagerTest extends TestCase {
 			Integer port1 = 0;
 			Integer startTask1 = 0;
 			Integer endTask1 = 10;
-			Long executed1 = 100L;
-			Long outputs1 = 80L;
+			Long totalExecuted1 = 100L;
+			Long totalOutputs1 = 80L;
+			Long updateExecuted1 = 10L;
+			Long updateOutputs1 = 8L;
 			Double avgLatency1 = 50.0;
 			Double selectivity1 = 0.8;
 			
@@ -379,19 +467,21 @@ public class StatStorageManagerTest extends TestCase {
 			Integer port2 = 0;
 			Integer startTask2 = 11;
 			Integer endTask2 = 20;
-			Long executed2 = 100L;
-			Long outputs2 = 70L;
+			Long totalExecuted2 = 100L;
+			Long totalOutputs2 = 70L;
+			Long updateExecuted2 = 10L;
+			Long updateOutputs2 = 7L;
 			Double avgLatency2 = 60.0;
 			Double selectivity2 = 0.7;
 			
 			Double avgLatency3 = 65.0;
 			Double avgLatency4 = 72.0;
 			
-			manager.storeBoltExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, executed1, outputs1, avgLatency1, selectivity1);
-			manager.storeBoltExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, executed2, outputs2, avgLatency2, selectivity2);
+			manager.storeBoltExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted1, totalOutputs1, updateOutputs1, avgLatency1, selectivity1);
+			manager.storeBoltExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs2, avgLatency2, selectivity2);
 			
-			manager.storeBoltExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, executed1, outputs1, avgLatency3, selectivity1);
-			manager.storeBoltExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, executed2, outputs2, avgLatency4, selectivity2);
+			manager.storeBoltExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted1, totalOutputs1, updateOutputs1, avgLatency3, selectivity1);
+			manager.storeBoltExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs2, avgLatency4, selectivity2);
 			
 			HashMap<Integer, Double> actualAvgLatency = manager.getAvgLatency(component, 11, 10);
 			
@@ -433,8 +523,10 @@ public class StatStorageManagerTest extends TestCase {
 			Integer port1 = 0;
 			Integer startTask1 = 0;
 			Integer endTask1 = 10;
-			Long executed1 = 100L;
-			Long outputs1 = 80L;
+			Long totalExecuted1 = 100L;
+			Long totalOutputs1 = 80L;
+			Long updateExecuted1 = 10L;
+			Long updateOutputs1 = 8L;
 			Double avgLatency1 = 50.0;
 			Double selectivity1 = 0.8;
 			
@@ -442,19 +534,21 @@ public class StatStorageManagerTest extends TestCase {
 			Integer port2 = 0;
 			Integer startTask2 = 11;
 			Integer endTask2 = 20;
-			Long executed2 = 100L;
-			Long outputs2 = 70L;
+			Long totalExecuted2 = 100L;
+			Long totalOutputs2 = 70L;
+			Long updateExecuted2 = 10L;
+			Long updateOutputs2 = 7L;
 			Double avgLatency2 = 60.0;
 			Double selectivity2 = 0.7;
 			
 			Double selectivity3 = 0.76;
 			Double selectivity4 = 0.83;
 			
-			manager.storeBoltExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, executed1, outputs1, avgLatency1, selectivity1);
-			manager.storeBoltExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, executed2, outputs2, avgLatency2, selectivity2);
+			manager.storeBoltExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted1, totalOutputs1, updateOutputs1, avgLatency1, selectivity1);
+			manager.storeBoltExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs2, avgLatency2, selectivity2);
 			
-			manager.storeBoltExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, executed1, outputs1, avgLatency1, selectivity3);
-			manager.storeBoltExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, executed2, outputs2, avgLatency2, selectivity4);
+			manager.storeBoltExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted1, totalOutputs1, updateOutputs1, avgLatency1, selectivity3);
+			manager.storeBoltExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs2, avgLatency2, selectivity4);
 			
 			HashMap<Integer, Double> actualSelectivity = manager.getSelectivity(component, 11, 10);
 			
@@ -496,9 +590,12 @@ public class StatStorageManagerTest extends TestCase {
 			Integer port1 = 0;
 			Integer startTask1 = 0;
 			Integer endTask1 = 10;
-			Long outputs1 = 100L;
-			Long throughput1 = 75L;
-			Long losses1 = 10L;
+			Long totalOutputs1 = 100L;
+			Long totalThroughput1 = 50L;
+			Long totalLosses1 = 5L;
+			Long updateOutputs1 = 10L;
+			Long updateThroughput1 = 8L;
+			Long updateLosses1 = 0L;
 			Double avgLatency1 = 500.0;
 			
 			
@@ -506,25 +603,28 @@ public class StatStorageManagerTest extends TestCase {
 			Integer port2 = 0;
 			Integer startTask2 = 11;
 			Integer endTask2 = 20;
-			Long outputs2 = 120L;
-			Long throughput2 = 90L;
-			Long losses2 = 15L;
+			Long totalOutputs2 = 100L;
+			Long totalThroughput2 = 50L;
+			Long totalLosses2 = 5L;
+			Long updateOutputs2 = 10L;
+			Long updateThroughput2 = 8L;
+			Long updateLosses2 = 2L;
 			Double avgLatency2 = 700.0;
 			
-			Long throughput3 = 87L;
-			Long throughput4 = 105L;
+			Long updateThroughput3 = 12L;
+			Long updateThroughput4 = 14L;
 			
-			manager.storeSpoutExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, outputs1, throughput1, losses1, avgLatency1);
-			manager.storeSpoutExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, outputs2, throughput2, losses2, avgLatency2);
+			manager.storeSpoutExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, totalOutputs1, updateOutputs1, totalThroughput1, updateThroughput1, totalLosses1, updateLosses1, avgLatency1);
+			manager.storeSpoutExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, totalOutputs2, updateOutputs2, totalThroughput2, updateThroughput2, totalLosses2, updateLosses2, avgLatency2);
 			
-			manager.storeSpoutExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, outputs1, throughput3, losses1, avgLatency1);
-			manager.storeSpoutExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, outputs2, throughput4, losses2, avgLatency2);
+			manager.storeSpoutExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, totalOutputs1, updateOutputs1, totalThroughput1, updateThroughput3, totalLosses1, updateLosses1, avgLatency1);
+			manager.storeSpoutExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, totalOutputs2, updateOutputs2, totalThroughput2, updateThroughput4, totalLosses2, updateLosses2, avgLatency2);
 			
 			HashMap<Integer, Long> actualThroughput = manager.getTopologyThroughput(topology, 11, 10);
 			
 			HashMap<Integer, Long> expectedThroughput = new HashMap<>();
-			Long expectedThroughputTimestamp1 = throughput1 + throughput2;
-			Long expectedThroughputTimestamp2 = throughput3 + throughput4;
+			Long expectedThroughputTimestamp1 = updateThroughput1 + updateThroughput2;
+			Long expectedThroughputTimestamp2 = updateThroughput3 + updateThroughput4;
 			expectedThroughput.put(timestamp1, expectedThroughputTimestamp1);
 			expectedThroughput.put(timestamp2, expectedThroughputTimestamp2);
 			
@@ -560,9 +660,12 @@ public class StatStorageManagerTest extends TestCase {
 			Integer port1 = 0;
 			Integer startTask1 = 0;
 			Integer endTask1 = 10;
-			Long outputs1 = 100L;
-			Long throughput1 = 75L;
-			Long losses1 = 10L;
+			Long totalOutputs1 = 100L;
+			Long totalThroughput1 = 50L;
+			Long totalLosses1 = 5L;
+			Long updateOutputs1 = 10L;
+			Long updateThroughput1 = 8L;
+			Long updateLosses1 = 0L;
 			Double avgLatency1 = 500.0;
 			
 			
@@ -570,25 +673,28 @@ public class StatStorageManagerTest extends TestCase {
 			Integer port2 = 0;
 			Integer startTask2 = 11;
 			Integer endTask2 = 20;
-			Long outputs2 = 120L;
-			Long throughput2 = 90L;
-			Long losses2 = 15L;
+			Long totalOutputs2 = 100L;
+			Long totalThroughput2 = 50L;
+			Long totalLosses2 = 5L;
+			Long updateOutputs2 = 10L;
+			Long updateThroughput2 = 8L;
+			Long updateLosses2 = 2L;
 			Double avgLatency2 = 700.0;
 			
-			Long losses3 = 14L;
-			Long losses4 = 16L;
+			Long updateLosses3 = 4L;
+			Long updateLosses4 = 5L;
 			
-			manager.storeSpoutExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, outputs1, throughput1, losses1, avgLatency1);
-			manager.storeSpoutExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, outputs2, throughput2, losses2, avgLatency2);
+			manager.storeSpoutExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, totalOutputs1, updateOutputs1, totalThroughput1, updateThroughput1, totalLosses1, updateLosses1, avgLatency1);
+			manager.storeSpoutExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, totalOutputs2, updateOutputs2, totalThroughput2, updateThroughput2, totalLosses2, updateLosses2, avgLatency2);
 			
-			manager.storeSpoutExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, outputs1, throughput1, losses3, avgLatency1);
-			manager.storeSpoutExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, outputs2, throughput2, losses4, avgLatency2);
+			manager.storeSpoutExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, totalOutputs1, updateOutputs1, totalThroughput1, updateThroughput1, totalLosses1, updateLosses3, avgLatency1);
+			manager.storeSpoutExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, totalOutputs2, updateOutputs2, totalThroughput2, updateThroughput2, totalLosses2, updateLosses4, avgLatency2);
 			
 			HashMap<Integer, Long> actualLosses = manager.getTopologyLosses(topology, 11, 10);
 			
 			HashMap<Integer, Long> expectedLosses = new HashMap<>();
-			Long expectedLossesTimestamp1 = losses1 + losses2;
-			Long expectedLossesTimestamp2 = losses3 + losses4;
+			Long expectedLossesTimestamp1 = updateLosses1 + updateLosses2;
+			Long expectedLossesTimestamp2 = updateLosses3 + updateLosses4;
 			expectedLosses.put(timestamp1, expectedLossesTimestamp1);
 			expectedLosses.put(timestamp2, expectedLossesTimestamp2);
 			
@@ -624,9 +730,12 @@ public class StatStorageManagerTest extends TestCase {
 			Integer port1 = 0;
 			Integer startTask1 = 0;
 			Integer endTask1 = 10;
-			Long outputs1 = 100L;
-			Long throughput1 = 75L;
-			Long losses1 = 10L;
+			Long totalOutputs1 = 100L;
+			Long totalThroughput1 = 50L;
+			Long totalLosses1 = 5L;
+			Long updateOutputs1 = 10L;
+			Long updateThroughput1 = 8L;
+			Long updateLosses1 = 0L;
 			Double avgLatency1 = 500.0;
 			
 			
@@ -634,19 +743,22 @@ public class StatStorageManagerTest extends TestCase {
 			Integer port2 = 0;
 			Integer startTask2 = 11;
 			Integer endTask2 = 20;
-			Long outputs2 = 120L;
-			Long throughput2 = 90L;
-			Long losses2 = 15L;
+			Long totalOutputs2 = 100L;
+			Long totalThroughput2 = 50L;
+			Long totalLosses2 = 5L;
+			Long updateOutputs2 = 10L;
+			Long updateThroughput2 = 8L;
+			Long updateLosses2 = 2L;
 			Double avgLatency2 = 700.0;
 			
 			Double avgLatency3 = 460.0;
 			Double avgLatency4 = 332.0;
 			
-			manager.storeSpoutExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, outputs1, throughput1, losses1, avgLatency1);
-			manager.storeSpoutExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, outputs2, throughput2, losses2, avgLatency2);
+			manager.storeSpoutExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, totalOutputs1, updateOutputs1, totalThroughput1, updateThroughput1, totalLosses1, updateLosses1, avgLatency1);
+			manager.storeSpoutExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, totalOutputs2, updateOutputs2, totalThroughput2, updateThroughput2, totalLosses2, updateLosses2, avgLatency2);
 			
-			manager.storeSpoutExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, outputs1, throughput1, losses1, avgLatency3);
-			manager.storeSpoutExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, outputs2, throughput2, losses2, avgLatency4);
+			manager.storeSpoutExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, totalOutputs1, updateOutputs1, totalThroughput1, updateThroughput1, totalLosses1, updateLosses1, avgLatency3);
+			manager.storeSpoutExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, totalOutputs2, updateOutputs2, totalThroughput2, updateThroughput2, totalLosses2, updateLosses2, avgLatency4);
 			
 			HashMap<Integer, Double> actualAvgLatency = manager.getTopologyAvgLatency(topology, 11, 10);
 			
@@ -676,63 +788,114 @@ public class StatStorageManagerTest extends TestCase {
 	public void testGetFormerValue(){
 		try {
 			StatStorageManager manager = StatStorageManager.getManager("localhost");
-		
-		Integer timestamp1 = 1;
-		Integer timestamp2 = 10;
-		Integer timestamp3 = 51;
-		Integer timestamp4 = 52; 
-		String topology = "testTopology";
-		String component = "testComponent";
-		
-		String host1 = "testHost1";
-		Integer port = 0;
-		Integer startTask = 11;
-		Integer endTask = 20;
-		Long outputs1 = 100L;
-		Long throughput1 = 75L;
-		Long losses1 = 10L;
-		Double avgLatency1 = 500.0;
-		
-		Long outputs2 = 120L;
-		Long throughput2 = 90L;
-		Long losses2 = 15L;
-		Double avgLatency2 = 700.0;
-		
-		String host2 = "testHost2";
-		Long outputs3 = 150L;
-		Long throughput3 = 90L;
-		Long losses3 = 15L;
-		Double avgLatency3 = 700.0;
-		
-		manager.storeSpoutExecutorStats(timestamp1, host1, port, topology, component, startTask, endTask, outputs1, throughput1, losses1, avgLatency1);
-		manager.storeSpoutExecutorStats(timestamp2, host1, port, topology, component, startTask, endTask, outputs2, throughput2, losses2, avgLatency2);
-		manager.storeSpoutExecutorStats(timestamp3, host2, port, topology, component, startTask, endTask, outputs3, throughput3, losses3, avgLatency3);
-		
-		Long actual1 = manager.getFormerValue(component, startTask, endTask, timestamp1, "spout", "outputs");
-		Long actual2 = manager.getFormerValue(component, startTask, endTask, timestamp2, "spout", "outputs");
-		Long actual3 = manager.getFormerValue(component, startTask, endTask, timestamp3, "spout", "outputs");
-		Long actual4 = manager.getFormerValue(component, startTask, endTask, timestamp4, "spout", "outputs");
-		Long actual5 = manager.getFormerValue(component, startTask, endTask, timestamp4, "spout", "losses");
-		
-		assertEquals(0L, actual1, 0);
-		assertEquals(100L, actual2, 0);
-		assertEquals(120L, actual3, 0);
-		assertEquals(150L, actual4, 0);
-		assertEquals(15L, actual5, 0);
-		
-		String jdbcDriver = "com.mysql.jdbc.Driver";
-		String dbUrl = "jdbc:mysql://localhost/benchmarks";
-		String user = "root";
-		Class.forName(jdbcDriver);
-		
-		Connection connection = DriverManager.getConnection(dbUrl,user, null);
-		Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-		
-		String testCleanQuery = "DELETE FROM all_time_spouts_stats";
-		statement.executeUpdate(testCleanQuery);
+
+			Integer timestamp1 = 1;
+			Integer timestamp2 = 10;
+			Integer timestamp3 = 51;
+			Integer timestamp4 = 52; 
+			String topology = "testTopology";
+			String component = "testComponent";
+
+			String host1 = "testHost1";
+			Integer port = 0;
+			Integer startTask = 0;
+			Integer endTask = 10;
+			Long totalOutputs1 = 100L;
+			Long totalThroughput1 = 50L;
+			Long totalLosses1 = 5L;
+			Long updateOutputs1 = 10L;
+			Long updateThroughput1 = 8L;
+			Long updateLosses1 = 0L;
+			Double avgLatency1 = 500.0;
+
+
+			String host2 = "testHost2";
+			Long totalOutputs2 = 100L;
+			Long totalThroughput2 = 50L;
+			Long totalLosses2 = 5L;
+			Long updateOutputs2 = 10L;
+			Long updateThroughput2 = 8L;
+			Long updateLosses2 = 2L;
+			Double avgLatency2 = 700.0;
+
+			Long totalOutputs3 = 150L;
+			Long totalThroughput3 = 90L;
+			Long totalLosses3 = 15L;
+			Long updateOutputs3 = 15L;
+			Long updateThroughput3 = 9L;
+			Long updateLosses3 = 1L;
+			Double avgLatency3 = 700.0;
+
+			manager.storeSpoutExecutorStats(timestamp1, host1, port, topology, component, startTask, endTask, totalOutputs1, updateOutputs1, totalThroughput1, updateThroughput1, totalLosses1, updateLosses1, avgLatency1);
+			manager.storeSpoutExecutorStats(timestamp2, host1, port, topology, component, startTask, endTask, totalOutputs2, updateOutputs2, totalThroughput2, updateThroughput2, totalLosses2, updateLosses2, avgLatency2);
+			manager.storeSpoutExecutorStats(timestamp3, host2, port, topology, component, startTask, endTask, totalOutputs3, updateOutputs3, totalThroughput3, updateThroughput3, totalLosses3, updateLosses3, avgLatency3);
+
+			Long actual1 = manager.getFormerValue(component, startTask, endTask, timestamp1, "spout", "total_outputs");
+			Long actual2 = manager.getFormerValue(component, startTask, endTask, timestamp2, "spout", "total_outputs");
+			Long actual3 = manager.getFormerValue(component, startTask, endTask, timestamp3, "spout", "update_outputs");
+			Long actual4 = manager.getFormerValue(component, startTask, endTask, timestamp4, "spout", "update_outputs");
+			Long actual5 = manager.getFormerValue(component, startTask, endTask, timestamp4, "spout", "update_losses");
+
+			assertEquals(0L, actual1, 0);
+			assertEquals(100L, actual2, 0);
+			assertEquals(10L, actual3, 0);
+			assertEquals(15L, actual4, 0);
+			assertEquals(1L, actual5, 0);
+
+			String jdbcDriver = "com.mysql.jdbc.Driver";
+			String dbUrl = "jdbc:mysql://localhost/benchmarks";
+			String user = "root";
+			Class.forName(jdbcDriver);
+
+			Connection connection = DriverManager.getConnection(dbUrl,user, null);
+			Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+
+			String testCleanQuery = "DELETE FROM all_time_spouts_stats";
+			statement.executeUpdate(testCleanQuery);
 		} catch (ClassNotFoundException | SQLException e) {
 			e.printStackTrace();
 		}
 	}
 	
+	public void testGetFormerRemainingTuples(){
+		try {
+			StatStorageManager manager = StatStorageManager.getManager("localhost");
+			Integer timestamp1 = 10;
+			Integer timestamp2 = 12;
+			Integer timestamp3 = 20;
+
+			String topology = "testTopology";
+			String component = "testComponent";
+			Double eprValue = 0.85;
+			Integer remaining1 = 50;
+			Integer remaining2 = 60;
+			Integer remaining3 = 75;
+			Double processingRate = 30.0;
+
+			manager.storeEPRInfo(timestamp1, topology, component, eprValue, remaining1, processingRate);
+			manager.storeEPRInfo(timestamp2, topology, component, eprValue, remaining2, processingRate);
+			manager.storeEPRInfo(timestamp3, topology, component, eprValue, remaining3, processingRate);
+
+			Long actual1 = manager.getFormerRemainingTuples(timestamp1, component);
+			Long actual2 = manager.getFormerRemainingTuples(timestamp2, component);
+			Long actual3 = manager.getFormerRemainingTuples(timestamp3, component);
+
+			assertEquals(0, actual1, 0);
+			assertEquals(50, actual2, 0);
+			assertEquals(60, actual3, 0);
+			
+			String jdbcDriver = "com.mysql.jdbc.Driver";
+			String dbUrl = "jdbc:mysql://localhost/benchmarks";
+			String user = "root";
+			Class.forName(jdbcDriver);
+
+			Connection connection = DriverManager.getConnection(dbUrl,user, null);
+			Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+
+			String testCleanQuery = "DELETE FROM operators_epr";
+			statement.executeUpdate(testCleanQuery);
+		}catch (ClassNotFoundException | SQLException e) {
+			e.printStackTrace();		
+		}	
+	}
 }

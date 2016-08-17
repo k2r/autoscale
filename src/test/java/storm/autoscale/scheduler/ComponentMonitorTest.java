@@ -198,16 +198,10 @@ public class ComponentMonitorTest extends TestCase {
 		cm.updateStats(cws3.getId(), cws3);
 		cm.updateStats(cws4.getId(), cws4);
 		
-		assertEquals(true, cm.needScaleOut("component1"));
+		assertEquals(false, cm.needScaleOut("component1"));
 		assertEquals(false, cm.needScaleOut("component2"));
 		assertEquals(false, cm.needScaleOut("component3"));
 		assertEquals(false, cm.needScaleOut("component4"));
-	}
-
-	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.stats.ComponentMonitor#couldCongest(java.lang.String)}.
-	 */
-	public void testCouldCongest() {
 	}
 
 	/**
@@ -274,14 +268,6 @@ public class ComponentMonitorTest extends TestCase {
 		cm.updateStats(cws4.getId(), cws4);
 		
 		ArrayList<String> expected = new ArrayList<>();
-		expected.add("component1");
 		assertEquals(expected, cm.getScaleOutDecisions());
 	}
-
-	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.stats.ComponentMonitor#getScaleInDecisions()}.
-	 */
-	public void testGetPotentialCongested() {
-	}
-
 }

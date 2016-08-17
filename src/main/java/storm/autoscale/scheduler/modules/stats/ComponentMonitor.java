@@ -3,6 +3,7 @@
  */
 package storm.autoscale.scheduler.modules.stats;
 
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,6 +28,7 @@ public class ComponentMonitor {
 	public static final Integer WINDOW_SIZE = 10;
 	public static final Double RECORD_THRESHOLD = 0.7;
 	public static final Double VAR_THRESHOLD = 20.0;
+	public static final Double EPR_SENSIVITY = 0.1;
 	private static Logger logger = Logger.getLogger("ComponentMonitor");
 	
 	/**
@@ -34,6 +36,8 @@ public class ComponentMonitor {
 	 */
 	public ComponentMonitor(String dbHost, String nimbusHost, Integer nimbusPort, Integer rate) {
 		this.stats = new HashMap<>();
+		this.scaleInRequirements = new ArrayList<>();
+		this.scaleOutRequirements = new ArrayList<>();
 		this.samplingRate = rate; 
 		if(nimbusHost != null && nimbusPort != null){
 			try {
@@ -181,19 +185,33 @@ public class ComponentMonitor {
 	public HashMap<String, Long> getFormerRemainingTuples(){
 		HashMap<String, Long> result = new HashMap<>();
 		for(String component : this.stats.keySet()){
-			result.put(component, this.manager.getFormerRemainingTuples(component));
+			result.put(component, this.manager.getFormerRemainingTuples(this.timestamp, component));
 		}
 		return result;
 	}
 	
 	public void trackRequirements(TopologyExplorer explorer){
+		//Initialize an EPR metric for the current topology
 		EPRMetric metric = new EPRMetric(explorer, this);
 		for(String component : this.stats.keySet()){
-			//TODO
-			//store the info
-			//compute the epr
-			//apply rules defined in the proposition
-			//fulfill scale out and scale in lists
+			//Compute the EPR and expose monitoring info concerning the EPR for storage
+			Double eprValue = metric.compute(component);
+			HashMap<String, BigDecimal> eprInfo = metric.getEPRInfo(component);
+			this.manager.storeEPRInfo(this.timestamp, metric.getTopologyExplorer().getTopologyName(), component, eprValue, eprInfo.get(EPRMetric.REMAINING).intValue(), eprInfo.get(EPRMetric.PROCRATE).doubleValue());
+			
+			//Apply rules to take local decisions
+			Double threshold = 1 - EPR_SENSIVITY;
+			if(eprValue < threshold && isInputDecreasing(component)){
+				this.scaleInRequirements.add(component);
+			}else{
+				if(eprValue > threshold && eprValue < 1 && isInputIncreasing(component)){
+					this.scaleOutRequirements.add(component);
+				}else{
+					if(eprValue > 1){
+						this.scaleOutRequirements.add(component);
+					}
+				}
+			}
 		}
 	}
 	
@@ -203,6 +221,14 @@ public class ComponentMonitor {
 	
 	public ArrayList<String> getScaleInDecisions(){
 		return this.scaleInRequirements;
+	}
+	
+	public boolean needScaleOut(String component){
+		return this.scaleOutRequirements.contains(component);
+	}
+	
+	public boolean needScaleIn(String component){
+		return this.scaleInRequirements.contains(component);
 	}
 	
 	public void reset(){
