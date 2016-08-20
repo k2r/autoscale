@@ -136,4 +136,20 @@ public class TopologyExplorer {
 		}
 		return result;
 	}
+	
+	public ArrayList<String> getAntecedents(String component){
+		ArrayList<String> result = new ArrayList<>();
+		ArrayList<String> parents = this.getParents(component);
+		for(String parent : parents){
+			result.add(parent);
+			if(!this.getSpouts().contains(parent)){
+				result.addAll(this.getAntecedents(parent));
+			}
+		}
+		return result;
+	}
+	
+	public boolean isSink(String component){
+		return this.getChildren(component).isEmpty();
+	}
 }

@@ -25,6 +25,7 @@ public class ComponentMonitor {
 	private Integer samplingRate;
 	private ArrayList<String> scaleOutRequirements;
 	private ArrayList<String> scaleInRequirements;
+	private HashMap<String, Double> eprValues;
 	public static final Integer WINDOW_SIZE = 10;
 	public static final Double RECORD_THRESHOLD = 0.7;
 	public static final Double VAR_THRESHOLD = 20.0;
@@ -38,6 +39,7 @@ public class ComponentMonitor {
 		this.stats = new HashMap<>();
 		this.scaleInRequirements = new ArrayList<>();
 		this.scaleOutRequirements = new ArrayList<>();
+		this.eprValues = new HashMap<>();
 		this.samplingRate = rate; 
 		if(nimbusHost != null && nimbusPort != null){
 			try {
@@ -196,6 +198,7 @@ public class ComponentMonitor {
 		for(String component : this.stats.keySet()){
 			//Compute the EPR and expose monitoring info concerning the EPR for storage
 			Double eprValue = metric.compute(component);
+			this.eprValues.put(component, eprValue);
 			HashMap<String, BigDecimal> eprInfo = metric.getEPRInfo(component);
 			this.manager.storeEPRInfo(this.timestamp, metric.getTopologyExplorer().getTopologyName(), component, eprValue, eprInfo.get(EPRMetric.REMAINING).intValue(), eprInfo.get(EPRMetric.PROCRATE).doubleValue());
 			
@@ -229,6 +232,10 @@ public class ComponentMonitor {
 	
 	public boolean needScaleIn(String component){
 		return this.scaleInRequirements.contains(component);
+	}
+	
+	public Double getEPRValue(String component){
+		return this.eprValues.get(component);
 	}
 	
 	public void reset(){

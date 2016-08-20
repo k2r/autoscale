@@ -5,7 +5,6 @@ package storm.autoscale.scheduler;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -85,8 +84,6 @@ public class AutoscaleScheduler implements IScheduler {
 				
 				this.needScaleOut = this.compMonitor.getScaleOutDecisions();
 				this.needScaleIn = this.compMonitor.getScaleInDecisions();
-				HashMap<String, ComponentWindowedStats> needScaleOutStats = new HashMap<>();
-				HashMap<String, ComponentWindowedStats> needScaleInStats = new HashMap<>();
 				int oldestTimestamp = Math.max(0, timestamp - ComponentMonitor.WINDOW_SIZE);
 				String monitoring = "Current monitoring info (from timestamp " + oldestTimestamp + " to timestamp " + timestamp + ")\n";
 				logger.fine(monitoring);
@@ -137,7 +134,7 @@ public class AutoscaleScheduler implements IScheduler {
 					}
 					scaleOutInfo += "have required a scale out!";
 					logger.fine(scaleOutInfo);
-					IAction action = new ScaleOutAction(needScaleOutStats, topology, assignMonitor, new DelegatedAllocationStrategy(assignMonitor), this.nimbusHost, this.nimbusPort);
+					IAction action = new ScaleOutAction(this.compMonitor, this.explorer, this.assignMonitor, new DelegatedAllocationStrategy(assignMonitor), this.nimbusHost, this.nimbusPort);
 				}
 
 				if(this.needScaleIn.isEmpty()){
@@ -149,7 +146,7 @@ public class AutoscaleScheduler implements IScheduler {
 					}
 					scaleInInfo += "have required a scale in!";
 					logger.fine(scaleInInfo);
-					IAction action = new ScaleInAction(needScaleInStats, topology, assignMonitor, new DelegatedAllocationStrategy(assignMonitor), this.nimbusHost, this.nimbusPort);
+					IAction action = new ScaleInAction(this.compMonitor, this.explorer, this.assignMonitor, new DelegatedAllocationStrategy(assignMonitor), this.nimbusHost, this.nimbusPort);
 				}
 			}
 			/*Then we let the default scheduler balance the load*/
