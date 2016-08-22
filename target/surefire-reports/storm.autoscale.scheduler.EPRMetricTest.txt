@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
-Test set: storm.autoscale.scheduler.StatStorageManagerTest
+Test set: storm.autoscale.scheduler.EPRMetricTest
 -------------------------------------------------------------------------------
-Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.205 sec
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.509 sec

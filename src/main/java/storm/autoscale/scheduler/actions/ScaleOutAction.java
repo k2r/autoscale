@@ -5,6 +5,7 @@ package storm.autoscale.scheduler.actions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import org.apache.thrift7.TException;
@@ -52,10 +53,20 @@ public class ScaleOutAction implements IAction {
 
 	@Override
 	public void validate() {
-		ArrayList<String> scaleInRequirements = this.compMonitor.getScaleInDecisions();
-		for(String component : scaleInRequirements){
+		//TODO Exclude directly the excecptional case epr = -1
+		Set<String> allComponents = this.compMonitor.getRegisteredComponents();
+		for(String component : allComponents){
+			boolean validate = false;
+			if(this.compMonitor.needScaleOut(component)){
+				validate = true;
+			}
+			ArrayList<String> parents = explorer.getParents(component);
+			for(String parent : parents){
+				if(this.compMonitor.needScaleOut(parent)){
+					validate = true;
+				}
+			}
 			ArrayList<String> antecedents = explorer.getAntecedents(component);
-			boolean validate = true;
 			for(String antecedent : antecedents){
 				if(!this.explorer.getSpouts().contains(antecedent)){
 					if(this.compMonitor.needScaleIn(antecedent)){
@@ -83,6 +94,7 @@ public class ScaleOutAction implements IAction {
 				tTransport.open();
 			}
 			for(String component : this.validateActions){
+				//TODO Use the epr value instead of currently processed tuples
 				ComponentWindowedStats stats = this.compMonitor.getStats(component);
 				Long totalInputs = stats.getTotalInput();
 				Long totalExecuted = stats.getTotalExecuted();

@@ -55,6 +55,7 @@ public class ScaleInAction implements IAction {
 
 	@Override
 	public void validate() {
+		//TODO Exclude the exceptional case epr = -1
 		ArrayList<String> scaleInRequirements = this.compMonitor.getScaleInDecisions();
 		for(String component : scaleInRequirements){
 			ArrayList<String> antecedents = explorer.getAntecedents(component);
@@ -90,6 +91,7 @@ public class ScaleInAction implements IAction {
 				tTransport.open();
 			}
 			for(String component : this.validateActions){
+				//TODO Use the epr value instead of currently processed tuples
 				ComponentWindowedStats stats = this.compMonitor.getStats(component);
 				Long totalInputs = stats.getTotalInput();
 				Long totalExecuted = stats.getTotalExecuted();

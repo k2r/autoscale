@@ -1,5 +1,6 @@
 storm\autoscale\scheduler\allocation\NetworkAwareStrategy.class
 storm\autoscale\scheduler\modules\stats\ComponentWindowedStats.class
+storm\autoscale\scheduler\metrics\EPRMetric.class
 storm\autoscale\scheduler\metrics\WelfMetric.class
 storm\autoscale\scheduler\UtilFunctions$DecreasingIntOrder.class
 storm\autoscale\scheduler\UtilFunctions$DecreasingDoubleOrder.class
@@ -13,6 +14,7 @@ storm\autoscale\scheduler\actions\IAction.class
 storm\autoscale\scheduler\modules\stats\StatStorageManager.class
 storm\autoscale\scheduler\modules\TopologyExplorer.class
 storm\autoscale\scheduler\modules\AssignmentMonitor.class
+storm\autoscale\scheduler\actions\ScaleInAction.class
 storm\autoscale\scheduler\MonitoredEvenScheduler.class
 storm\autoscale\scheduler\AutoscaleScheduler.class
 storm\autoscale\scheduler\metrics\IMetric.class

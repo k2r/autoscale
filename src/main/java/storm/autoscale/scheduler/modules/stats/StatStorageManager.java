@@ -110,7 +110,8 @@ public class StatStorageManager implements Runnable{
 	}
 	
 	public Integer getRate(){
-		return this.rate;
+		//turn it into milliseconds
+		return this.rate * 1000;
 	}
 	
 	public Boolean isActive(String topId){
@@ -175,7 +176,7 @@ public class StatStorageManager implements Runnable{
 
 								if(specStats.is_set_spout()){
 									
-									Long updateOutputs = totalOutputs - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "spout", "totalOutputs");
+									Long updateOutputs = totalOutputs - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "spout", "total_outputs");
 									
 									SpoutStats spoutStats = specStats.get_spout();
 									Map<String, Long> acked = spoutStats.get_acked().get(ALLTIME);
@@ -184,7 +185,7 @@ public class StatStorageManager implements Runnable{
 										totalThroughput += acked.get(stream);
 									}
 									
-									Long updateThroughput = totalThroughput - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "spout", "totalThroughput");
+									Long updateThroughput = totalThroughput - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "spout", "total_throughput");
 									
 									Map<String, Long> failed = spoutStats.get_failed().get(ALLTIME);
 									Long totalLosses = 0L;
@@ -192,7 +193,7 @@ public class StatStorageManager implements Runnable{
 										totalLosses += failed.get(stream);
 									}
 									
-									Long updateLosses = totalLosses - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "spout", "totalLosses");
+									Long updateLosses = totalLosses - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "spout", "total_losses");
 
 									Map<String, Double> completeAvgTime = spoutStats.get_complete_ms_avg().get(ALLTIME);
 									Double sum = 0.0;
@@ -210,7 +211,7 @@ public class StatStorageManager implements Runnable{
 
 								if(specStats.is_set_bolt()){
 									
-									Long updateOutputs = totalOutputs - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "bolt", "totalOutputs");
+									Long updateOutputs = totalOutputs - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "bolt", "total_outputs");
 									
 									BoltStats boltStats = specStats.get_bolt();
 									Map<GlobalStreamId, Long> executed = boltStats.get_executed().get(ALLTIME);
@@ -219,7 +220,7 @@ public class StatStorageManager implements Runnable{
 										totalExecuted += executed.get(gs);
 									}
 									
-									Long updateExecuted = totalExecuted - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "bolt", "totalExecuted");
+									Long updateExecuted = totalExecuted - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "bolt", "total_executed");
 
 									Map<GlobalStreamId, Double> executionAvgTime = boltStats.get_execute_ms_avg().get(ALLTIME);
 									Double sum = 0.0;

@@ -151,4 +151,15 @@ public class ComponentWindowedStats {
 		}
 		return result;
 	}
+	
+	public boolean hasRecords(){
+		ArrayList<Integer> inputTimestamps = ComponentWindowedStats.getRecordedTimestamps(this.inputRecords);
+		ArrayList<Integer> executedTimestamps = ComponentWindowedStats.getRecordedTimestamps(this.executedRecords);
+		ArrayList<Integer> outputTimestamps = ComponentWindowedStats.getRecordedTimestamps(this.outputRecords);
+		ArrayList<Integer> avgLatencyTimestamps = ComponentWindowedStats.getRecordedTimestamps(this.avgLatencyRecords);
+		ArrayList<Integer> selectivityTimestamps = ComponentWindowedStats.getRecordedTimestamps(this.selectivityRecords);
+		
+		return (!inputTimestamps.isEmpty() && !executedTimestamps.isEmpty() && !outputTimestamps.isEmpty()
+				&& !avgLatencyTimestamps.isEmpty() && !selectivityTimestamps.isEmpty());
+	}
 }

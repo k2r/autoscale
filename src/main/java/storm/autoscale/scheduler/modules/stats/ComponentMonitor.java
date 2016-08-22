@@ -196,22 +196,24 @@ public class ComponentMonitor {
 		//Initialize an EPR metric for the current topology
 		EPRMetric metric = new EPRMetric(explorer, this);
 		for(String component : this.stats.keySet()){
-			//Compute the EPR and expose monitoring info concerning the EPR for storage
-			Double eprValue = metric.compute(component);
-			this.eprValues.put(component, eprValue);
-			HashMap<String, BigDecimal> eprInfo = metric.getEPRInfo(component);
-			this.manager.storeEPRInfo(this.timestamp, metric.getTopologyExplorer().getTopologyName(), component, eprValue, eprInfo.get(EPRMetric.REMAINING).intValue(), eprInfo.get(EPRMetric.PROCRATE).doubleValue());
-			
-			//Apply rules to take local decisions
-			Double threshold = 1 - EPR_SENSIVITY;
-			if(eprValue < threshold && isInputDecreasing(component)){
-				this.scaleInRequirements.add(component);
-			}else{
-				if(eprValue > threshold && eprValue < 1 && isInputIncreasing(component)){
-					this.scaleOutRequirements.add(component);
+			if(hasRecords(component)){
+				//Compute the EPR and expose monitoring info concerning the EPR for storage
+				Double eprValue = metric.compute(component);
+				this.eprValues.put(component, eprValue);
+				HashMap<String, BigDecimal> eprInfo = metric.getEPRInfo(component);
+				this.manager.storeEPRInfo(this.timestamp, metric.getTopologyExplorer().getTopologyName(), component, eprValue, eprInfo.get(EPRMetric.REMAINING).intValue(), eprInfo.get(EPRMetric.PROCRATE).doubleValue());
+
+				//Apply rules to take local decisions
+				Double threshold = 1 - EPR_SENSIVITY;
+				if(eprValue < threshold && isInputDecreasing(component)){
+					this.scaleInRequirements.add(component);
 				}else{
-					if(eprValue > 1){
+					if(eprValue > threshold && eprValue < 1 && isInputIncreasing(component)){
 						this.scaleOutRequirements.add(component);
+					}else{
+						if(eprValue > 1){
+							this.scaleOutRequirements.add(component);
+						}
 					}
 				}
 			}
@@ -236,6 +238,11 @@ public class ComponentMonitor {
 	
 	public Double getEPRValue(String component){
 		return this.eprValues.get(component);
+	}
+	
+	public boolean hasRecords(String component){
+		ComponentWindowedStats stats = this.getStats(component);
+		return stats.hasRecords();
 	}
 	
 	public void reset(){
