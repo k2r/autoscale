@@ -5,7 +5,6 @@ package storm.autoscale.scheduler.modules;
 
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.Set;
 
 import backtype.storm.generated.Bolt;
 import backtype.storm.generated.ComponentCommon;
@@ -46,12 +45,20 @@ public class TopologyExplorer {
 		return this.components;
 	}
 	 
-	public Set<String> getSpouts(){
-		return this.spouts.keySet();
+	public ArrayList<String> getSpouts(){
+		ArrayList<String> result = new ArrayList<>();
+		for(String spout : this.spouts.keySet()){
+			result.add(spout);
+		}
+		return result;
 	}
 	
-	public Set<String> getBolts(){
-		return this.bolts.keySet();
+	public ArrayList<String> getBolts(){
+		ArrayList<String> result = new ArrayList<>();
+		for(String spout : this.bolts.keySet()){
+			result.add(spout);
+		}
+		return result;
 	}
 
 	public boolean areLinked(String component1, String component2){
@@ -141,8 +148,8 @@ public class TopologyExplorer {
 		ArrayList<String> result = new ArrayList<>();
 		ArrayList<String> parents = this.getParents(component);
 		for(String parent : parents){
-			result.add(parent);
 			if(!this.getSpouts().contains(parent)){
+				result.add(parent);
 				result.addAll(this.getAntecedents(parent));
 			}
 		}

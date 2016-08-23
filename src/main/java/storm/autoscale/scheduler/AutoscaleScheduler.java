@@ -19,7 +19,6 @@ import storm.autoscale.scheduler.actions.ScaleOutAction;
 import storm.autoscale.scheduler.allocation.DelegatedAllocationStrategy;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
-import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 import storm.autoscale.scheduler.modules.stats.StatStorageManager;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
 
@@ -82,10 +81,10 @@ public class AutoscaleScheduler implements IScheduler {
 				Integer timestamp = manager.getCurrentTimestamp();
 				if(!this.compMonitor.getRegisteredComponents().isEmpty()){
 					this.compMonitor.trackRequirements(explorer);
-
-					this.needScaleOut = this.compMonitor.getScaleOutDecisions();
-					this.needScaleIn = this.compMonitor.getScaleInDecisions();
-					int oldestTimestamp = Math.max(0, timestamp - ComponentMonitor.WINDOW_SIZE);
+					this.compMonitor.validateRequirements(explorer.getSpouts(), explorer);
+					this.needScaleOut = this.compMonitor.getScaleOutRequirements();
+					this.needScaleIn = this.compMonitor.getScaleInRequirements();
+					/*int oldestTimestamp = Math.max(0, timestamp - ComponentMonitor.WINDOW_SIZE);
 					String monitoring = "Current monitoring info (from timestamp " + oldestTimestamp + " to timestamp " + timestamp + ")\n";
 					logger.fine(monitoring);
 					for(String component : this.compMonitor.getRegisteredComponents()){
@@ -125,7 +124,7 @@ public class AutoscaleScheduler implements IScheduler {
 						infos += "\t latency : " + lastAvgLatencyRecord + " milliseconds per tuple \n";
 						infos += "\t selectivity : " + lastSelectivityRecord + "\n";
 						logger.fine(infos);
-					}
+					}*/
 					if(this.needScaleOut.isEmpty()){
 						logger.fine("No component to scale out!");
 					}else{

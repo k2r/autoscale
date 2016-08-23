@@ -239,15 +239,11 @@ public class TopologyExplorerTest extends TestCase {
 		
 		TopologyExplorer explorer = new TopologyExplorer("test", topology);
 		
-		ArrayList<String> antecedentsC = new ArrayList<>();
-		antecedentsC.add("A");
-		
 		ArrayList<String> antecedentsDF = new ArrayList<>();
 		antecedentsDF.add("C");
-		antecedentsDF.add("A");
 		
 		assertEquals(new ArrayList<String>(), explorer.getAntecedents("A"));
-		assertEquals(antecedentsC, explorer.getAntecedents("C"));
+		assertEquals(new ArrayList<String>(), explorer.getAntecedents("C"));
 		assertEquals(antecedentsDF, explorer.getAntecedents("D"));
 		assertEquals(antecedentsDF, explorer.getAntecedents("F"));
 	}

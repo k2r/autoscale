@@ -5,7 +5,6 @@ package storm.autoscale.scheduler.actions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Set;
 import java.util.logging.Logger;
 
 import org.apache.thrift7.TException;
@@ -45,47 +44,13 @@ public class ScaleOutAction implements IAction {
 		this.allocStrategy = allocStrategy;
 		this.nimbusHost = nimbusHost;
 		this.nimbusPort = nimbusPort;
-		this.validateActions = new ArrayList<>();
+		this.validateActions = this.compMonitor.getScaleOutRequirements();
 		Thread thread = new Thread(this);
 		thread.start();
-	}
-
-	@Override
-	public void validate() {
-		Set<String> allComponents = this.compMonitor.getRegisteredComponents();
-		for(String component : allComponents){
-			boolean validate = false;
-			Double eprValue = this.compMonitor.getEPRValue(component);
-			if(eprValue == -1.0){
-				break;
-			}
-			if(this.compMonitor.needScaleOut(component)){
-				validate = true;
-			}
-			ArrayList<String> parents = explorer.getParents(component);
-			for(String parent : parents){
-				if(this.compMonitor.needScaleOut(parent)){
-					validate = true;
-				}
-			}
-			ArrayList<String> antecedents = explorer.getAntecedents(component);
-			for(String antecedent : antecedents){
-				if(!this.explorer.getSpouts().contains(antecedent)){
-					if(this.compMonitor.needScaleIn(antecedent)){
-						validate = false;
-						break;
-					}
-				}
-			}
-			if(validate){
-				this.validateActions.add(component);
-			}
-		}
 	}
 	
 	@Override
 	public void run() {
-		this.validate();
 		//HashMap<String, WorkerSlot> bestWorkers = this.getBestLocation();
 		TSocket tsocket = new TSocket(this.nimbusHost, this.nimbusPort);
 		TFramedTransport tTransport = new TFramedTransport(tsocket);

@@ -309,7 +309,7 @@ public class StatStorageManager implements Runnable{
 			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			statement.executeUpdate(query);
 		} catch (SQLException e){
-			logger.severe("Unable to store epr info because of " + e);
+			logger.fine("Unable to store epr info because of " + e);
 		}
 	}
 	

@@ -54,7 +54,7 @@ public class ComponentMonitor {
 	public void getStatistics(TopologyExplorer explorer){
 		this.reset();
 		this.timestamp = this.manager.getCurrentTimestamp(); 
-		Set<String> spouts = explorer.getSpouts();
+		ArrayList<String> spouts = explorer.getSpouts();
 		for(String spout : spouts){
 			
 			HashMap<Integer, Long> outputRecords = this.manager.getSpoutOutputs(spout, this.timestamp, WINDOW_SIZE);
@@ -73,7 +73,7 @@ public class ComponentMonitor {
 			ComponentWindowedStats componentRecords = new ComponentWindowedStats(spout, inputRecords, executedRecords, outputRecords, avgTopLatencyRecords, selectivityRecords);
 			this.stats.put(spout, componentRecords);
 		}
-		Set<String> bolts = explorer.getBolts();
+		ArrayList<String> bolts = explorer.getBolts();
 		for(String bolt : bolts){
 			HashMap<Integer, Long> inputRecords = new HashMap<>();
 			ArrayList<String> parents = explorer.getParents(bolt);
@@ -126,6 +126,48 @@ public class ComponentMonitor {
 		this.stats.put(component, cws);
 	}
 	
+	/**
+	 * @return the scaleOutRequirements
+	 */
+	public ArrayList<String> getScaleOutRequirements() {
+		return scaleOutRequirements;
+	}
+
+	/**
+	 * @param scaleOutRequirements the scaleOutRequirements to set
+	 */
+	public void setScaleOutRequirements(ArrayList<String> scaleOutRequirements) {
+		this.scaleOutRequirements = scaleOutRequirements;
+	}
+
+	/**
+	 * @return the scaleInRequirements
+	 */
+	public ArrayList<String> getScaleInRequirements() {
+		return scaleInRequirements;
+	}
+
+	/**
+	 * @param scaleInRequirements the scaleInRequirements to set
+	 */
+	public void setScaleInRequirements(ArrayList<String> scaleInRequirements) {
+		this.scaleInRequirements = scaleInRequirements;
+	}
+
+	/**
+	 * @return the eprValues
+	 */
+	public HashMap<String, Double> getEprValues() {
+		return eprValues;
+	}
+
+	/**
+	 * @param eprValues the eprValues to set
+	 */
+	public void setEprValues(HashMap<String, Double> eprValues) {
+		this.eprValues = eprValues;
+	}
+
 	public Integer getSamplingRate(){
 		return this.samplingRate;
 	}
@@ -195,14 +237,13 @@ public class ComponentMonitor {
 	public void trackRequirements(TopologyExplorer explorer){
 		//Initialize an EPR metric for the current topology
 		EPRMetric metric = new EPRMetric(explorer, this);
-		for(String component : this.stats.keySet()){
+		for(String component : this.getRegisteredComponents()){
 			if(hasRecords(component)){
 				//Compute the EPR and expose monitoring info concerning the EPR for storage
 				Double eprValue = metric.compute(component);
 				this.eprValues.put(component, eprValue);
 				HashMap<String, BigDecimal> eprInfo = metric.getEPRInfo(component);
 				this.manager.storeEPRInfo(this.timestamp, metric.getTopologyExplorer().getTopologyName(), component, eprValue, eprInfo.get(EPRMetric.REMAINING).intValue(), eprInfo.get(EPRMetric.PROCRATE).doubleValue());
-
 				//Apply rules to take local decisions
 				Double threshold = 1 - EPR_SENSIVITY;
 				if(eprValue < threshold && isInputDecreasing(component)){
@@ -220,12 +261,79 @@ public class ComponentMonitor {
 		}
 	}
 	
-	public ArrayList<String> getScaleOutDecisions(){
-		return this.scaleOutRequirements;
+	public boolean validateScaleIn(String component, TopologyExplorer explorer){
+		boolean validate = false;
+		Double eprValue = this.getEPRValue(component);
+		//System.out.println(component + " has epr = " + eprValue);
+		if(eprValue != null){
+			if(eprValue == -1.0){
+				//System.out.println(component + " cannot scale in because of epr = -1");
+				return false;
+			}
+			ArrayList<String> antecedents = explorer.getAntecedents(component);
+			for(String antecedent : antecedents){
+				Double antecedentEprValue = this.getEPRValue(antecedent);
+				if(antecedentEprValue >= 1){
+					//System.out.println(component + " cannot scale in because " + antecedent + " can scale out");
+					return false;
+				}
+			}
+			if(this.needScaleIn(component)){
+				//System.out.println(component + " can scale in");
+				validate = true;
+			}
+		}
+		return validate;
 	}
 	
-	public ArrayList<String> getScaleInDecisions(){
-		return this.scaleInRequirements;
+	public boolean validateScaleOut(String component, TopologyExplorer explorer){
+		boolean validate = false;
+		Double eprValue = this.getEPRValue(component);
+		//System.out.println(component + " has epr = " + eprValue);
+		if(eprValue != null){
+			if(eprValue == -1.0){
+				//System.out.println(component + " cannot scale out because of epr = -1");
+				return false;
+			}
+			ArrayList<String> parents = explorer.getParents(component);
+			for(String parent : parents){
+				if(this.validateScaleOut(parent, explorer)){
+					//System.out.println(component + " will scale out instead remaining in the same state because " + parent + " will scale out");
+					validate = true;
+					break;
+				}
+			}
+			if(this.needScaleOut(component)){
+				validate = true;
+			}
+			
+		}
+		return validate;
+	}
+	
+	public void validateRequirements(ArrayList<String> parents, TopologyExplorer explorer){
+		for(String parent : parents){
+			ArrayList<String> children = explorer.getChildren(parent);
+			for(String child : children){
+				if(this.needScaleIn(child)){
+					boolean validate = this.validateScaleIn(child, explorer);
+					if(!validate){
+						this.scaleInRequirements.remove(child);
+					}
+				}else{
+					boolean validate = this.validateScaleOut(child, explorer);
+					if(!validate){
+						this.scaleOutRequirements.remove(child);
+					}
+				}
+			}
+			for(String child : children){
+				ArrayList<String> grandChildren = explorer.getChildren(child);
+				if(!grandChildren.isEmpty()){
+					validateRequirements(children, explorer);
+				}
+			}
+		}
 	}
 	
 	public boolean needScaleOut(String component){

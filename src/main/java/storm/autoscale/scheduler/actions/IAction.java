@@ -13,7 +13,5 @@ import backtype.storm.scheduler.WorkerSlot;
  */
 public interface IAction extends Runnable{
 	
-	public void validate();
-	
 	public HashMap<String, WorkerSlot> getBestLocation();
 }

@@ -47,35 +47,9 @@ public class ScaleInAction implements IAction {
 		this.allocStrategy = allocStrategy;
 		this.nimbusHost = nimbusHost;
 		this.nimbusPort = nimbusPort;
-		this.validateActions = new ArrayList<>();
+		this.validateActions = this.compMonitor.getScaleInRequirements();
 		Thread thread = new Thread(this);
 		thread.start();
-	}
-
-	@Override
-	public void validate() {
-		ArrayList<String> scaleInRequirements = this.compMonitor.getScaleInDecisions();
-		for(String component : scaleInRequirements){
-			boolean validate = true;
-			Double eprValue = this.compMonitor.getEPRValue(component);
-			if(eprValue == -1.0){
-				validate = false;
-				break;
-			}
-			ArrayList<String> antecedents = explorer.getAntecedents(component);
-			for(String antecedent : antecedents){
-				if(!this.explorer.getSpouts().contains(antecedent)){
-					Double antecedentEprValue = this.compMonitor.getEPRValue(antecedent);
-					if(antecedentEprValue >= 1 || this.compMonitor.needScaleOut(antecedent)){
-						validate = false;
-						break;
-					}
-				}
-			}
-			if(validate){
-				this.validateActions.add(component);
-			}
-		}
 	}
 
 	/* (non-Javadoc)
@@ -83,7 +57,6 @@ public class ScaleInAction implements IAction {
 	 */
 	@Override
 	public void run() {
-		this.validate();
 		//HashMap<String, WorkerSlot> bestWorkers = this.getBestLocation();
 		TSocket tsocket = new TSocket(this.nimbusHost, this.nimbusPort);
 		TFramedTransport tTransport = new TFramedTransport(tsocket);
@@ -103,7 +76,7 @@ public class ScaleInAction implements IAction {
 		
 				int newParallelism = Math.min(maxParallelism, estimatedParallelism);
 				
-				if(newParallelism < currentParallelism && currentParallelism > 1){
+				if(newParallelism < currentParallelism && currentParallelism > 1 && newParallelism > 0){
 					RebalanceOptions options = new RebalanceOptions();
 					options.put_to_num_executors(component, newParallelism);
 					options.set_num_workers(this.assignMonitor.getNbWorkers());
