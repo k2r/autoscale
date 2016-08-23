@@ -582,7 +582,7 @@ public class StatStorageManagerTest extends TestCase {
 		try {
 			StatStorageManager manager = StatStorageManager.getManager("localhost");
 			Integer timestamp1 = 1;
-			Integer timestamp2 = 10;
+			Integer timestamp2 = 9;
 			String topology = "testTopology";
 			String component = "testComponent";
 			
@@ -791,8 +791,8 @@ public class StatStorageManagerTest extends TestCase {
 
 			Integer timestamp1 = 1;
 			Integer timestamp2 = 10;
-			Integer timestamp3 = 51;
-			Integer timestamp4 = 52; 
+			Integer timestamp3 = 21;
+			Integer timestamp4 = 22; 
 			String topology = "testTopology";
 			String component = "testComponent";
 

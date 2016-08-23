@@ -43,11 +43,26 @@ public class StatStorageManager implements Runnable{
 	private HashMap<String, Boolean> topStatus;
 	private final Connection connection;
 	private final static String ALLTIME = ":all-time";
+	
 	private final static String TABLE_SPOUT = "all_time_spouts_stats";
 	private final static String TABLE_BOLT = "all_time_bolts_stats";
 	private final static String TABLE_TOPOLOGY = "topologies_status";
 	private final static String TABLE_EPR = "operators_epr";
-	private final static Integer LARGE_WINDOW_SIZE = 50;
+	
+	private final static String COL_TOTAL_EXEC = "total_executed";
+	private final static String COL_TOTAL_OUTPUT = "total_outputs";
+	private final static String COL_TOTAL_THROUGHPUT = "total_throughput";
+	private final static String COL_TOTAL_LOSS = "total_losses";
+	private final static String COL_UPDT_EXEC = "update_executed";
+	private final static String COL_UPDT_OUTPUT = "update_outputs";
+	private final static String COL_UPDT_THROUGHPUT = "update_throughput";
+	private final static String COL_UPDT_LOSS = "update_losses";
+	private final static String COL_AVG_LATENCY = "execute_ms_avg";
+	private final static String COL_SELECTIVITY = "selectivity";
+	
+	private final static Integer LARGE_WINDOW_SIZE = 20;
+	
+	
 	private Thread thread;
 	private static Logger logger = Logger.getLogger("StatStorageManager");
 	
@@ -176,7 +191,7 @@ public class StatStorageManager implements Runnable{
 
 								if(specStats.is_set_spout()){
 									
-									Long updateOutputs = totalOutputs - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "spout", "total_outputs");
+									Long updateOutputs = totalOutputs - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "spout", COL_TOTAL_OUTPUT);
 									
 									SpoutStats spoutStats = specStats.get_spout();
 									Map<String, Long> acked = spoutStats.get_acked().get(ALLTIME);
@@ -185,7 +200,7 @@ public class StatStorageManager implements Runnable{
 										totalThroughput += acked.get(stream);
 									}
 									
-									Long updateThroughput = totalThroughput - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "spout", "total_throughput");
+									Long updateThroughput = totalThroughput - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "spout", COL_TOTAL_THROUGHPUT);
 									
 									Map<String, Long> failed = spoutStats.get_failed().get(ALLTIME);
 									Long totalLosses = 0L;
@@ -193,7 +208,7 @@ public class StatStorageManager implements Runnable{
 										totalLosses += failed.get(stream);
 									}
 									
-									Long updateLosses = totalLosses - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "spout", "total_losses");
+									Long updateLosses = totalLosses - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "spout", COL_TOTAL_LOSS);
 
 									Map<String, Double> completeAvgTime = spoutStats.get_complete_ms_avg().get(ALLTIME);
 									Double sum = 0.0;
@@ -211,7 +226,7 @@ public class StatStorageManager implements Runnable{
 
 								if(specStats.is_set_bolt()){
 									
-									Long updateOutputs = totalOutputs - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "bolt", "total_outputs");
+									Long updateOutputs = totalOutputs - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "bolt", COL_TOTAL_OUTPUT);
 									
 									BoltStats boltStats = specStats.get_bolt();
 									Map<GlobalStreamId, Long> executed = boltStats.get_executed().get(ALLTIME);
@@ -220,7 +235,7 @@ public class StatStorageManager implements Runnable{
 										totalExecuted += executed.get(gs);
 									}
 									
-									Long updateExecuted = totalExecuted - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "bolt", "total_executed");
+									Long updateExecuted = totalExecuted - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "bolt", COL_TOTAL_EXEC);
 
 									Map<GlobalStreamId, Double> executionAvgTime = boltStats.get_execute_ms_avg().get(ALLTIME);
 									Double sum = 0.0;
@@ -372,7 +387,7 @@ public class StatStorageManager implements Runnable{
 		int oldestTimestamp =  timestamp - windowSize;
 		HashMap<Integer, Long> records = new HashMap<>();
 		try {
-			String query  = "SELECT timestamp, SUM(update_executed) AS nbExecuted FROM " + TABLE_BOLT
+			String query  = "SELECT timestamp, SUM(" + COL_UPDT_EXEC + ") AS nbExecuted FROM " + TABLE_BOLT
 					+ " WHERE component = '" + component 
 					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp
 					+ " GROUP BY timestamp, component";
@@ -394,7 +409,7 @@ public class StatStorageManager implements Runnable{
 		int oldestTimestamp =  timestamp - windowSize;
 		HashMap<Integer, Long> records = new HashMap<>();
 		try {
-			String query  = "SELECT timestamp, SUM(update_outputs) AS nbOutputs FROM " + TABLE_SPOUT 
+			String query  = "SELECT timestamp, SUM(" + COL_UPDT_OUTPUT + ") AS nbOutputs FROM " + TABLE_SPOUT 
 					+ " WHERE component = '" + component 
 					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp 
 					+ " GROUP BY timestamp, component;";
@@ -416,7 +431,7 @@ public class StatStorageManager implements Runnable{
 		int oldestTimestamp =  timestamp - windowSize;
 		HashMap<Integer, Long> records = new HashMap<>();
 		try {
-			String query  = "SELECT timestamp, SUM(update_outputs) AS nbOutputs FROM " + TABLE_BOLT 
+			String query  = "SELECT timestamp, SUM(" + COL_UPDT_OUTPUT + ") AS nbOutputs FROM " + TABLE_BOLT 
 					+ " WHERE component = '" + component 
 					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp 
 					+ " GROUP BY timestamp, component;";
@@ -438,7 +453,7 @@ public class StatStorageManager implements Runnable{
 		int oldestTimestamp =  timestamp - windowSize;
 		HashMap<Integer, Double> records = new HashMap<>();
 		try {
-			String query  = "SELECT timestamp, AVG(execute_ms_avg) AS avgLatency FROM " + TABLE_BOLT 
+			String query  = "SELECT timestamp, AVG(" + COL_AVG_LATENCY + ") AS avgLatency FROM " + TABLE_BOLT 
 					+ " WHERE component = '" + component 
 					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp 
 					+ " GROUP BY timestamp, component;";
@@ -460,7 +475,7 @@ public class StatStorageManager implements Runnable{
 		int oldestTimestamp =  timestamp - windowSize;
 		HashMap<Integer, Double> records = new HashMap<>();
 		try {
-			String query  = "SELECT timestamp, AVG(selectivity) AS avgSelectivity FROM " + TABLE_BOLT 
+			String query  = "SELECT timestamp, AVG(" + COL_SELECTIVITY + ") AS avgSelectivity FROM " + TABLE_BOLT 
 					+ " WHERE component = '" + component 
 					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp 
 					+ " GROUP BY timestamp, component;";
@@ -482,7 +497,7 @@ public class StatStorageManager implements Runnable{
 		int oldestTimestamp =  timestamp - windowSize;
 		HashMap<Integer, Long> records = new HashMap<>();
 		try {
-			String query  = "SELECT timestamp, SUM(update_throughput) AS topThroughput FROM " + TABLE_SPOUT 
+			String query  = "SELECT timestamp, SUM(" +  COL_UPDT_THROUGHPUT + ") AS topThroughput FROM " + TABLE_SPOUT 
 					+ " WHERE topology = '" + topology 
 					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp 
 					+ " GROUP BY timestamp, topology;";
@@ -504,7 +519,7 @@ public class StatStorageManager implements Runnable{
 		int oldestTimestamp =  timestamp - windowSize;
 		HashMap<Integer, Long> records = new HashMap<>();
 		try {
-			String query  = "SELECT timestamp, SUM(update_losses) AS topLosses FROM " + TABLE_SPOUT 
+			String query  = "SELECT timestamp, SUM(" + COL_UPDT_LOSS + ") AS topLosses FROM " + TABLE_SPOUT 
 					+ " WHERE topology = '" + topology 
 					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp 
 					+ " GROUP BY timestamp, topology;";

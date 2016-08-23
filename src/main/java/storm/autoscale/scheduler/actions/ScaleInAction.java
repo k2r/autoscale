@@ -19,7 +19,6 @@ import storm.autoscale.scheduler.allocation.IAllocationStrategy;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
 import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
-import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 
 /**
  * @author Roland
@@ -55,15 +54,19 @@ public class ScaleInAction implements IAction {
 
 	@Override
 	public void validate() {
-		//TODO Exclude the exceptional case epr = -1
 		ArrayList<String> scaleInRequirements = this.compMonitor.getScaleInDecisions();
 		for(String component : scaleInRequirements){
-			ArrayList<String> antecedents = explorer.getAntecedents(component);
 			boolean validate = true;
+			Double eprValue = this.compMonitor.getEPRValue(component);
+			if(eprValue == -1.0){
+				validate = false;
+				break;
+			}
+			ArrayList<String> antecedents = explorer.getAntecedents(component);
 			for(String antecedent : antecedents){
 				if(!this.explorer.getSpouts().contains(antecedent)){
-					Double eprValue = this.compMonitor.getEPRValue(antecedent);
-					if(eprValue >= 1 || this.compMonitor.needScaleOut(antecedent)){
+					Double antecedentEprValue = this.compMonitor.getEPRValue(antecedent);
+					if(antecedentEprValue >= 1 || this.compMonitor.needScaleOut(antecedent)){
 						validate = false;
 						break;
 					}
@@ -91,16 +94,16 @@ public class ScaleInAction implements IAction {
 				tTransport.open();
 			}
 			for(String component : this.validateActions){
-				//TODO Use the epr value instead of currently processed tuples
-				ComponentWindowedStats stats = this.compMonitor.getStats(component);
-				Long totalInputs = stats.getTotalInput();
-				Long totalExecuted = stats.getTotalExecuted();
-				int nbExecToDelete = (int) Math.round((totalInputs - totalExecuted) / (1.0 * totalExecuted)); 
-				ArrayList<Integer> tasks = this.assignMonitor.getAllSortedTasks(component);
+				Double eprValue = this.compMonitor.getEPRValue(component);
+	
+				int maxParallelism = this.assignMonitor.getAllSortedTasks(component).size();
 
 				int currentParallelism = this.assignMonitor.getParallelism(component);
-				int newParallelism = Math.min(tasks.size(), currentParallelism - nbExecToDelete);
-				if(newParallelism < currentParallelism){
+				int estimatedParallelism  = (int) Math.round(eprValue * currentParallelism);
+		
+				int newParallelism = Math.min(maxParallelism, estimatedParallelism);
+				
+				if(newParallelism < currentParallelism && currentParallelism > 1){
 					RebalanceOptions options = new RebalanceOptions();
 					options.put_to_num_executors(component, newParallelism);
 					options.set_num_workers(this.assignMonitor.getNbWorkers());

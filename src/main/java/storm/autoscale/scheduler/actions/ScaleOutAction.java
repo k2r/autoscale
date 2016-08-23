@@ -20,7 +20,6 @@ import storm.autoscale.scheduler.allocation.IAllocationStrategy;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
 import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
-import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 
 /**
  * @author Roland
@@ -53,10 +52,13 @@ public class ScaleOutAction implements IAction {
 
 	@Override
 	public void validate() {
-		//TODO Exclude directly the excecptional case epr = -1
 		Set<String> allComponents = this.compMonitor.getRegisteredComponents();
 		for(String component : allComponents){
 			boolean validate = false;
+			Double eprValue = this.compMonitor.getEPRValue(component);
+			if(eprValue == -1.0){
+				break;
+			}
 			if(this.compMonitor.needScaleOut(component)){
 				validate = true;
 			}
@@ -94,15 +96,13 @@ public class ScaleOutAction implements IAction {
 				tTransport.open();
 			}
 			for(String component : this.validateActions){
-				//TODO Use the epr value instead of currently processed tuples
-				ComponentWindowedStats stats = this.compMonitor.getStats(component);
-				Long totalInputs = stats.getTotalInput();
-				Long totalExecuted = stats.getTotalExecuted();
-				int nbExecToAdd = (int) Math.round((totalInputs - totalExecuted) / (1.0 * totalExecuted)); 
-				ArrayList<Integer> tasks = this.assignMonitor.getAllSortedTasks(component);
-				
+				Double eprValue = this.compMonitor.getEPRValue(component);
+				int maxParallelism = this.assignMonitor.getAllSortedTasks(component).size();
+
 				int currentParallelism = this.assignMonitor.getParallelism(component);
-				int newParallelism = Math.min(tasks.size(), currentParallelism + nbExecToAdd);
+				int estimatedParallelism  = (int) Math.round(eprValue * currentParallelism);
+		
+				int newParallelism = Math.min(maxParallelism, estimatedParallelism);
 				if(newParallelism > currentParallelism){
 					RebalanceOptions options = new RebalanceOptions();
 					options.put_to_num_executors(component, newParallelism);
