@@ -273,9 +273,11 @@ public class ComponentMonitor {
 			ArrayList<String> antecedents = explorer.getAntecedents(component);
 			for(String antecedent : antecedents){
 				Double antecedentEprValue = this.getEPRValue(antecedent);
-				if(antecedentEprValue >= 1){
-					//System.out.println(component + " cannot scale in because " + antecedent + " can scale out");
-					return false;
+				if(antecedentEprValue != null){
+					if(antecedentEprValue >= 1){
+						//System.out.println(component + " cannot scale in because " + antecedent + " can scale out");
+						return false;
+					}
 				}
 			}
 			if(this.needScaleIn(component)){
