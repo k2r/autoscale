@@ -58,7 +58,7 @@ public class ComponentMonitorTest extends TestCase {
 		ComponentWindowedStats cws1 = new ComponentWindowedStats("component1", inputRecords1, null, null, null, null);
 		ComponentWindowedStats cws2 = new ComponentWindowedStats("component2", inputRecords2, null, null, null, null);
 		
-		ComponentMonitor cm = new ComponentMonitor(null, null, null, null);
+		ComponentMonitor cm = new ComponentMonitor(null, null, null, null, null);
 		cm.updateStats(cws1.getId(), cws1);
 		cm.updateStats(cws2.getId(), cws2);
 		
@@ -97,7 +97,7 @@ public class ComponentMonitorTest extends TestCase {
 		ComponentWindowedStats cws1 = new ComponentWindowedStats("component1", inputRecords1, null, null, null, null);
 		ComponentWindowedStats cws2 = new ComponentWindowedStats("component2", inputRecords2, null, null, null, null);
 		
-		ComponentMonitor cm = new ComponentMonitor(null, null, null, null);
+		ComponentMonitor cm = new ComponentMonitor(null, null, null, null, null);
 		cm.updateStats(cws1.getId(), cws1);
 		cm.updateStats(cws2.getId(), cws2);
 		
@@ -136,7 +136,7 @@ public class ComponentMonitorTest extends TestCase {
 		ComponentWindowedStats cws1 = new ComponentWindowedStats("component1", inputRecords1, null, null, null, null);
 		ComponentWindowedStats cws2 = new ComponentWindowedStats("component2", inputRecords2, null, null, null, null);
 		
-		ComponentMonitor cm = new ComponentMonitor(null, null, null, null);
+		ComponentMonitor cm = new ComponentMonitor(null, null, null, null, null);
 		cm.updateStats(cws1.getId(), cws1);
 		cm.updateStats(cws2.getId(), cws2);
 		
@@ -201,7 +201,7 @@ public class ComponentMonitorTest extends TestCase {
 		ComponentWindowedStats cws3 = new ComponentWindowedStats("component3", inputRecords2, executedRecords1, null, null, null);
 		ComponentWindowedStats cws4 = new ComponentWindowedStats("component4", inputRecords2, executedRecords2, null, null, null);
 		
-		ComponentMonitor cm = new ComponentMonitor(null, null, null, null);
+		ComponentMonitor cm = new ComponentMonitor(null, null, null, null, null);
 		cm.updateStats(cws1.getId(), cws1);
 		cm.updateStats(cws2.getId(), cws2);
 		cm.updateStats(cws3.getId(), cws3);
@@ -270,7 +270,7 @@ public class ComponentMonitorTest extends TestCase {
 		ComponentWindowedStats cws3 = new ComponentWindowedStats("component3", inputRecords2, executedRecords1, null, null, null);
 		ComponentWindowedStats cws4 = new ComponentWindowedStats("component4", inputRecords2, executedRecords2, null, null, null);
 		
-		ComponentMonitor cm = new ComponentMonitor(null, null, null, null);
+		ComponentMonitor cm = new ComponentMonitor(null, null, null, null, null);
 		cm.updateStats(cws1.getId(), cws1);
 		cm.updateStats(cws2.getId(), cws2);
 		cm.updateStats(cws3.getId(), cws3);
@@ -364,7 +364,7 @@ public class ComponentMonitorTest extends TestCase {
 		
 		TopologyExplorer explorer = new TopologyExplorer("test", topology);
 		
-		ComponentMonitor compMonitor = new ComponentMonitor(null, null, null, null);
+		ComponentMonitor compMonitor = new ComponentMonitor(null, null, null, null, null);
 		
 		HashMap<String, Double> eprValues = new HashMap<>();
 		eprValues.put("A", -1.0);

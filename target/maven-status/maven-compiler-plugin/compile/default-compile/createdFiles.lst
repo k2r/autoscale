@@ -12,6 +12,7 @@ storm\autoscale\scheduler\modules\stats\ComponentMonitor.class
 storm\autoscale\scheduler\allocation\IAllocationStrategy.class
 storm\autoscale\scheduler\actions\IAction.class
 storm\autoscale\scheduler\modules\stats\StatStorageManager.class
+storm\autoscale\scheduler\util\Regression.class
 storm\autoscale\scheduler\modules\TopologyExplorer.class
 storm\autoscale\scheduler\modules\AssignmentMonitor.class
 storm\autoscale\scheduler\actions\ScaleInAction.class

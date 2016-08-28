@@ -9,6 +9,7 @@ import java.util.HashMap;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
 import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
+import storm.autoscale.scheduler.util.Regression;
 
 /**
  * @author Roland
@@ -68,40 +69,10 @@ public class EPRMetric implements IMetric {
 		HashMap<String, BigDecimal> info = this.eprInfo.get(component);
 		info.put(REMAINING, new BigDecimal(currentRemainingTuples));
 		//Determine the min and the max of input records
-		Integer minTimestamp = 0;
-		Long minInput = Long.MAX_VALUE;
-		Integer maxTimestamp = 0;
-		Long maxInput = Long.MIN_VALUE;
 		HashMap<Integer, Long> inputRecords = this.cm.getStats(component).getInputRecords();
-		for(Integer timestamp : inputRecords.keySet()){
-			Long record = inputRecords.get(timestamp);
-			if(record < minInput){
-				minTimestamp = timestamp;
-				minInput = record;
-			}
-			if(record > maxInput){
-				maxTimestamp = timestamp;
-				maxInput = record;
-			}
-		}
-		//System.out.println("Min timestamp : " + minTimestamp);
-		//System.out.println("Min input : " + minInput);
-		//System.out.println("Max timestamp : " + maxTimestamp);
-		//System.out.println("Max input : " + maxInput);
 		//From those points, compute the equation of the line
-		Double coeff = 0.0;
-		Long offset = 0L;
-		if(minTimestamp < maxTimestamp){
-			coeff = (maxInput - minInput) / (1.0 * (maxTimestamp - minTimestamp));
-			offset = minInput;
-		}else{
-			if(minTimestamp > maxTimestamp){
-				coeff = (minInput - maxInput) / (1.0 * (minTimestamp - maxTimestamp));
-				offset = maxInput;
-			}else{
-				offset = maxInput;
-			}
-		}
+		Double coeff = Regression.linearRegressionCoeff(inputRecords);
+		Double offset = Regression.linearRegressionOffset(inputRecords);
 		//System.out.println("Linear coefficient : " + coeff);
 		//System.out.println("Linear offset : " + offset);
 		//determine each estimated value and sum them
@@ -124,45 +95,13 @@ public class EPRMetric implements IMetric {
 		Double result = 0.0;
 		//Get the window size
 		Integer windowSize = ComponentMonitor.WINDOW_SIZE;
-		//Get the min and the max of the inverse of latency records
-		Integer minTimestamp = 0;
-		Double minProcRate = Double.MAX_VALUE;
-		Integer maxTimestamp = 0;
-		Double maxProcRate = Double.MIN_VALUE;
 		HashMap<Integer, Double> latencyRecords = this.cm.getStats(component).getAvgLatencyRecords();
+		HashMap<Integer, Double> processingRates = new HashMap<>();
 		for(Integer timestamp : latencyRecords.keySet()){
-			Double record = 0.0;
-			try{
-				record = 1000 / latencyRecords.get(timestamp);
-			} catch(ArithmeticException e) {
-			}
-			if(record < minProcRate){
-				minTimestamp = timestamp;
-				minProcRate = record;
-			}
-			if(record > maxProcRate){
-				maxTimestamp = timestamp;
-				maxProcRate = record;
-			}
+			processingRates.put(timestamp, 1000 / latencyRecords.get(timestamp));
 		}
-		//System.out.println("Min timestamp : " + minTimestamp);
-		//System.out.println("Min processing rate : " + minProcRate);
-		//System.out.println("Max timestamp : " + maxTimestamp);
-		//System.out.println("Max processing rate : " + maxProcRate);
-		//From those points compute the equation of the line
-		Double coeff = 0.0;
-		Double offset = 0.0;
-		if(minTimestamp < maxTimestamp){
-			coeff = (maxProcRate - minProcRate) / (maxTimestamp - minTimestamp);
-			offset = minProcRate;
-		}else{
-			if(minTimestamp > maxTimestamp){
-				coeff = (minProcRate - maxProcRate) / (minTimestamp - maxTimestamp);
-				offset = maxProcRate;
-			}else{
-				offset = maxProcRate;
-			}
-		}
+		Double coeff = Regression.linearRegressionCoeff(processingRates);
+		Double offset = Regression.linearRegressionOffset(processingRates);
 		//System.out.println("Linear coefficient : " + coeff);
 		//System.out.println("Linear offset : " + offset);
 		//determine each estimated value and calculate the average
@@ -178,6 +117,9 @@ public class EPRMetric implements IMetric {
 			//System.out.println("timstamp : " + i + " estimated number of processed tuples : " + estimProcRate);
 		}
 		Double estimAvgProcRate = estimSumProcRate / count;
+		if(estimAvgProcRate.isInfinite() || estimAvgProcRate.isNaN()){
+			estimAvgProcRate = 0.0;
+		}
 		//System.out.println("Estimated processing rate : " + estimAvgProcRate);
 		result = windowSize * estimAvgProcRate;
 		//System.out.println("Estimated number of processed tuples on the next window: " + result);
@@ -207,5 +149,4 @@ public class EPRMetric implements IMetric {
 		info.put(EPR, new BigDecimal(epr));
 		return epr;
 	}
-
 }

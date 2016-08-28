@@ -1,5 +1,6 @@
 C:\These\D3\Depots\storm-scheduler\src\main\java\storm\autoscale\scheduler\modules\listener\NimbusListener.java
 C:\These\D3\Depots\storm-scheduler\src\main\java\storm\autoscale\scheduler\metrics\EPRMetric.java
+C:\These\D3\Depots\storm-scheduler\src\main\java\storm\autoscale\scheduler\util\Regression.java
 C:\These\D3\Depots\storm-scheduler\src\main\java\storm\autoscale\scheduler\metrics\WelfMetric.java
 C:\These\D3\Depots\storm-scheduler\src\main\java\storm\autoscale\scheduler\actions\ScaleInAction.java
 C:\These\D3\Depots\storm-scheduler\src\main\java\storm\autoscale\scheduler\modules\stats\ComponentMonitor.java

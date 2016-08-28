@@ -35,7 +35,7 @@ public class ComponentMonitor {
 	/**
 	 * 
 	 */
-	public ComponentMonitor(String dbHost, String nimbusHost, Integer nimbusPort, Integer rate) {
+	public ComponentMonitor(String dbHost, String password, String nimbusHost, Integer nimbusPort, Integer rate) {
 		this.stats = new HashMap<>();
 		this.scaleInRequirements = new ArrayList<>();
 		this.scaleOutRequirements = new ArrayList<>();
@@ -43,7 +43,7 @@ public class ComponentMonitor {
 		this.samplingRate = rate; 
 		if(nimbusHost != null && nimbusPort != null){
 			try {
-				this.manager = StatStorageManager.getManager(dbHost, nimbusHost, nimbusPort, rate);
+				this.manager = StatStorageManager.getManager(dbHost, password, nimbusHost, nimbusPort, rate);
 				this.timestamp = this.manager.getCurrentTimestamp();
 			} catch (SQLException | ClassNotFoundException e) {
 				e.printStackTrace();

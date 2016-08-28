@@ -26,7 +26,7 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testStoreSpoutExecutorStats() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost");
+			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
 			Integer timestamp = 0;
 			String host = "testHost";
 			Integer port = 0;
@@ -110,7 +110,7 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testStoreBoltExecutorStats() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost");
+			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
 			Integer timestamp = 0;
 			String host = "testHost";
 			Integer port = 0;
@@ -190,7 +190,7 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testStoreEPRInfo() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost");
+			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
 			Integer timestamp = 1;
 			String topology = "testTopology";
 			String component = "testComponent";
@@ -245,7 +245,7 @@ public class StatStorageManagerTest extends TestCase {
 	public void testGetWorkers() {
 		try {
 			
-			StatStorageManager manager = StatStorageManager.getManager("localhost");
+			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
 			Integer timestamp1 = 1;
 			Integer timestamp2 = 10;
 			String topology = "testTopology";
@@ -312,7 +312,7 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testGetExecuted() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost");
+			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
 			Integer timestamp1 = 1;
 			Integer timestamp2 = 10;
 			String topology = "testTopology";
@@ -379,7 +379,7 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testGetOutputs() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost");
+			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
 			Integer timestamp1 = 1;
 			Integer timestamp2 = 10;
 			String topology = "testTopology";
@@ -446,7 +446,7 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testGetAvgLatency() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost");
+			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
 			Integer timestamp1 = 1;
 			Integer timestamp2 = 10;
 			String topology = "testTopology";
@@ -513,7 +513,7 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testGetSelectivity() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost");
+			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
 			Integer timestamp1 = 1;
 			Integer timestamp2 = 10;
 			String topology = "testTopology";
@@ -580,7 +580,7 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testGetTopologyThroughput() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost");
+			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
 			Integer timestamp1 = 1;
 			Integer timestamp2 = 9;
 			String topology = "testTopology";
@@ -650,7 +650,7 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testGetTopologyLosses() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost");
+			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
 			Integer timestamp1 = 1;
 			Integer timestamp2 = 10;
 			String topology = "testTopology";
@@ -720,7 +720,7 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testGetTopologyAvgLatency() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost");
+			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
 			Integer timestamp1 = 1;
 			Integer timestamp2 = 10;
 			String topology = "testTopology";
@@ -787,7 +787,7 @@ public class StatStorageManagerTest extends TestCase {
 
 	public void testGetFormerValue(){
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost");
+			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
 
 			Integer timestamp1 = 1;
 			Integer timestamp2 = 10;
@@ -859,7 +859,7 @@ public class StatStorageManagerTest extends TestCase {
 	
 	public void testGetFormerRemainingTuples(){
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost");
+			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
 			Integer timestamp1 = 10;
 			Integer timestamp2 = 12;
 			Integer timestamp3 = 20;

@@ -27,6 +27,7 @@ public class MonitoredEvenScheduler implements IScheduler{
 	private ComponentMonitor compMonitor;
 	private AssignmentMonitor assignMonitor;
 	private TopologyExplorer explorer;
+	private String password;
 	private String nimbusHost;
 	private Integer nimbusPort;
 	private static Logger logger = Logger.getLogger("MonitoredEvenScheduler");
@@ -42,22 +43,23 @@ public class MonitoredEvenScheduler implements IScheduler{
 	@Override
 	public void prepare(Map conf) {
 		this.nimbusHost = (String) conf.get("nimbus.host");
-		this.nimbusPort = (Integer) conf.get("nimbus.thrift.port");	
+		this.nimbusPort = (Integer) conf.get("nimbus.thrift.port");
+		this.password = "storm";
 	}
 
 	@Override
 	public void schedule(Topologies topologies, Cluster cluster) {
 		StatStorageManager manager = null;
 		try {
-			manager = StatStorageManager.getManager("localhost", this.nimbusHost, this.nimbusPort, 2000);
+			manager = StatStorageManager.getManager("localhost", this.password, this.nimbusHost, this.nimbusPort, 2);
 		} catch (ClassNotFoundException | SQLException e1) {
 			logger.severe("Unable to start the StatStorageManage because of " + e1);
 		}
 		for(TopologyDetails topology : topologies.getTopologies()){
 			if(!manager.isActive(topology.getId())){
-				logger.info("Topology " + topology.getName() + " is being rebalanced...");
+				logger.fine("Topology " + topology.getName() + " has not started yet...");
 			}else{
-				this.compMonitor = new ComponentMonitor("localhost", this.nimbusHost, this.nimbusPort, 2000);
+				this.compMonitor = new ComponentMonitor("localhost", this.password, this.nimbusHost, this.nimbusPort, 2);
 				this.assignMonitor = new AssignmentMonitor(cluster, topology);
 				this.explorer = new TopologyExplorer(topology.getName(), topology.getTopology());
 				this.assignMonitor.update();

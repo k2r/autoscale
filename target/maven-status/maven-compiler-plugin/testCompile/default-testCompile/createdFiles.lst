@@ -4,4 +4,5 @@ storm\autoscale\scheduler\UtilFunctionsTest.class
 storm\autoscale\scheduler\WelfMetricTest.class
 storm\autoscale\scheduler\ComponentMonitorTest.class
 storm\autoscale\scheduler\StatStorageManagerTest.class
+storm\autoscale\scheduler\RegressionToolsTest.class
 storm\autoscale\scheduler\EPRMetricTest.class

@@ -71,12 +71,12 @@ public class StatStorageManager implements Runnable{
 	 * @throws ClassNotFoundException 
 	 * 
 	 */
-	private StatStorageManager(String dbHost, String nimbusHost, Integer nimbusPort, Integer rate) throws SQLException, ClassNotFoundException {
+	private StatStorageManager(String dbHost, String password, String nimbusHost, Integer nimbusPort, Integer rate) throws SQLException, ClassNotFoundException {
 		String jdbcDriver = "com.mysql.jdbc.Driver";
 		String dbUrl = "jdbc:mysql://"+ dbHost +"/benchmarks";
 		String user = "root";
 		Class.forName(jdbcDriver);
-		this.connection = DriverManager.getConnection(dbUrl,user, null);
+		this.connection = DriverManager.getConnection(dbUrl,user, password);
 		this.listener = NimbusListener.getInstance(nimbusHost, nimbusPort);
 		this.timestamp = 0;
 		this.rate = rate;
@@ -90,17 +90,17 @@ public class StatStorageManager implements Runnable{
 		}
 	}
 	
-	private StatStorageManager(String dbHost) throws ClassNotFoundException, SQLException{
+	private StatStorageManager(String dbHost, String password) throws ClassNotFoundException, SQLException{
 		String jdbcDriver = "com.mysql.jdbc.Driver";
 		String dbUrl = "jdbc:mysql://"+ dbHost +"/benchmarks";
 		String user = "root";
 		Class.forName(jdbcDriver);
-		this.connection = DriverManager.getConnection(dbUrl,user, null);
+		this.connection = DriverManager.getConnection(dbUrl,user, password);
 	}
 	
-	public static StatStorageManager getManager(String dbHost, String nimbusHost, Integer nimbusPort, Integer rate) throws ClassNotFoundException, SQLException{
+	public static StatStorageManager getManager(String dbHost, String password, String nimbusHost, Integer nimbusPort, Integer rate) throws ClassNotFoundException, SQLException{
 		if(StatStorageManager.manager == null){
-			StatStorageManager.manager = new StatStorageManager(dbHost, nimbusHost, nimbusPort, rate);
+			StatStorageManager.manager = new StatStorageManager(dbHost, password , nimbusHost, nimbusPort, rate);
 		}
 		if(!manager.thread.isAlive()){
 			manager.thread = new Thread(manager);
@@ -109,9 +109,9 @@ public class StatStorageManager implements Runnable{
 		return StatStorageManager.manager;
 	}
 	
-	public static StatStorageManager getManager(String dbHost) throws ClassNotFoundException, SQLException{
+	public static StatStorageManager getManager(String dbHost, String password) throws ClassNotFoundException, SQLException{
 		if(StatStorageManager.manager == null){
-			StatStorageManager.manager = new StatStorageManager(dbHost);
+			StatStorageManager.manager = new StatStorageManager(dbHost, password);
 		}
 		return StatStorageManager.manager;
 	}
@@ -191,7 +191,11 @@ public class StatStorageManager implements Runnable{
 
 								if(specStats.is_set_spout()){
 									
-									Long updateOutputs = totalOutputs - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "spout", COL_TOTAL_OUTPUT);
+									Long formerOutputs = this.getFormerValue(componentId, startTask, endTask, this.timestamp, "spout", COL_TOTAL_OUTPUT);
+									Long updateOutputs = totalOutputs;
+									if(formerOutputs <= updateOutputs){
+										updateOutputs = updateOutputs - formerOutputs;
+									}
 									
 									SpoutStats spoutStats = specStats.get_spout();
 									Map<String, Long> acked = spoutStats.get_acked().get(ALLTIME);
@@ -200,7 +204,11 @@ public class StatStorageManager implements Runnable{
 										totalThroughput += acked.get(stream);
 									}
 									
-									Long updateThroughput = totalThroughput - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "spout", COL_TOTAL_THROUGHPUT);
+									Long formerThroughput = this.getFormerValue(componentId, startTask, endTask, this.timestamp, "spout", COL_TOTAL_THROUGHPUT);
+									Long updateThroughput = totalThroughput;
+									if(formerThroughput <= updateThroughput){
+										updateThroughput = updateThroughput - formerThroughput;
+									}
 									
 									Map<String, Long> failed = spoutStats.get_failed().get(ALLTIME);
 									Long totalLosses = 0L;
@@ -208,7 +216,11 @@ public class StatStorageManager implements Runnable{
 										totalLosses += failed.get(stream);
 									}
 									
-									Long updateLosses = totalLosses - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "spout", COL_TOTAL_LOSS);
+									Long formerLosses = this.getFormerValue(componentId, startTask, endTask, this.timestamp, "spout", COL_TOTAL_LOSS);
+									Long updateLosses = totalLosses;
+									if(formerLosses <= updateLosses){
+										updateLosses = updateLosses - formerLosses;
+									}
 
 									Map<String, Double> completeAvgTime = spoutStats.get_complete_ms_avg().get(ALLTIME);
 									Double sum = 0.0;
@@ -226,7 +238,11 @@ public class StatStorageManager implements Runnable{
 
 								if(specStats.is_set_bolt()){
 									
-									Long updateOutputs = totalOutputs - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "bolt", COL_TOTAL_OUTPUT);
+									Long formerOutputs = this.getFormerValue(componentId, startTask, endTask, this.timestamp, "bolt", COL_TOTAL_OUTPUT);
+									Long updateOutputs = totalOutputs;
+									if(formerOutputs <= updateOutputs){
+										updateOutputs = updateOutputs - formerOutputs;
+									}
 									
 									BoltStats boltStats = specStats.get_bolt();
 									Map<GlobalStreamId, Long> executed = boltStats.get_executed().get(ALLTIME);
@@ -235,7 +251,11 @@ public class StatStorageManager implements Runnable{
 										totalExecuted += executed.get(gs);
 									}
 									
-									Long updateExecuted = totalExecuted - this.getFormerValue(componentId, startTask, endTask, this.timestamp, "bolt", COL_TOTAL_EXEC);
+									Long formerExecuted = this.getFormerValue(componentId, startTask, endTask, this.timestamp, "bolt", COL_TOTAL_EXEC);
+									Long updateExecuted = totalExecuted;
+									if(formerExecuted <= updateExecuted){
+										updateExecuted = updateExecuted - formerExecuted;
+									}
 
 									Map<GlobalStreamId, Double> executionAvgTime = boltStats.get_execute_ms_avg().get(ALLTIME);
 									Double sum = 0.0;

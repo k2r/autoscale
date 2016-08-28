@@ -36,6 +36,7 @@ public class AutoscaleScheduler implements IScheduler {
 	private ArrayList<String> needScaleIn;
 	private String nimbusHost;
 	private Integer nimbusPort;
+	private String password;
 	private static Logger logger = Logger.getLogger("AutoscaleScheduler");
 
 	/**
@@ -53,6 +54,7 @@ public class AutoscaleScheduler implements IScheduler {
 	public void prepare(Map conf) {
 		this.nimbusHost = (String) conf.get("nimbus.host");
 		this.nimbusPort = (Integer) conf.get("nimbus.thrift.port");
+		this.password = "storm";
 	}
 
 	/* (non-Javadoc)
@@ -63,7 +65,7 @@ public class AutoscaleScheduler implements IScheduler {
 	public void schedule(Topologies topologies, Cluster cluster) {
 		StatStorageManager manager = null;
 		try {
-			manager = StatStorageManager.getManager("localhost", this.nimbusHost, this.nimbusPort, 2);
+			manager = StatStorageManager.getManager("localhost", this.password, this.nimbusHost, this.nimbusPort, 2);
 		} catch (ClassNotFoundException | SQLException e1) {
 			logger.severe("Unable to start the StatStorageManage because of " + e1);
 		}
@@ -73,7 +75,7 @@ public class AutoscaleScheduler implements IScheduler {
 			if(!manager.isActive(topology.getId())){
 				logger.fine("Topology " + topology.getName() + " is inactive, killed or being rebalanced...");
 			}else{
-				this.compMonitor = new ComponentMonitor("localhost", this.nimbusHost, this.nimbusPort, 2);
+				this.compMonitor = new ComponentMonitor("localhost", this.password, this.nimbusHost, this.nimbusPort, 2);
 				this.assignMonitor = new AssignmentMonitor(cluster, topology);
 				this.explorer = new TopologyExplorer(topology.getName(), topology.getTopology());
 				this.assignMonitor.update();
