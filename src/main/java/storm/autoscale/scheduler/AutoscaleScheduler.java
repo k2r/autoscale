@@ -54,7 +54,7 @@ public class AutoscaleScheduler implements IScheduler {
 	public void prepare(Map conf) {
 		this.nimbusHost = (String) conf.get("nimbus.host");
 		this.nimbusPort = (Integer) conf.get("nimbus.thrift.port");
-		this.password = "storm";
+		this.password = null;
 	}
 
 	/* (non-Javadoc)
@@ -65,7 +65,7 @@ public class AutoscaleScheduler implements IScheduler {
 	public void schedule(Topologies topologies, Cluster cluster) {
 		StatStorageManager manager = null;
 		try {
-			manager = StatStorageManager.getManager("localhost", this.password, this.nimbusHost, this.nimbusPort, 2);
+			manager = StatStorageManager.getManager("localhost", this.password, this.nimbusHost, this.nimbusPort, 5);
 		} catch (ClassNotFoundException | SQLException e1) {
 			logger.severe("Unable to start the StatStorageManage because of " + e1);
 		}
@@ -75,7 +75,7 @@ public class AutoscaleScheduler implements IScheduler {
 			if(!manager.isActive(topology.getId())){
 				logger.fine("Topology " + topology.getName() + " is inactive, killed or being rebalanced...");
 			}else{
-				this.compMonitor = new ComponentMonitor("localhost", this.password, this.nimbusHost, this.nimbusPort, 2);
+				this.compMonitor = new ComponentMonitor("localhost", this.password, this.nimbusHost, this.nimbusPort, 5);
 				this.assignMonitor = new AssignmentMonitor(cluster, topology);
 				this.explorer = new TopologyExplorer(topology.getName(), topology.getTopology());
 				this.assignMonitor.update();
@@ -136,7 +136,7 @@ public class AutoscaleScheduler implements IScheduler {
 						}
 						scaleOutInfo += "have required a scale out!";
 						logger.fine(scaleOutInfo);
-						IAction action = new ScaleOutAction(this.compMonitor, this.explorer, this.assignMonitor, new DelegatedAllocationStrategy(assignMonitor), this.nimbusHost, this.nimbusPort);
+						IAction action = new ScaleOutAction(this.compMonitor, this.explorer, this.assignMonitor, new DelegatedAllocationStrategy(assignMonitor), this.nimbusHost, this.nimbusPort, this.password);
 					}
 
 					if(this.needScaleIn.isEmpty()){
@@ -148,7 +148,7 @@ public class AutoscaleScheduler implements IScheduler {
 						}
 						scaleInInfo += "have required a scale in!";
 						logger.fine(scaleInInfo);
-						IAction action = new ScaleInAction(this.compMonitor, this.explorer, this.assignMonitor, new DelegatedAllocationStrategy(assignMonitor), this.nimbusHost, this.nimbusPort);
+						IAction action = new ScaleInAction(this.compMonitor, this.explorer, this.assignMonitor, new DelegatedAllocationStrategy(assignMonitor), this.nimbusHost, this.nimbusPort, this.password);
 					}
 				}
 			}

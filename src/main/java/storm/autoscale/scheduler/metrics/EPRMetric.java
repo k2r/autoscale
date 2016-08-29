@@ -9,7 +9,7 @@ import java.util.HashMap;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
 import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
-import storm.autoscale.scheduler.util.Regression;
+import storm.autoscale.scheduler.util.RegressionTools;
 
 /**
  * @author Roland
@@ -31,7 +31,7 @@ public class EPRMetric implements IMetric {
 	public EPRMetric(TopologyExplorer te, ComponentMonitor cm) {
 		this.te = te;
 		this.cm = cm;
-		this.remainingTuples = this.cm.getFormerRemainingTuples();
+		this.remainingTuples = this.cm.getFormerRemainingTuples(this.te);
 		this.eprInfo = new HashMap<>();
 	}
 
@@ -71,8 +71,8 @@ public class EPRMetric implements IMetric {
 		//Determine the min and the max of input records
 		HashMap<Integer, Long> inputRecords = this.cm.getStats(component).getInputRecords();
 		//From those points, compute the equation of the line
-		Double coeff = Regression.linearRegressionCoeff(inputRecords);
-		Double offset = Regression.linearRegressionOffset(inputRecords);
+		Double coeff = RegressionTools.linearRegressionCoeff(inputRecords);
+		Double offset = RegressionTools.linearRegressionOffset(inputRecords);
 		//System.out.println("Linear coefficient : " + coeff);
 		//System.out.println("Linear offset : " + offset);
 		//determine each estimated value and sum them
@@ -100,8 +100,8 @@ public class EPRMetric implements IMetric {
 		for(Integer timestamp : latencyRecords.keySet()){
 			processingRates.put(timestamp, 1000 / latencyRecords.get(timestamp));
 		}
-		Double coeff = Regression.linearRegressionCoeff(processingRates);
-		Double offset = Regression.linearRegressionOffset(processingRates);
+		Double coeff = RegressionTools.linearRegressionCoeff(processingRates);
+		Double offset = RegressionTools.linearRegressionOffset(processingRates);
 		//System.out.println("Linear coefficient : " + coeff);
 		//System.out.println("Linear offset : " + offset);
 		//determine each estimated value and calculate the average

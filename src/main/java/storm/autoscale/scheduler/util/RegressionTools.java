@@ -9,7 +9,7 @@ import java.util.HashMap;
  * @author Roland
  *
  */
-public class Regression {
+public class RegressionTools {
 	
 	public static <T extends Number, U extends Number> Integer nbPoints(HashMap<T, U> coordinates){
 		return coordinates.size();
@@ -51,22 +51,22 @@ public class Regression {
 	}
 	
 	public static <T extends Number, U extends Number> Double avgXCoordinate(HashMap<T, U> coordinates){
-		return Regression.sumXCoordinate(coordinates) / Regression.nbPoints(coordinates);
+		return RegressionTools.sumXCoordinate(coordinates) / RegressionTools.nbPoints(coordinates);
 	}
 	
 	public static <T extends Number, U extends Number> Double avgYCoordinate(HashMap<T, U> coordinates){
-		return Regression.sumYCoordinate(coordinates) / Regression.nbPoints(coordinates);
+		return RegressionTools.sumYCoordinate(coordinates) / RegressionTools.nbPoints(coordinates);
 	}
 	
 	public static <T extends Number, U extends Number> Double linearRegressionCoeff(HashMap<T, U> coordinates){
-		Double dividend = (Regression.nbPoints(coordinates) * Regression.sumProdXYCoordinates(coordinates)) 
-				- (Regression.sumXCoordinate(coordinates) * Regression.sumYCoordinate(coordinates));
-		Double divisor = (Regression.nbPoints(coordinates) * Regression.sumSqXCoordinates(coordinates))
-				- (Math.pow(Regression.sumXCoordinate(coordinates), 2));
+		Double dividend = (RegressionTools.nbPoints(coordinates) * RegressionTools.sumProdXYCoordinates(coordinates)) 
+				- (RegressionTools.sumXCoordinate(coordinates) * RegressionTools.sumYCoordinate(coordinates));
+		Double divisor = (RegressionTools.nbPoints(coordinates) * RegressionTools.sumSqXCoordinates(coordinates))
+				- (Math.pow(RegressionTools.sumXCoordinate(coordinates), 2));
 		return dividend / divisor;
 	}
 	
 	public static <T extends Number, U extends Number> Double linearRegressionOffset(HashMap<T, U> coordinates){
-		return Regression.avgYCoordinate(coordinates) - (Regression.linearRegressionCoeff(coordinates) * Regression.avgXCoordinate(coordinates));
+		return RegressionTools.avgYCoordinate(coordinates) - (RegressionTools.linearRegressionCoeff(coordinates) * RegressionTools.avgXCoordinate(coordinates));
 	}
 }

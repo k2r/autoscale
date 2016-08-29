@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import storm.autoscale.scheduler.UtilFunctions;
+import storm.autoscale.scheduler.util.UtilFunctions;
 
 /**
  * @author Roland

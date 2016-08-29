@@ -62,7 +62,7 @@ public class ComponentMonitorTest extends TestCase {
 		cm.updateStats(cws1.getId(), cws1);
 		cm.updateStats(cws2.getId(), cws2);
 		
-		assertEquals(true, cm.isInputDecreasing("component1"));
+		assertEquals(false, cm.isInputDecreasing("component1"));
 		assertEquals(false, cm.isInputDecreasing("component2"));
 	}
 
@@ -101,7 +101,7 @@ public class ComponentMonitorTest extends TestCase {
 		cm.updateStats(cws1.getId(), cws1);
 		cm.updateStats(cws2.getId(), cws2);
 		
-		assertEquals(false, cm.isInputStable("component1"));
+		assertEquals(true, cm.isInputStable("component1"));
 		assertEquals(true, cm.isInputStable("component2"));
 	}
 
@@ -140,7 +140,7 @@ public class ComponentMonitorTest extends TestCase {
 		cm.updateStats(cws1.getId(), cws1);
 		cm.updateStats(cws2.getId(), cws2);
 		
-		assertEquals(true, cm.isInputIncreasing("component1"));
+		assertEquals(false, cm.isInputIncreasing("component1"));
 		assertEquals(false, cm.isInputIncreasing("component2"));
 	}
 

@@ -118,19 +118,19 @@ public class EPRMetricTest extends TestCase {
 		remainingTuples.put("component2", 0L);
 		remainingTuples.put("component3", 0L);
 		
+		TopologyExplorer explorer = Mockito.mock(TopologyExplorer.class);
+		
 		ComponentMonitor compMonitor = Mockito.mock(ComponentMonitor.class);
 		Mockito.when(compMonitor.getStats("component1")).thenReturn(stats1);
 		Mockito.when(compMonitor.getStats("component2")).thenReturn(stats2);
 		Mockito.when(compMonitor.getStats("component3")).thenReturn(stats3);
 		Mockito.when(compMonitor.getSamplingRate()).thenReturn(1);
-		Mockito.when(compMonitor.getFormerRemainingTuples()).thenReturn(remainingTuples);
-		
-		TopologyExplorer explorer = Mockito.mock(TopologyExplorer.class);
+		Mockito.when(compMonitor.getFormerRemainingTuples(explorer)).thenReturn(remainingTuples);
 		
 		EPRMetric eprMetric = new EPRMetric(explorer, compMonitor);
-		assertEquals(1450.0, eprMetric.computeEstimatedLoad("component1"), 0);
+		assertEquals(7350.0, eprMetric.computeEstimatedLoad("component1"), 0);
 		assertEquals(450.0, eprMetric.computeEstimatedLoad("component2"), 0);
-		assertEquals(500.0, eprMetric.computeEstimatedLoad("component3"), 0);
+		assertEquals(1500.0, eprMetric.computeEstimatedLoad("component3"), 0);
 	}
 
 	/**
@@ -187,18 +187,18 @@ public class EPRMetricTest extends TestCase {
 		remainingTuples.put("component2", 0L);
 		remainingTuples.put("component3", 0L);
 		
+		TopologyExplorer explorer = Mockito.mock(TopologyExplorer.class);
+		
 		ComponentMonitor compMonitor = Mockito.mock(ComponentMonitor.class);
 		Mockito.when(compMonitor.getStats("component1")).thenReturn(stats1);
 		Mockito.when(compMonitor.getStats("component2")).thenReturn(stats2);
 		Mockito.when(compMonitor.getStats("component3")).thenReturn(stats3);
 		Mockito.when(compMonitor.getSamplingRate()).thenReturn(1);
-		Mockito.when(compMonitor.getFormerRemainingTuples()).thenReturn(remainingTuples);
-		
-		TopologyExplorer explorer = Mockito.mock(TopologyExplorer.class);
-		
+		Mockito.when(compMonitor.getFormerRemainingTuples(explorer)).thenReturn(remainingTuples);
+			
 		EPRMetric eprMetric = new EPRMetric(explorer, compMonitor);
-		assertEquals(500.0, eprMetric.computeEstimatedProcessing("component1"), 0);
-		assertEquals(972.0, eprMetric.computeEstimatedProcessing("component2"), 1);
+		assertEquals(1500.0, eprMetric.computeEstimatedProcessing("component1"), 0);
+		assertEquals(5177.6, eprMetric.computeEstimatedProcessing("component2"), 1);
 		assertEquals(0.0, eprMetric.computeEstimatedProcessing("component3"), 0);
 	}
 	
@@ -371,6 +371,8 @@ public class EPRMetricTest extends TestCase {
 		remainingTuples.put("component8", 0L);
 		remainingTuples.put("component9", 0L);
 		
+		TopologyExplorer explorer = Mockito.mock(TopologyExplorer.class);
+		
 		ComponentMonitor compMonitor = Mockito.mock(ComponentMonitor.class);
 		Mockito.when(compMonitor.getStats("component1")).thenReturn(stats1);
 		Mockito.when(compMonitor.getStats("component2")).thenReturn(stats2);
@@ -382,19 +384,17 @@ public class EPRMetricTest extends TestCase {
 		Mockito.when(compMonitor.getStats("component8")).thenReturn(stats8);
 		Mockito.when(compMonitor.getStats("component9")).thenReturn(stats9);
 		Mockito.when(compMonitor.getSamplingRate()).thenReturn(1);
-		Mockito.when(compMonitor.getFormerRemainingTuples()).thenReturn(remainingTuples);
-		
-		TopologyExplorer explorer = Mockito.mock(TopologyExplorer.class);
+		Mockito.when(compMonitor.getFormerRemainingTuples(explorer)).thenReturn(remainingTuples);
 		
 		EPRMetric eprMetric = new EPRMetric(explorer, compMonitor);
 		assertEquals(1, eprMetric.compute("component1"), 0);
 		assertEquals(-1, eprMetric.compute("component2"), 0);
-		assertEquals(0.51, eprMetric.compute("component3"), 0.01);
-		assertEquals(0.9, eprMetric.compute("component4"), 0);
+		assertEquals(0.287, eprMetric.compute("component3"), 0.01);
+		assertEquals(0.3, eprMetric.compute("component4"), 0);
 		assertEquals(-1.0, eprMetric.compute("component5"), 0);
-		assertEquals(0.46, eprMetric.compute("component6"), 0.01);
-		assertEquals(2.9, eprMetric.compute("component7"), 0);
+		assertEquals(0.087, eprMetric.compute("component6"), 0.01);
+		assertEquals(4.9, eprMetric.compute("component7"), 0);
 		assertEquals(-1.0, eprMetric.compute("component8"), 0);
-		assertEquals(1.49, eprMetric.compute("component9"), 0.01);
+		assertEquals(1.419, eprMetric.compute("component9"), 0.01);
 	}
 }

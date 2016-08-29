@@ -28,6 +28,7 @@ import backtype.storm.generated.Nimbus;
 import backtype.storm.generated.SpoutStats;
 import backtype.storm.generated.TopologyInfo;
 import backtype.storm.generated.TopologySummary;
+import storm.autoscale.scheduler.modules.TopologyExplorer;
 import storm.autoscale.scheduler.modules.listener.NimbusListener;
 
 /**
@@ -60,7 +61,7 @@ public class StatStorageManager implements Runnable{
 	private final static String COL_AVG_LATENCY = "execute_ms_avg";
 	private final static String COL_SELECTIVITY = "selectivity";
 	
-	private final static Integer LARGE_WINDOW_SIZE = 20;
+	private final static Integer LARGE_WINDOW_SIZE = 60;
 	
 	
 	private Thread thread;
@@ -616,18 +617,44 @@ public class StatStorageManager implements Runnable{
 		return result;
 	}
 	
-	public Long getFormerRemainingTuples(Integer timestamp, String component){
+	public Long getFormerRemainingTuples(Integer timestamp, String component, TopologyExplorer explorer){
 		Long result = 0L;
 		Integer previousTimestamp = timestamp - 1;
 		Integer oldestTimestamp = timestamp - LARGE_WINDOW_SIZE;
-		String query = "SELECT remaining_tuples" + " FROM " + TABLE_EPR +
-					" WHERE component = '" + component + "' " + 
-					" AND timestamp BETWEEN " + oldestTimestamp + " AND " + previousTimestamp;
+		ArrayList<String> parents = explorer.getParents(component);
+		for(String parent : parents){
+			String query = "";
+			if(explorer.getSpouts().contains(parent)){
+				query = "SELECT SUM(" + COL_TOTAL_OUTPUT + ") FROM " + TABLE_SPOUT +
+						" WHERE component = '" + parent + "' " + 
+						" AND timestamp BETWEEN " + oldestTimestamp + " AND " + previousTimestamp + 
+						" GROUP BY timestamp, component";
+			}
+			if(explorer.getBolts().contains(parent)){
+				query = "SELECT SUM(" + COL_TOTAL_OUTPUT + ") FROM " + TABLE_BOLT +
+						" WHERE component = '" + parent + "' " + 
+						" AND timestamp BETWEEN " + oldestTimestamp + " AND " + previousTimestamp + 
+						" GROUP BY timestamp, component";
+			}
+			try {
+				Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+				ResultSet results = statement.executeQuery(query);
+				if(results.last()){
+					result += results.getLong("SUM(" + COL_TOTAL_OUTPUT + ")");
+				}
+			} catch (SQLException e) {
+				logger.severe("Unable to retrieve former value of remaining tuples to process because of " + e);
+			}
+		}
+		String queryExecuted = "SELECT SUM(" + COL_TOTAL_EXEC + ") FROM " + TABLE_BOLT +
+				" WHERE component = '" + component + "' " + 
+				" AND timestamp BETWEEN " + oldestTimestamp + " AND " + previousTimestamp + 
+				" GROUP BY timestamp, component";
 		try {
 			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			ResultSet results = statement.executeQuery(query);
+			ResultSet results = statement.executeQuery(queryExecuted);
 			if(results.last()){
-				result = results.getLong("remaining_tuples");
+				result = result - results.getLong("SUM(" + COL_TOTAL_EXEC + ")");
 			}
 		} catch (SQLException e) {
 			logger.severe("Unable to retrieve former value of remaining tuples to process because of " + e);

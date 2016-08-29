@@ -3,12 +3,15 @@
  */
 package storm.autoscale.scheduler.modules.stats;
 
+//import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
+//import java.util.logging.FileHandler;
 import java.util.logging.Logger;
+//import java.util.logging.SimpleFormatter;
 
 import storm.autoscale.scheduler.metrics.EPRMetric;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
@@ -26,11 +29,12 @@ public class ComponentMonitor {
 	private ArrayList<String> scaleOutRequirements;
 	private ArrayList<String> scaleInRequirements;
 	private HashMap<String, Double> eprValues;
-	public static final Integer WINDOW_SIZE = 10;
+	public static final Integer WINDOW_SIZE = 30;
 	public static final Double RECORD_THRESHOLD = 0.7;
-	public static final Double VAR_THRESHOLD = 20.0;
+	public static final Double VAR_THRESHOLD = 100.0;
 	public static final Double EPR_SENSIVITY = 0.1;
 	private static Logger logger = Logger.getLogger("ComponentMonitor");
+	//private static FileHandler fh;
 	
 	/**
 	 * 
@@ -49,6 +53,16 @@ public class ComponentMonitor {
 				e.printStackTrace();
 			}
 		}
+		// This block configure the logger with handler and formatter  
+        /*try {
+			fh = new FileHandler("scaling.log");
+			logger.addHandler(fh);
+	        SimpleFormatter formatter = new SimpleFormatter();  
+	        fh.setFormatter(formatter);
+	        logger.setUseParentHandlers(false);
+		} catch (SecurityException | IOException e) {
+			logger.severe("Unable to create the log file for scaling decisions because " + e);
+		}*/ 
 	}
 
 	public void getStatistics(TopologyExplorer explorer){
@@ -126,6 +140,13 @@ public class ComponentMonitor {
 		this.stats.put(component, cws);
 	}
 	
+	/**
+	 * @return the timestamp
+	 */
+	public Integer getTimestamp() {
+		return timestamp;
+	}
+
 	/**
 	 * @return the scaleOutRequirements
 	 */
@@ -226,10 +247,10 @@ public class ComponentMonitor {
 		return result;
 	}
 	
-	public HashMap<String, Long> getFormerRemainingTuples(){
+	public HashMap<String, Long> getFormerRemainingTuples(TopologyExplorer explorer){
 		HashMap<String, Long> result = new HashMap<>();
 		for(String component : this.stats.keySet()){
-			result.put(component, this.manager.getFormerRemainingTuples(this.timestamp, component));
+			result.put(component, this.manager.getFormerRemainingTuples(this.timestamp, component, explorer));
 		}
 		return result;
 	}
@@ -248,12 +269,15 @@ public class ComponentMonitor {
 				Double threshold = 1 - EPR_SENSIVITY;
 				if(eprValue < threshold && isInputDecreasing(component)){
 					this.scaleInRequirements.add(component);
+					//logger.info("Timestamp: " + this.timestamp + " Component " + component + " required scale in. EPR: " + eprValue + " and input decreasing.");
 				}else{
 					if(eprValue > threshold && eprValue < 1 && isInputIncreasing(component)){
 						this.scaleOutRequirements.add(component);
+						//logger.info("Timestamp: " + this.timestamp + " Component " + component + " required scale out. EPR: " + eprValue + " and input increasing.");
 					}else{
 						if(eprValue > 1){
 							this.scaleOutRequirements.add(component);
+							//logger.info("Timestamp: " + this.timestamp + " Component " + component + " required scale out. EPR: " + eprValue);
 						}
 					}
 				}
@@ -267,7 +291,7 @@ public class ComponentMonitor {
 		//System.out.println(component + " has epr = " + eprValue);
 		if(eprValue != null){
 			if(eprValue == -1.0){
-				//System.out.println(component + " cannot scale in because of epr = -1");
+				//logger.info("Timestamp: " + this.timestamp + " Component " + component + " cannot scale in because of epr = -1");
 				return false;
 			}
 			ArrayList<String> antecedents = explorer.getAntecedents(component);
@@ -275,13 +299,13 @@ public class ComponentMonitor {
 				Double antecedentEprValue = this.getEPRValue(antecedent);
 				if(antecedentEprValue != null){
 					if(antecedentEprValue >= 1){
-						//System.out.println(component + " cannot scale in because " + antecedent + " can scale out");
+						//logger.info("Timestamp: " + this.timestamp + " Component " + component + " cannot scale in because " + antecedent + " can scale out");
 						return false;
 					}
 				}
 			}
 			if(this.needScaleIn(component)){
-				//System.out.println(component + " can scale in");
+				//logger.info("Timestamp: " + this.timestamp + " Component " + component + " can scale in");
 				validate = true;
 			}
 		}
@@ -294,13 +318,13 @@ public class ComponentMonitor {
 		//System.out.println(component + " has epr = " + eprValue);
 		if(eprValue != null){
 			if(eprValue == -1.0){
-				//System.out.println(component + " cannot scale out because of epr = -1");
+				//logger.info("Timestamp: " + this.timestamp + " Component " + component + " cannot scale out because of epr = -1");
 				return false;
 			}
 			ArrayList<String> parents = explorer.getParents(component);
 			for(String parent : parents){
 				if(this.validateScaleOut(parent, explorer)){
-					//System.out.println(component + " will scale out instead remaining in the same state because " + parent + " will scale out");
+					//logger.info("Timestamp: " + this.timestamp + " Component " + component + " will scale out instead remaining in the same state because " + parent + " will scale out");
 					validate = true;
 					break;
 				}

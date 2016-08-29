@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 import junit.framework.TestCase;
+import storm.autoscale.scheduler.util.UtilFunctions;
 
 /**
  * @author Roland
@@ -15,7 +16,7 @@ import junit.framework.TestCase;
 public class UtilFunctionsTest extends TestCase {
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.UtilFunctions#getBuckets(java.util.ArrayList, java.lang.Integer)}.
+	 * Test method for {@link storm.autoscale.scheduler.util.UtilFunctions#getBuckets(java.util.ArrayList, java.lang.Integer)}.
 	 */
 	public void testGetBuckets() {
 		ArrayList<Integer> tasks = new ArrayList<>();

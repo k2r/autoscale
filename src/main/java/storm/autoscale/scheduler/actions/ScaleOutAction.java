@@ -3,8 +3,15 @@
  */
 package storm.autoscale.scheduler.actions;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import org.apache.thrift7.TException;
@@ -32,19 +39,25 @@ public class ScaleOutAction implements IAction {
 	private IAllocationStrategy allocStrategy;
 	private String nimbusHost;
 	private Integer nimbusPort;
-	private ArrayList<String> validateActions;
+	private String password;
+	private Set<String> validateActions;
 	private Logger logger = Logger.getLogger("ScaleOutAction");
 	
 	public ScaleOutAction(ComponentMonitor compMonitor, TopologyExplorer explorer,
 			AssignmentMonitor assignMonitor, IAllocationStrategy allocStrategy, String nimbusHost,
-			Integer nimbusPort) {
+			Integer nimbusPort, String password) {
 		this.compMonitor = compMonitor;
 		this.explorer = explorer;
 		this.assignMonitor = assignMonitor;
 		this.allocStrategy = allocStrategy;
 		this.nimbusHost = nimbusHost;
 		this.nimbusPort = nimbusPort;
-		this.validateActions = this.compMonitor.getScaleOutRequirements();
+		this.password = password;
+		ArrayList<String> actions = this.compMonitor.getScaleOutRequirements();
+		this.validateActions = new HashSet<>();
+		for(String action : actions){
+			this.validateActions.add(action);
+		}
 		Thread thread = new Thread(this);
 		thread.start();
 	}
@@ -78,10 +91,11 @@ public class ScaleOutAction implements IAction {
 
 					client.rebalance(explorer.getTopologyName(), options);
 					logger.fine("Parallelism of component " + component + " increased successfully!");
+					storeAction(component, currentParallelism, newParallelism);
 				}else{
 					logger.fine("This scale-out will not improve the distribution of the operator");
 				}
-				Thread.sleep(2000);
+				Thread.sleep(1000);
 			}
 		} catch (TException | InterruptedException e) {
 			logger.severe("Unable to scale topology " + explorer.getTopologyName() + " because of " + e);
@@ -109,6 +123,21 @@ public class ScaleOutAction implements IAction {
 			result.put(component, bestWorker);
 		}
 		return result;
+	}
+
+	@Override
+	public void storeAction(String component, Integer currentDegree, Integer newDegree) {
+		String jdbcDriver = "com.mysql.jdbc.Driver";
+		String dbUrl = "jdbc:mysql://localhost/benchmarks";
+		try {
+			Class.forName(jdbcDriver);
+			Connection connection = DriverManager.getConnection(dbUrl, "root", this.password);
+			String query = "INSERT INTO scales VALUES('" + this.compMonitor.getTimestamp() + "', '" + component + "', 'scale out', '" + currentDegree + "', '" + newDegree + "')";
+			Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			statement.executeUpdate(query);
+		} catch(ClassNotFoundException | SQLException e) {
+			logger.severe("Unable to store the scale out action for component " + component +  " because " + e);
+		}
 	}
 	
 }

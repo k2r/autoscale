@@ -1,7 +1,7 @@
 /**
  * 
  */
-package storm.autoscale.scheduler;
+package storm.autoscale.scheduler.util;
 
 import java.util.ArrayList;
 import java.util.Comparator;
