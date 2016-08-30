@@ -40,6 +40,7 @@ public class ScaleOutAction implements IAction {
 	private String nimbusHost;
 	private Integer nimbusPort;
 	private String password;
+	private Connection connection;
 	private Set<String> validateActions;
 	private Logger logger = Logger.getLogger("ScaleOutAction");
 	
@@ -57,6 +58,14 @@ public class ScaleOutAction implements IAction {
 		this.validateActions = new HashSet<>();
 		for(String action : actions){
 			this.validateActions.add(action);
+		}
+		String jdbcDriver = "com.mysql.jdbc.Driver";
+		String dbUrl = "jdbc:mysql://localhost/benchmarks";
+		try {
+			Class.forName(jdbcDriver);
+			this.connection = DriverManager.getConnection(dbUrl, "root", this.password);
+		} catch (SQLException | ClassNotFoundException e) {
+			logger.severe("Unable to scale in components because " + e);
 		}
 		Thread thread = new Thread(this);
 		thread.start();
@@ -81,7 +90,7 @@ public class ScaleOutAction implements IAction {
 				int estimatedParallelism  = (int) Math.round(eprValue * currentParallelism);
 		
 				int newParallelism = Math.min(maxParallelism, estimatedParallelism);
-				if(newParallelism > currentParallelism){
+				if(newParallelism > currentParallelism && !isGracePeriod(component)){
 					RebalanceOptions options = new RebalanceOptions();
 					options.put_to_num_executors(component, newParallelism);
 					options.set_num_workers(this.assignMonitor.getNbWorkers());
@@ -127,17 +136,32 @@ public class ScaleOutAction implements IAction {
 
 	@Override
 	public void storeAction(String component, Integer currentDegree, Integer newDegree) {
-		String jdbcDriver = "com.mysql.jdbc.Driver";
-		String dbUrl = "jdbc:mysql://localhost/benchmarks";
 		try {
-			Class.forName(jdbcDriver);
-			Connection connection = DriverManager.getConnection(dbUrl, "root", this.password);
 			String query = "INSERT INTO scales VALUES('" + this.compMonitor.getTimestamp() + "', '" + component + "', 'scale out', '" + currentDegree + "', '" + newDegree + "')";
-			Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			statement.executeUpdate(query);
-		} catch(ClassNotFoundException | SQLException e) {
+		} catch(SQLException e) {
 			logger.severe("Unable to store the scale out action for component " + component +  " because " + e);
 		}
+	}
+
+	@Override
+	public boolean isGracePeriod(String component) {
+		boolean isGrace = false;
+		Integer previousTimestamp = this.compMonitor.getTimestamp() - 1;
+		Integer oldTimestamp = this.compMonitor.getTimestamp() - ComponentMonitor.WINDOW_SIZE;
+		String query = "SELECT * FROM scales WHERE component = '" + component + "' AND timestamp BETWEEN " + oldTimestamp + " AND " + previousTimestamp;
+		Statement statement;
+		try {
+			statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			ResultSet result = statement.executeQuery(query);
+			if(result.next()){
+				isGrace = true;
+			}
+		} catch (SQLException e) {
+			logger.severe("Unable to scale component " + component + " because of " + e);
+		}
+		return isGrace;
 	}
 	
 }
