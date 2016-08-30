@@ -664,13 +664,6 @@ public class StatStorageManager implements Runnable{
 	
 	@Override
 	public void run() {
-		while(true){
-			try {
-				this.storeStatistics();
-				Thread.sleep(this.getRate());
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
+		this.storeStatistics();
 	}	
 }
