@@ -44,7 +44,7 @@ public class MonitoredEvenScheduler implements IScheduler{
 	public void prepare(Map conf) {
 		this.nimbusHost = (String) conf.get("nimbus.host");
 		this.nimbusPort = (Integer) conf.get("nimbus.thrift.port");
-		this.password = "storm";
+		this.password = null;
 	}
 
 	@Override

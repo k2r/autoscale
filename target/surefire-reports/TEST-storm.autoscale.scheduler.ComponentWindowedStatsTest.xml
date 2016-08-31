@@ -64,8 +64,8 @@
     <property name="sun.cpu.isalist" value="amd64"/>
   </properties>
   <testcase classname="storm.autoscale.scheduler.ComponentWindowedStatsTest" name="testGetRecord" time="0"/>
+  <testcase classname="storm.autoscale.scheduler.ComponentWindowedStatsTest" name="testGetRecordedTimestamps" time="0"/>
   <testcase classname="storm.autoscale.scheduler.ComponentWindowedStatsTest" name="testGetVariations" time="0"/>
   <testcase classname="storm.autoscale.scheduler.ComponentWindowedStatsTest" name="testGetOldestRecord" time="0"/>
   <testcase classname="storm.autoscale.scheduler.ComponentWindowedStatsTest" name="testGetLastRecord" time="0"/>
-  <testcase classname="storm.autoscale.scheduler.ComponentWindowedStatsTest" name="testGetRecordedTimestamps" time="0"/>
 </testsuite>
