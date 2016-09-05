@@ -64,12 +64,12 @@
     <property name="sun.cpu.isalist" value="amd64"/>
   </properties>
   <testcase classname="storm.autoscale.scheduler.RegressionToolsTest" name="testNbPoints" time="0"/>
-  <testcase classname="storm.autoscale.scheduler.RegressionToolsTest" name="testSumXCoordinate" time="0"/>
-  <testcase classname="storm.autoscale.scheduler.RegressionToolsTest" name="testSumYCoordinate" time="0"/>
   <testcase classname="storm.autoscale.scheduler.RegressionToolsTest" name="testSumProdXYCoordinates" time="0"/>
-  <testcase classname="storm.autoscale.scheduler.RegressionToolsTest" name="testSumSqXCoordinates" time="0"/>
   <testcase classname="storm.autoscale.scheduler.RegressionToolsTest" name="testAvgXCoordinate" time="0"/>
-  <testcase classname="storm.autoscale.scheduler.RegressionToolsTest" name="testAvgYCoordinate" time="0"/>
-  <testcase classname="storm.autoscale.scheduler.RegressionToolsTest" name="testLinearRegressionCoeff" time="0"/>
   <testcase classname="storm.autoscale.scheduler.RegressionToolsTest" name="testLinearRegressionOffset" time="0"/>
+  <testcase classname="storm.autoscale.scheduler.RegressionToolsTest" name="testAvgYCoordinate" time="0"/>
+  <testcase classname="storm.autoscale.scheduler.RegressionToolsTest" name="testSumXCoordinate" time="0"/>
+  <testcase classname="storm.autoscale.scheduler.RegressionToolsTest" name="testLinearRegressionCoeff" time="0"/>
+  <testcase classname="storm.autoscale.scheduler.RegressionToolsTest" name="testSumSqXCoordinates" time="0"/>
+  <testcase classname="storm.autoscale.scheduler.RegressionToolsTest" name="testSumYCoordinate" time="0"/>
 </testsuite>

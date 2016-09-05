@@ -54,7 +54,7 @@ public class AutoscaleScheduler implements IScheduler {
 	public void prepare(Map conf) {
 		this.nimbusHost = (String) conf.get("nimbus.host");
 		this.nimbusPort = (Integer) conf.get("nimbus.thrift.port");
-		this.password = null;
+		this.password = "storm";
 	}
 
 	/* (non-Javadoc)

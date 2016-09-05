@@ -137,9 +137,14 @@ public class EPRMetric implements IMetric {
 	 */
 	@Override
 	public Double compute(String component) {
+		Integer nbRecords = ComponentWindowedStats.getRecordedTimestamps(this.cm.getStats(component).getInputRecords()).size();
 		Double epr = this.computeEstimatedLoad(component) / this.computeEstimatedProcessing(component);
 		//In the case, we estimate that no tuples will be processed, we affect a special value to let a grace period 
 		if(epr.isInfinite() || epr.isNaN()){
+			epr = -1.0;
+		}
+		//In the case, not enough values have been registered to take a meaningful decision
+		if(nbRecords < 2){
 			epr = -1.0;
 		}
 		if(!this.eprInfo.containsKey(component)){
