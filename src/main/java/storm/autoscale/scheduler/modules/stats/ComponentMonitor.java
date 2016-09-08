@@ -30,6 +30,7 @@ public class ComponentMonitor {
 	private ArrayList<String> scaleInRequirements;
 	private HashMap<String, Double> eprValues;
 	public static final Integer WINDOW_SIZE = 30;
+	public static final Integer STABIL_COEFF = 2;
 	public static final Double RECORD_THRESHOLD = 0.7;
 	public static final Double VAR_THRESHOLD = 100.0;
 	public static final Double EPR_SENSIVITY = 0.1;

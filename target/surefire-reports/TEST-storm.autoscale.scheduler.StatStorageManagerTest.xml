@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuite tests="13" failures="0" name="storm.autoscale.scheduler.StatStorageManagerTest" time="1.27" errors="0" skipped="0">
+<testsuite tests="13" failures="0" name="storm.autoscale.scheduler.StatStorageManagerTest" time="1.374" errors="0" skipped="0">
   <properties>
     <property name="java.runtime.name" value="Java(TM) SE Runtime Environment"/>
     <property name="sun.boot.library.path" value="C:\Program Files\Java\jdk1.8.0_45\jre\bin"/>
@@ -63,17 +63,17 @@
     <property name="sun.desktop" value="windows"/>
     <property name="sun.cpu.isalist" value="amd64"/>
   </properties>
-  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetWorkers" time="0.819"/>
-  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testStoreEPRInfo" time="0.032"/>
-  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetOutputs" time="0.039"/>
-  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetExecuted" time="0.037"/>
+  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetExecuted" time="0.918"/>
+  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testStoreEPRInfo" time="0.045"/>
+  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetWorkers" time="0.034"/>
+  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetOutputs" time="0.032"/>
+  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testStoreSpoutExecutorStats" time="0.027"/>
+  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetTopologyAvgLatency" time="0.029"/>
+  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetFormerValue" time="0.049"/>
+  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetFormerRemainingTuples" time="0.097"/>
   <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetTopologyThroughput" time="0.031"/>
+  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetAvgLatency" time="0.031"/>
   <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetSelectivity" time="0.031"/>
-  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testStoreSpoutExecutorStats" time="0.031"/>
-  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetTopologyLosses" time="0.028"/>
-  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetFormerRemainingTuples" time="0.1"/>
-  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetTopologyAvgLatency" time="0.03"/>
-  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testStoreBoltExecutorStats" time="0.025"/>
-  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetAvgLatency" time="0.027"/>
-  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetFormerValue" time="0.04"/>
+  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testGetTopologyLosses" time="0.026"/>
+  <testcase classname="storm.autoscale.scheduler.StatStorageManagerTest" name="testStoreBoltExecutorStats" time="0.024"/>
 </testsuite>
