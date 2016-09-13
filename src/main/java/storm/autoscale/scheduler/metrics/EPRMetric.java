@@ -144,8 +144,11 @@ public class EPRMetric implements IMetric {
 			epr = -1.0;
 		}
 		//In the case, not enough values have been registered to take a meaningful decision
-		if(nbRecords < 2){
+		if(nbRecords < 4 && nbRecords > 1){
 			epr = -1.0;
+		}
+		if(nbRecords <= 1){
+			epr = Double.MIN_VALUE;
 		}
 		if(!this.eprInfo.containsKey(component)){
 			this.eprInfo.put(component, new HashMap<String, BigDecimal>());

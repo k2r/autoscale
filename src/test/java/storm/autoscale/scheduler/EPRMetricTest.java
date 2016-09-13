@@ -128,9 +128,9 @@ public class EPRMetricTest extends TestCase {
 		Mockito.when(compMonitor.getFormerRemainingTuples(explorer)).thenReturn(remainingTuples);
 		
 		EPRMetric eprMetric = new EPRMetric(explorer, compMonitor);
-		assertEquals(7350.0, eprMetric.computeEstimatedLoad("component1"), 0);
+		assertEquals(23700.0, eprMetric.computeEstimatedLoad("component1"), 0);
 		assertEquals(450.0, eprMetric.computeEstimatedLoad("component2"), 0);
-		assertEquals(1500.0, eprMetric.computeEstimatedLoad("component3"), 0);
+		assertEquals(3000.0, eprMetric.computeEstimatedLoad("component3"), 0);
 	}
 
 	/**
@@ -197,8 +197,8 @@ public class EPRMetricTest extends TestCase {
 		Mockito.when(compMonitor.getFormerRemainingTuples(explorer)).thenReturn(remainingTuples);
 			
 		EPRMetric eprMetric = new EPRMetric(explorer, compMonitor);
-		assertEquals(1500.0, eprMetric.computeEstimatedProcessing("component1"), 0);
-		assertEquals(5177.6, eprMetric.computeEstimatedProcessing("component2"), 1);
+		assertEquals(3000.0, eprMetric.computeEstimatedProcessing("component1"), 0);
+		assertEquals(17139.7, eprMetric.computeEstimatedProcessing("component2"), 1);
 		assertEquals(0.0, eprMetric.computeEstimatedProcessing("component3"), 0);
 	}
 	
@@ -389,12 +389,12 @@ public class EPRMetricTest extends TestCase {
 		EPRMetric eprMetric = new EPRMetric(explorer, compMonitor);
 		assertEquals(1, eprMetric.compute("component1"), 0);
 		assertEquals(-1, eprMetric.compute("component2"), 0);
-		assertEquals(0.287, eprMetric.compute("component3"), 0.01);
-		assertEquals(0.3, eprMetric.compute("component4"), 0);
+		assertEquals(0.175, eprMetric.compute("component3"), 0.01);
+		assertEquals(0.15, eprMetric.compute("component4"), 0);
 		assertEquals(-1.0, eprMetric.compute("component5"), 0);
-		assertEquals(0.087, eprMetric.compute("component6"), 0.01);
-		assertEquals(4.9, eprMetric.compute("component7"), 0);
+		assertEquals(0.026, eprMetric.compute("component6"), 0.01);
+		assertEquals(7.9, eprMetric.compute("component7"), 0);
 		assertEquals(-1.0, eprMetric.compute("component8"), 0);
-		assertEquals(1.419, eprMetric.compute("component9"), 0.01);
+		assertEquals(1.382, eprMetric.compute("component9"), 0.01);
 	}
 }

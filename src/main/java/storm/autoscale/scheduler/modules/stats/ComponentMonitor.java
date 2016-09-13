@@ -29,8 +29,8 @@ public class ComponentMonitor {
 	private ArrayList<String> scaleOutRequirements;
 	private ArrayList<String> scaleInRequirements;
 	private HashMap<String, Double> eprValues;
-	public static final Integer WINDOW_SIZE = 30;
-	public static final Integer STABIL_COEFF = 2;
+	public static final Integer WINDOW_SIZE = 60;
+	public static final Integer STABIL_COEFF = 1;
 	public static final Double RECORD_THRESHOLD = 0.7;
 	public static final Double VAR_THRESHOLD = 100.0;
 	public static final Double EPR_SENSIVITY = 0.1;
@@ -268,7 +268,7 @@ public class ComponentMonitor {
 				this.manager.storeEPRInfo(this.timestamp, metric.getTopologyExplorer().getTopologyName(), component, eprValue, eprInfo.get(EPRMetric.REMAINING).intValue(), eprInfo.get(EPRMetric.PROCRATE).doubleValue());
 				//Apply rules to take local decisions
 				Double threshold = 1 - EPR_SENSIVITY;
-				if(eprValue < threshold && isInputDecreasing(component)){
+				if(eprValue < threshold && !isInputIncreasing(component)){
 					this.scaleInRequirements.add(component);
 					//logger.info("Timestamp: " + this.timestamp + " Component " + component + " required scale in. EPR: " + eprValue + " and input decreasing.");
 				}else{

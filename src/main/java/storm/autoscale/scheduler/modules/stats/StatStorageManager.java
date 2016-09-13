@@ -183,7 +183,9 @@ public class StatStorageManager implements Runnable{
 								Map<String, Long> emitted = stats.get_emitted().get(ALLTIME);
 								Long totalOutputs = 0L;
 								for(String stream : emitted.keySet()){
-									totalOutputs += emitted.get(stream);
+									if(!stream.contains("ack")){
+										totalOutputs += emitted.get(stream);
+									}
 								}
 								
 								ExecutorSpecificStats specStats = stats.get_specific();
@@ -227,8 +229,8 @@ public class StatStorageManager implements Runnable{
 									Double sum = 0.0;
 									Double count = 0.0;
 									for(String stream : completeAvgTime.keySet()){
-										sum += completeAvgTime.get(stream);
-										count++;
+											sum += completeAvgTime.get(stream);
+											count++;
 									}
 									Double avgLatency = new BigDecimal(sum / count).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
 									
@@ -249,7 +251,9 @@ public class StatStorageManager implements Runnable{
 									Map<GlobalStreamId, Long> executed = boltStats.get_executed().get(ALLTIME);
 									Long totalExecuted = 0L;
 									for(GlobalStreamId gs : executed.keySet()){
-										totalExecuted += executed.get(gs);
+										if(!gs.get_streamId().contains("ack")){
+											totalExecuted += executed.get(gs);
+										}
 									}
 									
 									Long formerExecuted = this.getFormerValue(componentId, startTask, endTask, this.timestamp, "bolt", COL_TOTAL_EXEC);
@@ -262,8 +266,10 @@ public class StatStorageManager implements Runnable{
 									Double sum = 0.0;
 									Double count = 0.0;
 									for(GlobalStreamId gs : executionAvgTime.keySet()){
-										sum += executionAvgTime.get(gs);
-										count++;
+										if(!gs.get_streamId().contains("ack")){
+											sum += executionAvgTime.get(gs);
+											count++;
+										}
 									}
 									Double avgLatency = new BigDecimal(sum / count).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
 
@@ -514,28 +520,6 @@ public class StatStorageManager implements Runnable{
 		return records;
 	}
 	
-	public HashMap<Integer, Long> getTopologyThroughput(String topology, Integer timestamp, Integer windowSize){
-		int oldestTimestamp =  timestamp - windowSize;
-		HashMap<Integer, Long> records = new HashMap<>();
-		try {
-			String query  = "SELECT timestamp, SUM(" +  COL_UPDT_THROUGHPUT + ") AS topThroughput FROM " + TABLE_SPOUT 
-					+ " WHERE topology = '" + topology 
-					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp 
-					+ " GROUP BY timestamp, topology;";
-			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			ResultSet results = statement.executeQuery(query);
-			while(results.next()){
-				Integer readTimestamp = results.getInt("timestamp");
-				Long throughput = results.getLong("topThroughput");
-				records.put(readTimestamp, throughput);
-			}
-			results.close();
-		} catch (SQLException e) {
-			logger.severe("Unable to compute the global throughput of the topology " + topology + " because of " + e);
-		}
-		return records;
-	}
-	
 	public HashMap<Integer, Long> getTopologyLosses(String topology, Integer timestamp, Integer windowSize){
 		int oldestTimestamp =  timestamp - windowSize;
 		HashMap<Integer, Long> records = new HashMap<>();
@@ -558,6 +542,28 @@ public class StatStorageManager implements Runnable{
 		return records;
 	}
 	
+	public HashMap<Integer, Long> getTopologyThroughput(String topology, Integer timestamp, Integer windowSize){
+		int oldestTimestamp =  timestamp - windowSize;
+		HashMap<Integer, Long> records = new HashMap<>();
+		try {
+			String query  = "SELECT timestamp, SUM(" +  COL_UPDT_THROUGHPUT + ") AS topThroughput FROM " + TABLE_SPOUT 
+					+ " WHERE topology = '" + topology 
+					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp 
+					+ " GROUP BY timestamp, topology;";
+			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			ResultSet results = statement.executeQuery(query);
+			while(results.next()){
+				Integer readTimestamp = results.getInt("timestamp");
+				Long throughput = results.getLong("topThroughput");
+				records.put(readTimestamp, throughput);
+			}
+			results.close();
+		} catch (SQLException e) {
+			logger.severe("Unable to compute the global throughput of the topology " + topology + " because of " + e);
+		}
+		return records;
+	}
+
 	public HashMap<Integer, Double> getTopologyAvgLatency(String topology, Integer timestamp, Integer windowSize){
 		int oldestTimestamp =  timestamp - windowSize;
 		HashMap<Integer, Double> records = new HashMap<>();
