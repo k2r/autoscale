@@ -52,6 +52,7 @@ public class MonitoredEvenScheduler implements IScheduler{
 		StatStorageManager manager = null;
 		try {
 			manager = StatStorageManager.getManager("localhost", this.password, this.nimbusHost, this.nimbusPort, 10);
+			manager.storeStatistics();
 		} catch (ClassNotFoundException | SQLException e1) {
 			logger.severe("Unable to start the StatStorageManage because of " + e1);
 		}

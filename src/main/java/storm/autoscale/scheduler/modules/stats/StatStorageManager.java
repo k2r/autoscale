@@ -35,7 +35,7 @@ import storm.autoscale.scheduler.modules.listener.NimbusListener;
  * @author Roland
  *
  */
-public class StatStorageManager implements Runnable{
+public class StatStorageManager /*implements Runnable*/{
 
 	private static StatStorageManager manager = null;
 	private NimbusListener listener;
@@ -61,10 +61,10 @@ public class StatStorageManager implements Runnable{
 	private final static String COL_AVG_LATENCY = "execute_ms_avg";
 	private final static String COL_SELECTIVITY = "selectivity";
 	
-	private final static Integer LARGE_WINDOW_SIZE = 60;
+	private final static Integer LARGE_WINDOW_SIZE = 120;
 	
 	
-	private Thread thread;
+	//private Thread thread;
 	private static Logger logger = Logger.getLogger("StatStorageManager");
 	
 	/**
@@ -82,13 +82,13 @@ public class StatStorageManager implements Runnable{
 		this.timestamp = 0;
 		this.rate = rate;
 		this.topStatus = new HashMap<>();
-		this.thread = new Thread(this);
+		/*this.thread = new Thread(this);
 		try {
 			thread.start();
 			logger.fine("Statistic manager started successfully!");
 		} catch (IllegalThreadStateException e) {
 			logger.warning("Statistic storage manager has met an issue, restarting in few seconds...");
-		}
+		}*/
 	}
 	
 	private StatStorageManager(String dbHost, String password) throws ClassNotFoundException, SQLException{
@@ -103,10 +103,10 @@ public class StatStorageManager implements Runnable{
 		if(StatStorageManager.manager == null){
 			StatStorageManager.manager = new StatStorageManager(dbHost, password , nimbusHost, nimbusPort, rate);
 		}
-		if(!manager.thread.isAlive()){
+		/*if(!manager.thread.isAlive()){
 			manager.thread = new Thread(manager);
 			manager.thread.start();
-		}
+		}*/
 		return StatStorageManager.manager;
 	}
 	
@@ -232,7 +232,12 @@ public class StatStorageManager implements Runnable{
 											sum += completeAvgTime.get(stream);
 											count++;
 									}
-									Double avgLatency = new BigDecimal(sum / count).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+									Double avgLatency  = sum / count;
+									if(avgLatency.isInfinite() || avgLatency.isNaN()){
+										avgLatency = 0.0;
+									}else{
+										avgLatency = new BigDecimal(sum / count).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+									}
 									
 									storeSpoutExecutorStats(this.getCurrentTimestamp(), host, port, topology.get_id(), componentId, startTask, endTask, totalOutputs, updateOutputs, totalThroughput, updateThroughput, totalLosses, updateLosses, avgLatency);
 									logger.finest("Spout stats successfully persisted!");
@@ -271,9 +276,21 @@ public class StatStorageManager implements Runnable{
 											count++;
 										}
 									}
-									Double avgLatency = new BigDecimal(sum / count).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+									
+									Double avgLatency = sum / count;
+									if(avgLatency.isInfinite() || avgLatency.isNaN()){
+										avgLatency = 0.0;
+									}else{
+										avgLatency = new BigDecimal(sum / count).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+									}
+									
+									Double selectivity = updateOutputs / (updateExecuted * 1.0);
+									if(selectivity.isInfinite() || selectivity.isNaN()){
+										selectivity = 0.0;
+									}else{
+										selectivity = new BigDecimal(updateOutputs / (updateExecuted * 1.0)).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+									}
 
-									Double selectivity = new BigDecimal(updateOutputs / (updateExecuted * 1.0)).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
 									storeBoltExecutorStats(this.getCurrentTimestamp(), host, port, topology.get_id(), componentId, startTask, endTask, totalExecuted, updateExecuted, totalOutputs, updateOutputs, avgLatency, selectivity);
 									logger.finest("Bolt stats successfully persisted!");
 								}
@@ -668,8 +685,8 @@ public class StatStorageManager implements Runnable{
 		return result;
 	}
 	
-	@Override
+	/*@Override
 	public void run() {
 		this.storeStatistics();
-	}	
+	}*/	
 }
