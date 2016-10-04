@@ -33,27 +33,27 @@ public class ComponentMonitorTest extends TestCase {
 	public void testIsInputDecreasing() {
 		HashMap<Integer, Long> inputRecords1 = new HashMap<>();
 		inputRecords1.put(10, 250L / this.scaleFactor);
-		inputRecords1.put(9, 260L / this.scaleFactor);
-		inputRecords1.put(8, 425L / this.scaleFactor);
-		inputRecords1.put(7, 530L / this.scaleFactor);
-		inputRecords1.put(6, 710L / this.scaleFactor);
-		inputRecords1.put(5, 780L / this.scaleFactor);
-		inputRecords1.put(4, 955L / this.scaleFactor);
-		inputRecords1.put(3, 1095L / this.scaleFactor);
-		inputRecords1.put(2, 1225L / this.scaleFactor);
-		inputRecords1.put(1, 1350L / this.scaleFactor);
+		inputRecords1.put(9, 250L / this.scaleFactor);
+		inputRecords1.put(8, 260L / this.scaleFactor);
+		inputRecords1.put(7, 255L / this.scaleFactor);
+		inputRecords1.put(6, 260L / this.scaleFactor);
+		inputRecords1.put(5, 265L / this.scaleFactor);
+		inputRecords1.put(4, 266L / this.scaleFactor);
+		inputRecords1.put(3, 266L / this.scaleFactor);
+		inputRecords1.put(2, 270L / this.scaleFactor);
+		inputRecords1.put(1, 272L / this.scaleFactor);
 	
 		HashMap<Integer, Long> inputRecords2 = new HashMap<>();
 		inputRecords2.put(10, 250L / this.scaleFactor);
 		inputRecords2.put(9, 260L / this.scaleFactor);
-		inputRecords2.put(8, 425L / this.scaleFactor);
-		inputRecords2.put(7, 455L / this.scaleFactor);
-		inputRecords2.put(6, 710L / this.scaleFactor);
-		inputRecords2.put(5, 780L / this.scaleFactor);
-		inputRecords2.put(4, 800L / this.scaleFactor);
-		inputRecords2.put(3, 1095L / this.scaleFactor);
-		inputRecords2.put(2, 1225L / this.scaleFactor);
-		inputRecords2.put(1, 1350L / this.scaleFactor);
+		inputRecords2.put(8, 275L / this.scaleFactor);
+		inputRecords2.put(7, 260L / this.scaleFactor);
+		inputRecords2.put(6, 280L / this.scaleFactor);
+		inputRecords2.put(5, 310L / this.scaleFactor);
+		inputRecords2.put(4, 315L / this.scaleFactor);
+		inputRecords2.put(3, 350L / this.scaleFactor);
+		inputRecords2.put(2, 355L / this.scaleFactor);
+		inputRecords2.put(1, 380L / this.scaleFactor);
 		
 		ComponentWindowedStats cws1 = new ComponentWindowedStats("component1", inputRecords1, null, null, null, null);
 		ComponentWindowedStats cws2 = new ComponentWindowedStats("component2", inputRecords2, null, null, null, null);
@@ -63,7 +63,7 @@ public class ComponentMonitorTest extends TestCase {
 		cm.updateStats(cws2.getId(), cws2);
 		
 		assertEquals(false, cm.isInputDecreasing("component1"));
-		assertEquals(false, cm.isInputDecreasing("component2"));
+		assertEquals(true, cm.isInputDecreasing("component2"));
 	}
 
 	/**
@@ -72,15 +72,15 @@ public class ComponentMonitorTest extends TestCase {
 	public void testIsInputStable() {
 		HashMap<Integer, Long> inputRecords1 = new HashMap<>();
 		inputRecords1.put(10, 1350L / this.scaleFactor);
-		inputRecords1.put(9, 1225L / this.scaleFactor);
-		inputRecords1.put(8, 1095L / this.scaleFactor);
-		inputRecords1.put(7, 955L / this.scaleFactor);
-		inputRecords1.put(6, 780L / this.scaleFactor);
-		inputRecords1.put(5, 710L / this.scaleFactor);
-		inputRecords1.put(4, 530L / this.scaleFactor);
-		inputRecords1.put(3, 425L / this.scaleFactor);
-		inputRecords1.put(2, 260L / this.scaleFactor);
-		inputRecords1.put(1, 250L / this.scaleFactor);
+		inputRecords1.put(9, 1300L / this.scaleFactor);
+		inputRecords1.put(8, 1400L / this.scaleFactor);
+		inputRecords1.put(7, 1340L / this.scaleFactor);
+		inputRecords1.put(6, 1340L / this.scaleFactor);
+		inputRecords1.put(5, 1370L / this.scaleFactor);
+		inputRecords1.put(4, 1350L / this.scaleFactor);
+		inputRecords1.put(3, 1350L / this.scaleFactor);
+		inputRecords1.put(2, 1345L / this.scaleFactor);
+		inputRecords1.put(1, 1350L / this.scaleFactor);
 	
 		HashMap<Integer, Long> inputRecords2 = new HashMap<>();
 		inputRecords2.put(10, 220L / this.scaleFactor);
@@ -102,7 +102,7 @@ public class ComponentMonitorTest extends TestCase {
 		cm.updateStats(cws2.getId(), cws2);
 		
 		assertEquals(true, cm.isInputStable("component1"));
-		assertEquals(true, cm.isInputStable("component2"));
+		assertEquals(false, cm.isInputStable("component2"));
 	}
 
 	/**
@@ -110,28 +110,28 @@ public class ComponentMonitorTest extends TestCase {
 	 */
 	public void testIsInputIncreasing() {
 		HashMap<Integer, Long> inputRecords1 = new HashMap<>();
-		inputRecords1.put(10, 1350L / this.scaleFactor);
-		inputRecords1.put(9, 1225L / this.scaleFactor);
-		inputRecords1.put(8, 1095L / this.scaleFactor);
-		inputRecords1.put(7, 955L / this.scaleFactor);
-		inputRecords1.put(6, 780L / this.scaleFactor);
-		inputRecords1.put(5, 710L / this.scaleFactor);
-		inputRecords1.put(4, 530L / this.scaleFactor);
-		inputRecords1.put(3, 425L / this.scaleFactor);
-		inputRecords1.put(2, 260L / this.scaleFactor);
 		inputRecords1.put(1, 250L / this.scaleFactor);
+		inputRecords1.put(2, 250L / this.scaleFactor);
+		inputRecords1.put(3, 260L / this.scaleFactor);
+		inputRecords1.put(4, 255L / this.scaleFactor);
+		inputRecords1.put(5, 260L / this.scaleFactor);
+		inputRecords1.put(6, 265L / this.scaleFactor);
+		inputRecords1.put(7, 266L / this.scaleFactor);
+		inputRecords1.put(8, 266L / this.scaleFactor);
+		inputRecords1.put(9, 270L / this.scaleFactor);
+		inputRecords1.put(10, 272L / this.scaleFactor);
 	
 		HashMap<Integer, Long> inputRecords2 = new HashMap<>();
-		inputRecords2.put(10, 260L / this.scaleFactor);
-		inputRecords2.put(9, 235L / this.scaleFactor);
-		inputRecords2.put(8, 1095L / this.scaleFactor);
-		inputRecords2.put(7, 160L / this.scaleFactor);
-		inputRecords2.put(6, 780L / this.scaleFactor);
-		inputRecords2.put(5, 710L / this.scaleFactor);
-		inputRecords2.put(4, 455L / this.scaleFactor);
-		inputRecords2.put(3, 425L / this.scaleFactor);
-		inputRecords2.put(2, 260L / this.scaleFactor);
 		inputRecords2.put(1, 250L / this.scaleFactor);
+		inputRecords2.put(2, 260L / this.scaleFactor);
+		inputRecords2.put(3, 275L / this.scaleFactor);
+		inputRecords2.put(4, 260L / this.scaleFactor);
+		inputRecords2.put(5, 280L / this.scaleFactor);
+		inputRecords2.put(6, 310L / this.scaleFactor);
+		inputRecords2.put(7, 315L / this.scaleFactor);
+		inputRecords2.put(8, 350L / this.scaleFactor);
+		inputRecords2.put(9, 355L / this.scaleFactor);
+		inputRecords2.put(10, 380L / this.scaleFactor);
 		
 		ComponentWindowedStats cws1 = new ComponentWindowedStats("component1", inputRecords1, null, null, null, null);
 		ComponentWindowedStats cws2 = new ComponentWindowedStats("component2", inputRecords2, null, null, null, null);
@@ -141,7 +141,7 @@ public class ComponentMonitorTest extends TestCase {
 		cm.updateStats(cws2.getId(), cws2);
 		
 		assertEquals(false, cm.isInputIncreasing("component1"));
-		assertEquals(false, cm.isInputIncreasing("component2"));
+		assertEquals(true, cm.isInputIncreasing("component2"));
 	}
 
 	/**
@@ -384,9 +384,9 @@ public class ComponentMonitorTest extends TestCase {
 		
 		compMonitor.setScaleInRequirements(scaleInRequirements);
 		compMonitor.setScaleOutRequirements(scaleOutRequirements);
-		compMonitor.setEprValues(eprValues);
+		compMonitor.setActivityValues(eprValues);
 		
-		compMonitor.validateRequirements(explorer.getSpouts(), explorer);
+		compMonitor.autoscaleAlgorithm(explorer.getSpouts(), explorer);
 		
 		ArrayList<String> expectedScaleIn = new ArrayList<>();
 		expectedScaleIn.add("B");

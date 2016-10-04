@@ -6,6 +6,7 @@ package storm.autoscale.scheduler.metrics;
 import java.math.BigDecimal;
 import java.util.HashMap;
 
+import storm.autoscale.scheduler.modules.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
 import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
@@ -15,24 +16,26 @@ import storm.autoscale.scheduler.util.RegressionTools;
  * @author Roland
  *
  */
-public class EPRMetric implements IMetric {
+public class ActivityMetric implements IMetric {
 
 	TopologyExplorer te;
 	ComponentMonitor cm;
+	AssignmentMonitor am;
 	HashMap<String, Long> remainingTuples;
-	HashMap<String, HashMap<String, BigDecimal>> eprInfo;
+	HashMap<String, HashMap<String, BigDecimal>> activityInfo;
 	public static final String REMAINING = "remaining_tuples";
-	public static final String EPR = "epr";
-	public static final String PROCRATE = "processing_rate";
+	public static final String ACTIVITY = "activity_level";
+	public static final String CAPPERSEC = "capacity_per_second";
 	
 	/**
 	 * 
 	 */
-	public EPRMetric(TopologyExplorer te, ComponentMonitor cm) {
+	public ActivityMetric(TopologyExplorer te, ComponentMonitor cm, AssignmentMonitor am) {
 		this.te = te;
 		this.cm = cm;
+		this.am = am;
 		this.remainingTuples = this.cm.getFormerRemainingTuples(this.te);
-		this.eprInfo = new HashMap<>();
+		this.activityInfo = new HashMap<>();
 	}
 
 	/* (non-Javadoc)
@@ -51,8 +54,8 @@ public class EPRMetric implements IMetric {
 		return this.cm;
 	}
 
-	public HashMap<String, BigDecimal> getEPRInfo(String component){
-		return this.eprInfo.get(component);
+	public HashMap<String, BigDecimal> getActivityInfo(String component){
+		return this.activityInfo.get(component);
 	}
 	
 	public Double computeEstimatedLoad(String component){
@@ -62,11 +65,12 @@ public class EPRMetric implements IMetric {
 		//System.out.println("Tuples remaining at the start of the window : " + formerRemaining);
 		//compute the remaining tuples at the end of the current window (remaining from the last one + total input - total executed)
 		Long currentRemainingTuples = formerRemaining + this.cm.getStats(component).getTotalInput() - this.cm.getStats(component).getTotalExecuted();
+		currentRemainingTuples = Math.max(0, currentRemainingTuples);// to correct rare negative values due to the accuracy of Storm's internal metric
 		//System.out.println("Tuples remaining now: " + currentRemainingTuples);
-		if(!this.eprInfo.containsKey(component)){
-			this.eprInfo.put(component, new HashMap<String, BigDecimal>());
+		if(!this.activityInfo.containsKey(component)){
+			this.activityInfo.put(component, new HashMap<String, BigDecimal>());
 		}
-		HashMap<String, BigDecimal> info = this.eprInfo.get(component);
+		HashMap<String, BigDecimal> info = this.activityInfo.get(component);
 		info.put(REMAINING, new BigDecimal(currentRemainingTuples));
 		//Determine the min and the max of input records
 		HashMap<Integer, Long> inputRecords = this.cm.getStats(component).getInputRecords();
@@ -91,7 +95,7 @@ public class EPRMetric implements IMetric {
 		return result;
 	}
 	
-	public Double computeEstimatedProcessing(String component){
+	public Double computeAvgCapacity(String component){
 		Double result = 0.0;
 		//Get the window size
 		Integer windowSize = ComponentMonitor.WINDOW_SIZE;
@@ -100,14 +104,15 @@ public class EPRMetric implements IMetric {
 		for(Integer timestamp : latencyRecords.keySet()){
 			processingRates.put(timestamp, 1000 / latencyRecords.get(timestamp));
 		}
-		Double coeff = RegressionTools.linearRegressionCoeff(processingRates);
-		Double offset = RegressionTools.linearRegressionOffset(processingRates);
+		Double averageSeqCapacity = RegressionTools.avgYCoordinate(processingRates);
+		//Double coeff = RegressionTools.linearRegressionCoeff(processingRates);
+		//Double offset = RegressionTools.linearRegressionOffset(processingRates);
 		//System.out.println("Linear coefficient : " + coeff);
 		//System.out.println("Linear offset : " + offset);
 		//determine each estimated value and calculate the average
-		Integer lastTimestamp = ComponentWindowedStats.getRecordedTimestamps(latencyRecords).get(0);
-		Integer nextWindowEnd = lastTimestamp + windowSize;
-		Integer samplingRate = this.cm.getSamplingRate();
+		//Integer lastTimestamp = ComponentWindowedStats.getRecordedTimestamps(latencyRecords).get(0);
+		//Integer nextWindowEnd = lastTimestamp + windowSize;
+		/*Integer samplingRate = this.cm.getSamplingRate();
 		Double estimSumProcRate = 0.0;
 		Double count = 0.0;
 		for(int i = lastTimestamp + samplingRate; i <= nextWindowEnd; i += samplingRate){
@@ -115,19 +120,20 @@ public class EPRMetric implements IMetric {
 			estimSumProcRate += estimProcRate;
 			count++;
 			//System.out.println("timstamp : " + i + " estimated number of processed tuples : " + estimProcRate);
-		}
-		Double estimAvgProcRate = estimSumProcRate / count;
-		if(estimAvgProcRate.isInfinite() || estimAvgProcRate.isNaN()){
-			estimAvgProcRate = 0.0;
+		}*/
+		Integer parallelism = this.am.getParallelism(component); 
+		Double avgCapacity = averageSeqCapacity * parallelism;
+		if(avgCapacity.isInfinite() || avgCapacity.isNaN()){
+			avgCapacity = 0.0;
 		}
 		//System.out.println("Estimated processing rate : " + estimAvgProcRate);
-		result = windowSize * estimAvgProcRate;
+		result = windowSize * avgCapacity;
 		//System.out.println("Estimated number of processed tuples on the next window: " + result);
-		if(!this.eprInfo.containsKey(component)){
-			this.eprInfo.put(component, new HashMap<String, BigDecimal>());
+		if(!this.activityInfo.containsKey(component)){
+			this.activityInfo.put(component, new HashMap<String, BigDecimal>());
 		}
-		HashMap<String, BigDecimal> info = this.eprInfo.get(component);
-		info.put(PROCRATE, new BigDecimal(estimAvgProcRate));
+		HashMap<String, BigDecimal> info = this.activityInfo.get(component);
+		info.put(CAPPERSEC, new BigDecimal(avgCapacity));
 		//multiply these average with the window size into result variable
 		return result;
 	}
@@ -138,16 +144,16 @@ public class EPRMetric implements IMetric {
 	@Override
 	public Double compute(String component) {
 		Integer nbRecords = ComponentWindowedStats.getRecordedTimestamps(this.cm.getStats(component).getInputRecords()).size();
-		Double epr = this.computeEstimatedLoad(component) / this.computeEstimatedProcessing(component);
+		Double epr = this.computeEstimatedLoad(component) / this.computeAvgCapacity(component);
 		//In the case, we estimate that no tuples will be processed, we affect a special value to let a grace period 
 		if(epr.isInfinite() || epr.isNaN() || nbRecords < 4){
 			epr = -1.0;
 		}
-		if(!this.eprInfo.containsKey(component)){
-			this.eprInfo.put(component, new HashMap<String, BigDecimal>());
+		if(!this.activityInfo.containsKey(component)){
+			this.activityInfo.put(component, new HashMap<String, BigDecimal>());
 		}
-		HashMap<String, BigDecimal> info = this.eprInfo.get(component);
-		info.put(EPR, new BigDecimal(epr));
+		HashMap<String, BigDecimal> info = this.activityInfo.get(component);
+		info.put(ACTIVITY, new BigDecimal(epr));
 		return epr;
 	}
 }

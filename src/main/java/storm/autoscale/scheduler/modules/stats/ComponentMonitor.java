@@ -13,8 +13,11 @@ import java.util.Set;
 import java.util.logging.Logger;
 //import java.util.logging.SimpleFormatter;
 
-import storm.autoscale.scheduler.metrics.EPRMetric;
+import storm.autoscale.scheduler.metrics.ActivityMetric;
+import storm.autoscale.scheduler.metrics.LoadMetric;
+import storm.autoscale.scheduler.modules.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
+import storm.autoscale.scheduler.util.RegressionTools;
 
 /**
  * @author Roland
@@ -28,12 +31,13 @@ public class ComponentMonitor {
 	private Integer samplingRate;
 	private ArrayList<String> scaleOutRequirements;
 	private ArrayList<String> scaleInRequirements;
-	private HashMap<String, Double> eprValues;
+	private HashMap<String, Double> activityValues;
+	private HashMap<String, Double> loadValues;
 	public static final Integer WINDOW_SIZE = 60;
 	public static final Integer STABIL_COEFF = 1;
-	public static final Double RECORD_THRESHOLD = 0.7;
-	public static final Double VAR_THRESHOLD = 100.0;
-	public static final Double EPR_SENSIVITY = 0.1;
+	public static final Double VAR_THRESHOLD = 0.5;
+	public static final Double LOW_ACTIVITY_THRESHOLD = 0.4;
+	public static final Double HIGH_ACTIVITY_THRESHOLD = 0.8;
 	private static Logger logger = Logger.getLogger("ComponentMonitor");
 	//private static FileHandler fh;
 	
@@ -44,7 +48,8 @@ public class ComponentMonitor {
 		this.stats = new HashMap<>();
 		this.scaleInRequirements = new ArrayList<>();
 		this.scaleOutRequirements = new ArrayList<>();
-		this.eprValues = new HashMap<>();
+		this.activityValues = new HashMap<>();
+		this.loadValues = new HashMap<>();
 		this.samplingRate = rate; 
 		if(nimbusHost != null && nimbusPort != null){
 			try {
@@ -134,6 +139,11 @@ public class ComponentMonitor {
 		return this.stats.get(component);
 	}
 	
+	public boolean hasRecords(String component){
+		ComponentWindowedStats stats = this.getStats(component);
+		return stats.hasRecords();
+	}
+	
 	public void updateStats(String component, ComponentWindowedStats cws){
 		if(this.stats.containsKey(component)){
 			this.stats.remove(component);
@@ -176,76 +186,52 @@ public class ComponentMonitor {
 		this.scaleInRequirements = scaleInRequirements;
 	}
 
+	public boolean needScaleOut(String component){
+		return this.scaleOutRequirements.contains(component);
+	}
+	
+	public boolean needScaleIn(String component){
+		return this.scaleInRequirements.contains(component);
+	}
+	
 	/**
-	 * @return the eprValues
+	 * @return the activityValues
 	 */
-	public HashMap<String, Double> getEprValues() {
-		return eprValues;
+	public HashMap<String, Double> getActivityValues() {
+		return activityValues;
 	}
 
 	/**
-	 * @param eprValues the eprValues to set
+	 * @param activityValues the activityValues to set
 	 */
-	public void setEprValues(HashMap<String, Double> eprValues) {
-		this.eprValues = eprValues;
+	public void setActivityValues(HashMap<String, Double> activityValues) {
+		this.activityValues = activityValues;
 	}
 
+	public Double getActivityValue(String component){
+		return this.activityValues.get(component);
+	}
+	
 	public Integer getSamplingRate(){
 		return this.samplingRate;
 	}
 	
 	public boolean isInputDecreasing(String component){
-		boolean result = false;
 		HashMap<Integer, Long> inputRecords = this.getStats(component).getInputRecords();
-		ArrayList<Double> variations = ComponentWindowedStats.getVariations(inputRecords);
-		int count = 0;
-		int nbVectors = variations.size();
-		double threshold = nbVectors * RECORD_THRESHOLD;
-		for(int i = 0; i < nbVectors; i++){
-			if(variations.get(i) < -VAR_THRESHOLD){
-				count++;
-			}
-		}
-		if(count >= threshold){
-			result = true;
-		}
-		return result;
+		Double coeff = RegressionTools.linearRegressionCoeff(inputRecords);
+		return (coeff < -VAR_THRESHOLD);
 	}
 	
 	public boolean isInputStable(String component){
-		boolean result = false;
 		HashMap<Integer, Long> inputRecords = this.getStats(component).getInputRecords();
-		ArrayList<Double> variations = ComponentWindowedStats.getVariations(inputRecords);
-		int count = 0;
-		int nbVectors = variations.size();
-		double threshold = nbVectors * RECORD_THRESHOLD;
-		for(int i = 0; i < nbVectors; i++){
-			if(variations.get(i) > -VAR_THRESHOLD && variations.get(i) < VAR_THRESHOLD){
-				count++;
-			}
-		}
-		if(count >= threshold){
-			result = true;
-		}
-		return result;
+		Double coeff = RegressionTools.linearRegressionCoeff(inputRecords);
+		return (coeff >= -VAR_THRESHOLD && coeff <= VAR_THRESHOLD);
 	}
 	
 	public boolean isInputIncreasing(String component){
-		boolean result = false;
 		HashMap<Integer, Long> inputRecords = this.getStats(component).getInputRecords();
-		ArrayList<Double> variations = ComponentWindowedStats.getVariations(inputRecords);
-		int count = 0;
-		int nbVectors = variations.size();
-		double threshold = nbVectors * RECORD_THRESHOLD;
-		for(int i = 0; i < nbVectors; i++){
-			if(variations.get(i) > VAR_THRESHOLD){
-				count++;
-			}
-		}
-		if(count >= threshold){
-			result = true;
-		}
-		return result;
+		Double coeff = RegressionTools.linearRegressionCoeff(inputRecords);
+		return (coeff > VAR_THRESHOLD);
 	}
 	
 	public HashMap<String, Long> getFormerRemainingTuples(TopologyExplorer explorer){
@@ -256,29 +242,34 @@ public class ComponentMonitor {
 		return result;
 	}
 	
-	public void trackRequirements(TopologyExplorer explorer){
-		//Initialize an EPR metric for the current topology
-		EPRMetric metric = new EPRMetric(explorer, this);
+	public void buildActionGraph(TopologyExplorer explorer, AssignmentMonitor assignmentMonitor){
+		//Initialize an activity and load metric for the current topology
+		ActivityMetric activityMetric = new ActivityMetric(explorer, this, assignmentMonitor);
+		LoadMetric loadMetric = new LoadMetric(explorer, this, assignmentMonitor);
 		for(String component : this.getRegisteredComponents()){
 			if(hasRecords(component)){
-				//Compute the EPR and expose monitoring info concerning the EPR for storage
-				Double eprValue = metric.compute(component);
-				this.eprValues.put(component, eprValue);
-				HashMap<String, BigDecimal> eprInfo = metric.getEPRInfo(component);
-				this.manager.storeEPRInfo(this.timestamp, metric.getTopologyExplorer().getTopologyName(), component, eprValue, eprInfo.get(EPRMetric.REMAINING).intValue(), eprInfo.get(EPRMetric.PROCRATE).doubleValue());
+				//Compute the activity level/ load and expose monitoring info concerning the activity/ load for storage
+				Double activityValue = activityMetric.compute(component);
+				this.activityValues.put(component, activityValue);
+				HashMap<String, BigDecimal> activityInfo = activityMetric.getActivityInfo(component);
+				this.manager.storeActivityInfo(this.timestamp, activityMetric.getTopologyExplorer().getTopologyName(), component, activityValue, activityInfo.get(ActivityMetric.REMAINING).intValue(), activityInfo.get(ActivityMetric.CAPPERSEC).doubleValue());
+				
+				Double loadValue = loadMetric.compute(component);
+				this.loadValues.put(component, loadValue);
+				HashMap<String, BigDecimal> loadInfo = loadMetric.getLoadInfo(component);
+				this.manager.storeLoadInfo(this.timestamp, loadMetric.getTopologyExplorer().getTopologyName(), component, loadValue, loadInfo.get(LoadMetric.LOAD).doubleValue());
 				//Apply rules to take local decisions
-				Double threshold = 1 - EPR_SENSIVITY;
-				if(eprValue < threshold && !isInputIncreasing(component)){
+				if(activityValue <= LOW_ACTIVITY_THRESHOLD && !isInputIncreasing(component)){
 					this.scaleInRequirements.add(component);
-					//logger.info("Timestamp: " + this.timestamp + " Component " + component + " required scale in. EPR: " + eprValue + " and input decreasing.");
+					//logger.info("Timestamp: " + this.timestamp + " Component " + component + " required scale in. CR: " + eprValue + " and input decreasing.");
 				}else{
-					if(eprValue > threshold && eprValue < 1 && isInputIncreasing(component)){
+					if(activityValue > HIGH_ACTIVITY_THRESHOLD && activityValue <= 1 && isInputIncreasing(component)){
 						this.scaleOutRequirements.add(component);
-						//logger.info("Timestamp: " + this.timestamp + " Component " + component + " required scale out. EPR: " + eprValue + " and input increasing.");
+						//logger.info("Timestamp: " + this.timestamp + " Component " + component + " required scale out. CR: " + eprValue + " and input increasing.");
 					}else{
-						if(eprValue > 1){
+						if(activityValue > 1){
 							this.scaleOutRequirements.add(component);
-							//logger.info("Timestamp: " + this.timestamp + " Component " + component + " required scale out. EPR: " + eprValue);
+							//logger.info("Timestamp: " + this.timestamp + " Component " + component + " required scale out. CR: " + eprValue);
 						}
 					}
 				}
@@ -288,18 +279,18 @@ public class ComponentMonitor {
 	
 	public boolean validateScaleIn(String component, TopologyExplorer explorer){
 		boolean validate = false;
-		Double eprValue = this.getEPRValue(component);
+		Double activityValue = this.getActivityValue(component);
 		//System.out.println(component + " has epr = " + eprValue);
-		if(eprValue != null){
-			if(eprValue == -1.0){
+		if(activityValue != null){
+			if(activityValue == -1.0){
 				//logger.info("Timestamp: " + this.timestamp + " Component " + component + " cannot scale in because of epr = -1");
 				return false;
 			}
 			ArrayList<String> antecedents = explorer.getAntecedents(component);
 			for(String antecedent : antecedents){
-				Double antecedentEprValue = this.getEPRValue(antecedent);
-				if(antecedentEprValue != null){
-					if(antecedentEprValue >= 1){
+				Double antecedentActivivityValue = this.getActivityValue(antecedent);
+				if(antecedentActivivityValue != null){
+					if(antecedentActivivityValue >= 1){
 						//logger.info("Timestamp: " + this.timestamp + " Component " + component + " cannot scale in because " + antecedent + " can scale out");
 						return false;
 					}
@@ -315,10 +306,10 @@ public class ComponentMonitor {
 	
 	public boolean validateScaleOut(String component, TopologyExplorer explorer){
 		boolean validate = false;
-		Double eprValue = this.getEPRValue(component);
+		Double activityValue = this.getActivityValue(component);
 		//System.out.println(component + " has epr = " + eprValue);
-		if(eprValue != null){
-			if(eprValue == -1.0){
+		if(activityValue != null){
+			if(activityValue == -1.0){
 				//logger.info("Timestamp: " + this.timestamp + " Component " + component + " cannot scale out because of epr = -1");
 				return false;
 			}
@@ -338,7 +329,7 @@ public class ComponentMonitor {
 		return validate;
 	}
 	
-	public void validateRequirements(ArrayList<String> parents, TopologyExplorer explorer){
+	public void autoscaleAlgorithm(ArrayList<String> parents, TopologyExplorer explorer){
 		for(String parent : parents){
 			ArrayList<String> children = explorer.getChildren(parent);
 			for(String child : children){
@@ -357,27 +348,10 @@ public class ComponentMonitor {
 			for(String child : children){
 				ArrayList<String> grandChildren = explorer.getChildren(child);
 				if(!grandChildren.isEmpty()){
-					validateRequirements(children, explorer);
+					autoscaleAlgorithm(children, explorer);
 				}
 			}
 		}
-	}
-	
-	public boolean needScaleOut(String component){
-		return this.scaleOutRequirements.contains(component);
-	}
-	
-	public boolean needScaleIn(String component){
-		return this.scaleInRequirements.contains(component);
-	}
-	
-	public Double getEPRValue(String component){
-		return this.eprValues.get(component);
-	}
-	
-	public boolean hasRecords(String component){
-		ComponentWindowedStats stats = this.getStats(component);
-		return stats.hasRecords();
 	}
 	
 	public void reset(){

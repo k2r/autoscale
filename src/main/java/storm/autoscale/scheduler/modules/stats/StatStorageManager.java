@@ -48,7 +48,8 @@ public class StatStorageManager /*implements Runnable*/{
 	private final static String TABLE_SPOUT = "all_time_spouts_stats";
 	private final static String TABLE_BOLT = "all_time_bolts_stats";
 	private final static String TABLE_TOPOLOGY = "topologies_status";
-	private final static String TABLE_EPR = "operators_epr";
+	private final static String TABLE_ACTIVITY = "operators_activity";
+	private final static String TABLE_LOAD = "operators_loads";
 	
 	private final static String COL_TOTAL_EXEC = "total_executed";
 	private final static String COL_TOTAL_OUTPUT = "total_outputs";
@@ -346,14 +347,25 @@ public class StatStorageManager /*implements Runnable*/{
 		}
 	}
 	
-	public void storeEPRInfo(Integer timestamp, String topology, String component, Double epr, Integer remaining, Double procRate){
-		String query = "INSERT INTO " + TABLE_EPR + " VALUES ('" + timestamp + "', '"
-				+ topology + "', '" + component + "', '" + epr + "', '" + remaining + "', '" + procRate + "')";
+	public void storeActivityInfo(Integer timestamp, String topology, String component, Double cr, Integer remaining, Double capacity){
+		String query = "INSERT INTO " + TABLE_ACTIVITY + " VALUES ('" + timestamp + "', '"
+				+ topology + "', '" + component + "', '" + cr + "', '" + remaining + "', '" + capacity + "')";
 		try{
 			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			statement.executeUpdate(query);
 		} catch (SQLException e){
-			logger.fine("Unable to store epr info because of " + e);
+			logger.fine("Unable to store activity info because of " + e);
+		}
+	}
+	
+	public void storeLoadInfo(Integer timestamp, String topology, String component, Double pl, Double il){
+		String query = "INSERT INTO " + TABLE_LOAD + " VALUES ('" + timestamp + "', '"
+				+ topology + "', '" + component + "', '" + pl + "', '" + il + "')";
+		try{
+			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			statement.executeUpdate(query);
+		} catch (SQLException e){
+			logger.fine("Unable to store load info because of " + e);
 		}
 	}
 	

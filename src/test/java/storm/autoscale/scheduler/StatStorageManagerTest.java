@@ -189,19 +189,19 @@ public class StatStorageManagerTest extends TestCase {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#storeEPRInfo(java.lang.Integer, java.lang.String, java.lang.String, java.lang.String, java.lang.Double, java.lang.Integer, java.lang.Double)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#storeActivityInfo(java.lang.Integer, java.lang.String, java.lang.String, java.lang.String, java.lang.Double, java.lang.Integer, java.lang.Double)}.
 	 */
-	public void testStoreEPRInfo() {
+	public void testStoreActivityInfo() {
 		try {
 			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
 			Integer timestamp = 1;
 			String topology = "testTopology";
 			String component = "testComponent";
-			Double eprValue = 0.85;
+			Double activityValue = 0.85;
 			Integer remaining = 50;
 			Double processingRate = 30.0;
 			
-			manager.storeEPRInfo(timestamp, topology, component, eprValue, remaining, processingRate);
+			manager.storeActivityInfo(timestamp, topology, component, activityValue, remaining, processingRate);
 			
 			String jdbcDriver = "com.mysql.jdbc.Driver";
 			String dbUrl = "jdbc:mysql://localhost/benchmarks";
@@ -210,32 +210,32 @@ public class StatStorageManagerTest extends TestCase {
 
 			Connection connection = DriverManager.getConnection(dbUrl,user, null);
 			Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			String testEPRStorageQuery = "SELECT * FROM operators_epr";
-			ResultSet result = statement.executeQuery(testEPRStorageQuery);
+			String testCRStorageQuery = "SELECT * FROM operators_activity";
+			ResultSet result = statement.executeQuery(testCRStorageQuery);
 			
 			Integer actualTimestamp = null;
 			String actualTopology = null;
 			String actualComponent = null;
-			Double actualEPRValue = null;
+			Double actualCRValue = null;
 			Integer actualRemaining = null;
 			Double actualProcessingRate = null;
 			if(result.next()){
 				actualTimestamp = result.getInt("timestamp");
 				actualTopology = result.getString("topology");
 				actualComponent = result.getString("component");
-				actualEPRValue = result.getDouble("epr");
+				actualCRValue = result.getDouble("activity_level");
 				actualRemaining = result.getInt("remaining_tuples");
-				actualProcessingRate = result.getDouble("processing_rate");
+				actualProcessingRate = result.getDouble("capacity_per_second");
 			}
 			
 			assertEquals(timestamp, actualTimestamp);
 			assertEquals(topology, actualTopology);
 			assertEquals(component, actualComponent);
-			assertEquals(eprValue, actualEPRValue);
+			assertEquals(activityValue, actualCRValue);
 			assertEquals(remaining, actualRemaining);
 			assertEquals(processingRate, actualProcessingRate);
 			
-			String testCleanQuery = "DELETE FROM operators_epr";
+			String testCleanQuery = "DELETE FROM operators_activity";
 			statement.executeUpdate(testCleanQuery);
 		} catch (ClassNotFoundException | SQLException e) {
 			e.printStackTrace();
@@ -969,7 +969,7 @@ public class StatStorageManagerTest extends TestCase {
 			
 			String cleanQuery1 = "DELETE FROM all_time_spouts_stats";
 			String cleanQuery2 = "DELETE FROM all_time_bolts_stats";
-			String cleanQuery3 = "DELETE FROM operators_epr";
+			String cleanQuery3 = "DELETE FROM operators_activity";
 			String cleanQuery4 = "DELETE FROM topologies_status";
 			
 			ArrayList<String> cleanQueries = new ArrayList<>();

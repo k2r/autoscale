@@ -83,11 +83,11 @@ public class ScaleOutAction implements IAction {
 				tTransport.open();
 			}
 			for(String component : this.validateActions){
-				Double eprValue = this.compMonitor.getEPRValue(component);
+				Double crValue = this.compMonitor.getActivityValue(component);
 				int maxParallelism = this.assignMonitor.getAllSortedTasks(component).size();
 
 				int currentParallelism = this.assignMonitor.getParallelism(component);
-				int estimatedParallelism  = (int) Math.round(eprValue * currentParallelism);
+				int estimatedParallelism  = (int) Math.round(crValue * currentParallelism);
 		
 				int newParallelism = Math.min(maxParallelism, estimatedParallelism);
 				if(newParallelism > currentParallelism && !isGracePeriod(component)){

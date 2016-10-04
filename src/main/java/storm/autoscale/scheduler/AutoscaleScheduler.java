@@ -54,7 +54,7 @@ public class AutoscaleScheduler implements IScheduler {
 	public void prepare(Map conf) {
 		this.nimbusHost = (String) conf.get("nimbus.host");
 		this.nimbusPort = (Integer) conf.get("nimbus.thrift.port");
-		this.password = "storm";
+		this.password = null;
 	}
 
 	/* (non-Javadoc)
@@ -83,51 +83,11 @@ public class AutoscaleScheduler implements IScheduler {
 				this.compMonitor.getStatistics(explorer);
 				Integer timestamp = manager.getCurrentTimestamp();
 				if(!this.compMonitor.getRegisteredComponents().isEmpty()){
-					this.compMonitor.trackRequirements(explorer);
-					this.compMonitor.validateRequirements(explorer.getSpouts(), explorer);
+					this.compMonitor.buildActionGraph(explorer, assignMonitor);
+					this.compMonitor.autoscaleAlgorithm(explorer.getSpouts(), explorer);
 					this.needScaleOut = this.compMonitor.getScaleOutRequirements();
 					this.needScaleIn = this.compMonitor.getScaleInRequirements();
-					/*int oldestTimestamp = Math.max(0, timestamp - ComponentMonitor.WINDOW_SIZE);
-					String monitoring = "Current monitoring info (from timestamp " + oldestTimestamp + " to timestamp " + timestamp + ")\n";
-					logger.fine(monitoring);
-					for(String component : this.compMonitor.getRegisteredComponents()){
-						ComponentWindowedStats stats = this.compMonitor.getStats(component);
 
-						boolean decreasing = this.compMonitor.isInputDecreasing(component);
-						boolean stable = this.compMonitor.isInputStable(component);
-						boolean increasing = this.compMonitor.isInputIncreasing(component);
-						String growth = "undefined";
-						if(decreasing){
-							growth = "decreasing";
-						}else{
-							if(stable){
-								growth = "stable";
-							}else{
-								if(increasing){
-									growth = "increasing";
-								}
-							}
-						}
-						Double lastInputRecord = ComponentWindowedStats.getLastRecord(stats.getInputRecords());
-						Double oldestInputRecord = ComponentWindowedStats.getOldestRecord(stats.getInputRecords());
-						Double globalInputVar = lastInputRecord - oldestInputRecord;
-						Double lastOutputRecord = ComponentWindowedStats.getLastRecord(stats.getOutputRecords());
-						Double oldestOutputRecord = ComponentWindowedStats.getOldestRecord(stats.getOutputRecords());
-						Double globalOutputVar = lastOutputRecord - oldestOutputRecord;
-						Double lastExecutedRecord = ComponentWindowedStats.getLastRecord(stats.getExecutedRecords());
-						Double oldestExecutedRecord = ComponentWindowedStats.getOldestRecord(stats.getExecutedRecords());
-						Double globalExecutedVar = lastExecutedRecord - oldestExecutedRecord;
-						Double lastAvgLatencyRecord = ComponentWindowedStats.getLastRecord(stats.getAvgLatencyRecords());
-						Double lastSelectivityRecord = ComponentWindowedStats.getLastRecord(stats.getSelectivityRecords());
-
-						String infos = "Component " + component + " : \n";
-						infos += "\t input : " + lastInputRecord + " (" + growth + "), variation on window: " + globalInputVar + " tuple(s) \n";
-						infos += "\t executed : " + lastExecutedRecord + ", variation on window: " + globalExecutedVar + " tuple(s) \n";
-						infos += "\t output : " + lastOutputRecord + ", variation on window: " + globalOutputVar + " tuple(s) \n";
-						infos += "\t latency : " + lastAvgLatencyRecord + " milliseconds per tuple \n";
-						infos += "\t selectivity : " + lastSelectivityRecord + "\n";
-						logger.fine(infos);
-					}*/
 					if(this.needScaleOut.isEmpty()){
 						logger.fine("No component to scale out!");
 					}else{

@@ -10,23 +10,24 @@ import org.mockito.Mockito;
 import junit.framework.TestCase;
 import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
-import storm.autoscale.scheduler.metrics.EPRMetric;
+import storm.autoscale.scheduler.metrics.ActivityMetric;
+import storm.autoscale.scheduler.modules.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
 
 /**
  * @author Roland
  *
  */
-public class EPRMetricTest extends TestCase {
+public class ActivityMetricTest extends TestCase {
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.metrics.EPRMetric#getEPRInfo(java.lang.String)}.
+	 * Test method for {@link storm.autoscale.scheduler.metrics.ActivityMetric#getActivityInfo(java.lang.String)}.
 	 */
 	public void testGetEPRInfo() {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.metrics.EPRMetric#computeEstimatedLoad(java.lang.String)}.
+	 * Test method for {@link storm.autoscale.scheduler.metrics.ActivityMetric#computeEstimatedLoad(java.lang.String)}.
 	 */
 	public void testComputeEstimatedLoad() {
 		HashMap<Integer, Long> inputRecordsIncr = new HashMap<>();
@@ -127,16 +128,21 @@ public class EPRMetricTest extends TestCase {
 		Mockito.when(compMonitor.getSamplingRate()).thenReturn(1);
 		Mockito.when(compMonitor.getFormerRemainingTuples(explorer)).thenReturn(remainingTuples);
 		
-		EPRMetric eprMetric = new EPRMetric(explorer, compMonitor);
+		AssignmentMonitor assignmentMonitor = Mockito.mock(AssignmentMonitor.class);
+		Mockito.when(assignmentMonitor.getParallelism("component1")).thenReturn(1);
+		Mockito.when(assignmentMonitor.getParallelism("component2")).thenReturn(1);
+		Mockito.when(assignmentMonitor.getParallelism("component3")).thenReturn(1);
+		
+		ActivityMetric eprMetric = new ActivityMetric(explorer, compMonitor, assignmentMonitor);
 		assertEquals(23700.0, eprMetric.computeEstimatedLoad("component1"), 0);
 		assertEquals(450.0, eprMetric.computeEstimatedLoad("component2"), 0);
 		assertEquals(3000.0, eprMetric.computeEstimatedLoad("component3"), 0);
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.metrics.EPRMetric#computeEstimatedProcessing(java.lang.String)}.
+	 * Test method for {@link storm.autoscale.scheduler.metrics.ActivityMetric#computeAvgCapacity(java.lang.String)}.
 	 */
-	public void testComputeEstimatedProcessing() {
+	public void testComputeAvgCapacity() {
 		HashMap<Integer, Double> latencyRecordsConst = new HashMap<>();
 		latencyRecordsConst.put(0, 20.0);
 		latencyRecordsConst.put(1, 20.0);
@@ -196,15 +202,20 @@ public class EPRMetricTest extends TestCase {
 		Mockito.when(compMonitor.getSamplingRate()).thenReturn(1);
 		Mockito.when(compMonitor.getFormerRemainingTuples(explorer)).thenReturn(remainingTuples);
 			
-		EPRMetric eprMetric = new EPRMetric(explorer, compMonitor);
-		assertEquals(3000.0, eprMetric.computeEstimatedProcessing("component1"), 0);
-		assertEquals(17139.7, eprMetric.computeEstimatedProcessing("component2"), 1);
-		assertEquals(0.0, eprMetric.computeEstimatedProcessing("component3"), 0);
+		AssignmentMonitor assignmentMonitor = Mockito.mock(AssignmentMonitor.class);
+		Mockito.when(assignmentMonitor.getParallelism("component1")).thenReturn(1);
+		Mockito.when(assignmentMonitor.getParallelism("component2")).thenReturn(1);
+		Mockito.when(assignmentMonitor.getParallelism("component3")).thenReturn(1);
+		
+		ActivityMetric eprMetric = new ActivityMetric(explorer, compMonitor, assignmentMonitor);
+		assertEquals(3000.0, eprMetric.computeAvgCapacity("component1"), 0);
+		assertEquals(1309.4, eprMetric.computeAvgCapacity("component2"), 0.1);
+		assertEquals(1309.5, eprMetric.computeAvgCapacity("component3"), 0.1);
 	}
 	
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.metrics.EPRMetric#compute(java.lang.String)}.
+	 * Test method for {@link storm.autoscale.scheduler.metrics.ActivityMetric#compute(java.lang.String)}.
 	 */
 	public void testCompute() {
 		HashMap<Integer, Long> inputRecordsIncr = new HashMap<>();
@@ -386,15 +397,26 @@ public class EPRMetricTest extends TestCase {
 		Mockito.when(compMonitor.getSamplingRate()).thenReturn(1);
 		Mockito.when(compMonitor.getFormerRemainingTuples(explorer)).thenReturn(remainingTuples);
 		
-		EPRMetric eprMetric = new EPRMetric(explorer, compMonitor);
+		AssignmentMonitor assignmentMonitor = Mockito.mock(AssignmentMonitor.class);
+		Mockito.when(assignmentMonitor.getParallelism("component1")).thenReturn(1);
+		Mockito.when(assignmentMonitor.getParallelism("component2")).thenReturn(1);
+		Mockito.when(assignmentMonitor.getParallelism("component3")).thenReturn(1);
+		Mockito.when(assignmentMonitor.getParallelism("component4")).thenReturn(1);
+		Mockito.when(assignmentMonitor.getParallelism("component5")).thenReturn(1);
+		Mockito.when(assignmentMonitor.getParallelism("component6")).thenReturn(1);
+		Mockito.when(assignmentMonitor.getParallelism("component7")).thenReturn(1);
+		Mockito.when(assignmentMonitor.getParallelism("component8")).thenReturn(1);
+		Mockito.when(assignmentMonitor.getParallelism("component9")).thenReturn(1);
+		
+		ActivityMetric eprMetric = new ActivityMetric(explorer, compMonitor, assignmentMonitor);
 		assertEquals(1, eprMetric.compute("component1"), 0);
-		assertEquals(-1, eprMetric.compute("component2"), 0);
-		assertEquals(0.175, eprMetric.compute("component3"), 0.01);
+		assertEquals(2.29, eprMetric.compute("component2"), 0.01);
+		assertEquals(2.29, eprMetric.compute("component3"), 0.01);
 		assertEquals(0.15, eprMetric.compute("component4"), 0);
-		assertEquals(-1.0, eprMetric.compute("component5"), 0);
-		assertEquals(0.026, eprMetric.compute("component6"), 0.01);
+		assertEquals(0.34, eprMetric.compute("component5"), 0.01);
+		assertEquals(0.34, eprMetric.compute("component6"), 0.01);
 		assertEquals(7.9, eprMetric.compute("component7"), 0);
-		assertEquals(-1.0, eprMetric.compute("component8"), 0);
-		assertEquals(1.382, eprMetric.compute("component9"), 0.01);
+		assertEquals(18.1, eprMetric.compute("component8"), 0.01);
+		assertEquals(18.1, eprMetric.compute("component9"), 0.01);
 	}
 }
