@@ -234,30 +234,30 @@ public class ComponentMonitor {
 		return (coeff > VAR_THRESHOLD);
 	}
 	
-	public HashMap<String, Long> getFormerRemainingTuples(TopologyExplorer explorer){
+	public HashMap<String, Long> getFormerRemainingTuples(){
 		HashMap<String, Long> result = new HashMap<>();
 		for(String component : this.stats.keySet()){
-			result.put(component, this.manager.getFormerRemainingTuples(this.timestamp, component, explorer));
+			result.put(component, this.manager.getFormerRemainingTuples(this.timestamp, component));
 		}
 		return result;
 	}
 	
 	public void buildActionGraph(TopologyExplorer explorer, AssignmentMonitor assignmentMonitor){
 		//Initialize an activity and load metric for the current topology
-		ActivityMetric activityMetric = new ActivityMetric(explorer, this, assignmentMonitor);
-		LoadMetric loadMetric = new LoadMetric(explorer, this, assignmentMonitor);
+		ActivityMetric activityMetric = new ActivityMetric(this, assignmentMonitor);
+		LoadMetric loadMetric = new LoadMetric(this, assignmentMonitor);
 		for(String component : this.getRegisteredComponents()){
 			if(hasRecords(component)){
 				//Compute the activity level/ load and expose monitoring info concerning the activity/ load for storage
 				Double activityValue = activityMetric.compute(component);
 				this.activityValues.put(component, activityValue);
 				HashMap<String, BigDecimal> activityInfo = activityMetric.getActivityInfo(component);
-				this.manager.storeActivityInfo(this.timestamp, activityMetric.getTopologyExplorer().getTopologyName(), component, activityValue, activityInfo.get(ActivityMetric.REMAINING).intValue(), activityInfo.get(ActivityMetric.CAPPERSEC).doubleValue());
+				this.manager.storeActivityInfo(this.timestamp, explorer.getTopologyName(), component, activityValue, activityInfo.get(ActivityMetric.REMAINING).intValue(), activityInfo.get(ActivityMetric.CAPPERSEC).doubleValue());
 				
 				Double loadValue = loadMetric.compute(component);
 				this.loadValues.put(component, loadValue);
 				HashMap<String, BigDecimal> loadInfo = loadMetric.getLoadInfo(component);
-				this.manager.storeLoadInfo(this.timestamp, loadMetric.getTopologyExplorer().getTopologyName(), component, loadValue, loadInfo.get(LoadMetric.LOAD).doubleValue());
+				this.manager.storeLoadInfo(this.timestamp, explorer.getTopologyName(), component, loadValue, loadInfo.get(LoadMetric.LOAD).doubleValue());
 				//Apply rules to take local decisions
 				if(activityValue <= LOW_ACTIVITY_THRESHOLD && !isInputIncreasing(component)){
 					this.scaleInRequirements.add(component);

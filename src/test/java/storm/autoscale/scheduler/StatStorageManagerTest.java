@@ -12,10 +12,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.mockito.Mockito;
-
 import junit.framework.TestCase;
-import storm.autoscale.scheduler.modules.TopologyExplorer;
 import storm.autoscale.scheduler.modules.stats.StatStorageManager;
 
 /**
@@ -867,51 +864,19 @@ public class StatStorageManagerTest extends TestCase {
 			Class.forName(jdbcDriver);
 			Connection connection = DriverManager.getConnection(dbUrl, "root", null);
 			ArrayList<String> queries = new ArrayList<>();
-			String queryA1 = "INSERT INTO all_time_spouts_stats VALUES('1', 'host1', '10', 'topologyTest', 'A', '1', '1', '10', '10', '5', '5', '0', '0', '10')";
-			String queryB1 = "INSERT INTO all_time_bolts_stats VALUES('1', 'host1', '20', 'topologyTest', 'B', '2', '4', '10', '10', '8', '8', '3', '0.8')";
-			String queryC1 = "INSERT INTO all_time_bolts_stats VALUES('1', 'host2', '10', 'topologyTest', 'C', '5', '7', '6', '6', '6', '6', '5', '1')";
-			String queryD1 = "INSERT INTO all_time_bolts_stats VALUES('1', 'host2', '20', 'topologyTest', 'D', '8', '10', '6', '6', '0', '0', '10', '0')";
-			String queryE1 = "INSERT INTO all_time_bolts_stats VALUES('1', 'host2', '20', 'topologyTest', 'E', '11', '13', '6', '6', '5', '5', '8', '0.84')";
-			String queryF1 = "INSERT INTO all_time_bolts_stats VALUES('1', 'host3', '10', 'topologyTest', 'F', '14', '16', '5', '5', '0', '0', '20', '0')";
-			
-			String queryA2 = "INSERT INTO all_time_spouts_stats VALUES('2', 'host1', '10', 'topologyTest', 'A', '1', '1', '70', '10', '10', '5', '5', '5', '22')";
-			String queryB21 = "INSERT INTO all_time_bolts_stats VALUES('2', 'host1', '20', 'topologyTest', 'B', '2', '3', '30', '20', '20', '12', '2.5', '0.8')";
-			String queryB22 = "INSERT INTO all_time_bolts_stats VALUES('2', 'host3', '30', 'topologyTest', 'B', '4', '4', '25', '15', '16', '8', '3.5', '0.8')";
-			String queryC2 = "INSERT INTO all_time_bolts_stats VALUES('2', 'host2', '10', 'topologyTest', 'C', '5', '7', '20', '8', '6', '6', '5', '1')";
-			String queryD2 = "INSERT INTO all_time_bolts_stats VALUES('2', 'host2', '20', 'topologyTest', 'D', '8', '10', '6', '6', '0', '0', '10', '0')";
-			String queryE2 = "INSERT INTO all_time_bolts_stats VALUES('2', 'host2', '20', 'topologyTest', 'E', '11', '13', '6', '6', '5', '5', '8', '0.84')";
-			String queryF2 = "INSERT INTO all_time_bolts_stats VALUES('2', 'host3', '10', 'topologyTest', 'F', '14', '16', '5', '5', '0', '0', '20', '0')";
-			
-			String queryA3 = "INSERT INTO all_time_spouts_stats VALUES('3', 'host1', '10', 'topologyTest', 'A', '1', '1', '42', '15', '12', '2', '6', '1', '8')";
-			String queryB3 = "INSERT INTO all_time_bolts_stats VALUES('3', 'host3', '20', 'topologyTest', 'B', '2', '4', '10', '5', '40', '4', '4.25', '0.8')";
-			String queryC3 = "INSERT INTO all_time_bolts_stats VALUES('3', 'host2', '10', 'topologyTest', 'C', '5', '7', '8', '8', '6', '6', '5', '1')";
-			String queryD31 = "INSERT INTO all_time_bolts_stats VALUES('3', 'host2', '20', 'topologyTest', 'D', '8', '9', '6', '6', '5', '5', '8', '0.84')";
-			String queryD32 = "INSERT INTO all_time_bolts_stats VALUES('3', 'host3', '20', 'topologyTest', 'D', '10', '10', '6', '6', '0', '0', '10', '0')";
-			String queryE3 = "INSERT INTO all_time_bolts_stats VALUES('3', 'host2', '30', 'topologyTest', 'E', '11', '13', '6', '6', '5', '5', '8', '0.84')";
-			String queryF31 = "INSERT INTO all_time_bolts_stats VALUES('3', 'host3', '10', 'topologyTest', 'F', '14', '15', '5', '5', '0', '0', '20', '0')";
-			String queryF32 = "INSERT INTO all_time_bolts_stats VALUES('3', 'host4', '10', 'topologyTest', 'F', '16', '16', '5', '5', '0', '0', '20', '0')";
+			String queryA1 = "INSERT INTO operators_activity VALUES('1', 'topologyTest', 'A', '1', '0', '10')";
+			String queryB1 = "INSERT INTO operators_activity VALUES('1', 'topologyTest', 'B', '1', '5', '5')";
+			String queryA2 = "INSERT INTO operators_activity VALUES('2', 'topologyTest', 'A', '1', '4', '10')";
+			String queryB2 = "INSERT INTO operators_activity VALUES('2', 'topologyTest', 'B', '1', '3', '5')";
+			String queryA3 = "INSERT INTO operators_activity VALUES('3', 'topologyTest', 'A', '1', '8', '10')";
+			String queryB3 = "INSERT INTO operators_activity VALUES('3', 'topologyTest', 'B', '1', '6', '10')";
 
 			queries.add(queryA1);
 			queries.add(queryB1);
-			queries.add(queryC1);
-			queries.add(queryD1);
-			queries.add(queryE1);
-			queries.add(queryF1);
 			queries.add(queryA2);
-			queries.add(queryB21);
-			queries.add(queryB22);
-			queries.add(queryC2);
-			queries.add(queryD2);
-			queries.add(queryE2);
-			queries.add(queryF2);
+			queries.add(queryB2);
 			queries.add(queryA3);
 			queries.add(queryB3);
-			queries.add(queryC3);
-			queries.add(queryD31);
-			queries.add(queryD32);
-			queries.add(queryE3);
-			queries.add(queryF31);
-			queries.add(queryF32);
 			
 			for(String query : queries){
 				try {
@@ -922,50 +887,16 @@ public class StatStorageManagerTest extends TestCase {
 				}
 			}
 			
-			ArrayList<String> expectedParentsA = new ArrayList<>();
-			ArrayList<String> expectedParentsB = new ArrayList<>();
-			expectedParentsB.add("A");
-			ArrayList<String> expectedParentsC = new ArrayList<>();
-			expectedParentsC.add("B");
-			ArrayList<String> expectedParentsD = new ArrayList<>();
-			expectedParentsD.add("C");
-			ArrayList<String> expectedParentsE = new ArrayList<>();
-			expectedParentsE.add("C");
-			ArrayList<String> expectedParentsF = new ArrayList<>();
-			expectedParentsF.add("E");
-			
-			ArrayList<String> expectedSpouts = new ArrayList<>();
-			expectedSpouts.add("A");
-			ArrayList<String> expectedBolts = new ArrayList<>();
-			expectedBolts.add("B");
-			expectedBolts.add("C");
-			expectedBolts.add("D");
-			expectedBolts.add("E");
-			expectedBolts.add("F");
-			
-			TopologyExplorer explorer = Mockito.mock(TopologyExplorer.class);
-			Mockito.when(explorer.getParents("A")).thenReturn(expectedParentsA);
-			Mockito.when(explorer.getParents("B")).thenReturn(expectedParentsB);
-			Mockito.when(explorer.getParents("C")).thenReturn(expectedParentsC);
-			Mockito.when(explorer.getParents("D")).thenReturn(expectedParentsD);
-			Mockito.when(explorer.getParents("E")).thenReturn(expectedParentsE);
-			Mockito.when(explorer.getParents("F")).thenReturn(expectedParentsF);
-			Mockito.when(explorer.getSpouts()).thenReturn(expectedSpouts);
-			Mockito.when(explorer.getBolts()).thenReturn(expectedBolts);
-			
 			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
 			
-			assertEquals(0, manager.getFormerRemainingTuples(1, "A", explorer), 0);
-			assertEquals(0, manager.getFormerRemainingTuples(2, "A", explorer), 0);
-			assertEquals(0, manager.getFormerRemainingTuples(3, "A", explorer), 0);
-			assertEquals(0,manager.getFormerRemainingTuples(1, "B", explorer), 0);
-			assertEquals(0, manager.getFormerRemainingTuples(2, "B", explorer), 0);
-			assertEquals(15, manager.getFormerRemainingTuples(3, "B", explorer), 0);
-			assertEquals(32, manager.getFormerRemainingTuples(4, "B", explorer), 0);
-			assertEquals(0,manager.getFormerRemainingTuples(1, "C", explorer), 0);
-			assertEquals(2, manager.getFormerRemainingTuples(2, "C", explorer), 0);
-			assertEquals(16, manager.getFormerRemainingTuples(3, "C", explorer), 0);
-			assertEquals(32, manager.getFormerRemainingTuples(4, "C", explorer), 0);
+			assertEquals(0, manager.getFormerRemainingTuples(1, "A"), 0);
+			assertEquals(0, manager.getFormerRemainingTuples(2, "A"), 0);
+			assertEquals(4, manager.getFormerRemainingTuples(3, "A"), 0);
+			assertEquals(8, manager.getFormerRemainingTuples(4, "A"), 0);
+			assertEquals(0,manager.getFormerRemainingTuples(1, "B"), 0);
+			assertEquals(5, manager.getFormerRemainingTuples(2, "B"), 0);
+			assertEquals(3, manager.getFormerRemainingTuples(3, "B"), 0);
+			assertEquals(6, manager.getFormerRemainingTuples(4, "B"), 0);
 			
 			String cleanQuery1 = "DELETE FROM all_time_spouts_stats";
 			String cleanQuery2 = "DELETE FROM all_time_bolts_stats";

@@ -2,7 +2,6 @@ storm\autoscale\scheduler\ComponentWindowedStatsTest.class
 storm\autoscale\scheduler\TopologyExplorerTest.class
 storm\autoscale\scheduler\UtilFunctionsTest.class
 storm\autoscale\scheduler\ActivityMetricTest.class
-storm\autoscale\scheduler\WelfMetricTest.class
 storm\autoscale\scheduler\ComponentMonitorTest.class
 storm\autoscale\scheduler\StatStorageManagerTest.class
 storm\autoscale\scheduler\RegressionToolsTest.class

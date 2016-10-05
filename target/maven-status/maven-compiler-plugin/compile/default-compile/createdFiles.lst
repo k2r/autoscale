@@ -1,7 +1,6 @@
 storm\autoscale\scheduler\util\UtilFunctions$DecreasingDoubleOrder.class
 storm\autoscale\scheduler\allocation\NetworkAwareStrategy.class
 storm\autoscale\scheduler\modules\stats\ComponentWindowedStats.class
-storm\autoscale\scheduler\metrics\WelfMetric.class
 storm\autoscale\scheduler\actions\ScaleOutAction.class
 storm\autoscale\scheduler\allocation\DelegatedAllocationStrategy.class
 storm\autoscale\scheduler\util\UtilFunctions$DecreasingIntOrder.class

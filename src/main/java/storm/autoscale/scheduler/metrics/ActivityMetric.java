@@ -7,7 +7,6 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
-import storm.autoscale.scheduler.modules.TopologyExplorer;
 import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 import storm.autoscale.scheduler.util.RegressionTools;
@@ -18,7 +17,6 @@ import storm.autoscale.scheduler.util.RegressionTools;
  */
 public class ActivityMetric implements IMetric {
 
-	TopologyExplorer te;
 	ComponentMonitor cm;
 	AssignmentMonitor am;
 	HashMap<String, Long> remainingTuples;
@@ -30,20 +28,11 @@ public class ActivityMetric implements IMetric {
 	/**
 	 * 
 	 */
-	public ActivityMetric(TopologyExplorer te, ComponentMonitor cm, AssignmentMonitor am) {
-		this.te = te;
+	public ActivityMetric(ComponentMonitor cm, AssignmentMonitor am) {
 		this.cm = cm;
 		this.am = am;
-		this.remainingTuples = this.cm.getFormerRemainingTuples(this.te);
+		this.remainingTuples = this.cm.getFormerRemainingTuples();
 		this.activityInfo = new HashMap<>();
-	}
-
-	/* (non-Javadoc)
-	 * @see storm.autoscale.scheduler.metrics.IMetric#getTopologyExplorer()
-	 */
-	@Override
-	public TopologyExplorer getTopologyExplorer() {
-		return this.te;
 	}
 
 	/* (non-Javadoc)

@@ -7,7 +7,6 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
-import storm.autoscale.scheduler.modules.TopologyExplorer;
 import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
 
 /**
@@ -16,7 +15,6 @@ import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
  */
 public class LoadMetric implements IMetric {
 
-	TopologyExplorer te;
 	ComponentMonitor cm;
 	AssignmentMonitor am;
 	HashMap<String, HashMap<String, BigDecimal>> loadInfo;
@@ -24,20 +22,12 @@ public class LoadMetric implements IMetric {
 	public static final String LOAD = "current_load";
 	
 	
-	public LoadMetric(TopologyExplorer te, ComponentMonitor cm, AssignmentMonitor am) {
-		this.te = te;
+	public LoadMetric(ComponentMonitor cm, AssignmentMonitor am) {
 		this.cm = cm;
 		this.am = am;
 		this.loadInfo = new HashMap<>();
 	}
-	
-	/* (non-Javadoc)
-	 * @see storm.autoscale.scheduler.metrics.IMetric#getTopologyExplorer()
-	 */
-	@Override
-	public TopologyExplorer getTopologyExplorer() {
-		return te;
-	}
+
 
 	/* (non-Javadoc)
 	 * @see storm.autoscale.scheduler.metrics.IMetric#getComponentMonitor()
