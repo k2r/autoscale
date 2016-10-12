@@ -234,17 +234,27 @@ public class ComponentMonitor {
 		return (coeff > VAR_THRESHOLD);
 	}
 	
-	public HashMap<String, Long> getFormerRemainingTuples(){
+	public HashMap<String, Long> getFormerRemainingTuples(TopologyExplorer explorer){
 		HashMap<String, Long> result = new HashMap<>();
 		for(String component : this.stats.keySet()){
-			result.put(component, this.manager.getFormerRemainingTuples(this.timestamp, component));
+			ArrayList<String> parents = explorer.getParents(component);
+			Long input = 0L;
+			for(String parent : parents){
+				String table = StatStorageManager.TABLE_BOLT;
+				if(explorer.getSpouts().contains(parent)){
+					table = StatStorageManager.TABLE_SPOUT;
+				}
+				input += this.manager.getCurrentTotalOutput(this.timestamp, parent, table);
+			}
+			Long executed = this.manager.getCurrentTotalExecuted(this.timestamp, component, StatStorageManager.TABLE_BOLT);
+			result.put(component, Math.max(0, input - executed));
 		}
 		return result;
 	}
 	
 	public void buildActionGraph(TopologyExplorer explorer, AssignmentMonitor assignmentMonitor){
 		//Initialize an activity and load metric for the current topology
-		ActivityMetric activityMetric = new ActivityMetric(this, assignmentMonitor);
+		ActivityMetric activityMetric = new ActivityMetric(this, assignmentMonitor, explorer);
 		LoadMetric loadMetric = new LoadMetric(this, assignmentMonitor);
 		for(String component : this.getRegisteredComponents()){
 			if(hasRecords(component)){
@@ -261,15 +271,15 @@ public class ComponentMonitor {
 				//Apply rules to take local decisions
 				if(activityValue <= LOW_ACTIVITY_THRESHOLD && !isInputIncreasing(component)){
 					this.scaleInRequirements.add(component);
-					//logger.info("Timestamp: " + this.timestamp + " Component " + component + " required scale in. CR: " + eprValue + " and input decreasing.");
+					//System.out.println("Timestamp: " + this.timestamp + " Component " + component + " required scale in. Activity value: " + activityValue + " and input decreasing or constant.");
 				}else{
 					if(activityValue > HIGH_ACTIVITY_THRESHOLD && activityValue <= 1 && isInputIncreasing(component)){
 						this.scaleOutRequirements.add(component);
-						//logger.info("Timestamp: " + this.timestamp + " Component " + component + " required scale out. CR: " + eprValue + " and input increasing.");
+						//System.out.println("Timestamp: " + this.timestamp + " Component " + component + " required scale out. Activity value: " + activityValue + " and input increasing.");
 					}else{
 						if(activityValue > 1){
 							this.scaleOutRequirements.add(component);
-							//logger.info("Timestamp: " + this.timestamp + " Component " + component + " required scale out. CR: " + eprValue);
+							//System.out.println("Timestamp: " + this.timestamp + " Component " + component + " required scale out. Activity value: " + activityValue);
 						}
 					}
 				}
@@ -280,10 +290,10 @@ public class ComponentMonitor {
 	public boolean validateScaleIn(String component, TopologyExplorer explorer){
 		boolean validate = false;
 		Double activityValue = this.getActivityValue(component);
-		//System.out.println(component + " has epr = " + eprValue);
+		//System.out.println(component + " has epr = " + activityValue);
 		if(activityValue != null){
 			if(activityValue == -1.0){
-				//logger.info("Timestamp: " + this.timestamp + " Component " + component + " cannot scale in because of epr = -1");
+				//System.out.println("Timestamp: " + this.timestamp + " Component " + component + " cannot scale in because of epr = -1");
 				return false;
 			}
 			ArrayList<String> antecedents = explorer.getAntecedents(component);
@@ -291,13 +301,13 @@ public class ComponentMonitor {
 				Double antecedentActivivityValue = this.getActivityValue(antecedent);
 				if(antecedentActivivityValue != null){
 					if(antecedentActivivityValue >= 1){
-						//logger.info("Timestamp: " + this.timestamp + " Component " + component + " cannot scale in because " + antecedent + " can scale out");
+						//System.out.println("Timestamp: " + this.timestamp + " Component " + component + " cannot scale in because " + antecedent + " can scale out");
 						return false;
 					}
 				}
 			}
 			if(this.needScaleIn(component)){
-				//logger.info("Timestamp: " + this.timestamp + " Component " + component + " can scale in");
+				//System.out.println("Timestamp: " + this.timestamp + " Component " + component + " can scale in");
 				validate = true;
 			}
 		}

@@ -12,6 +12,7 @@ import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 import storm.autoscale.scheduler.metrics.ActivityMetric;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
+import storm.autoscale.scheduler.modules.TopologyExplorer;
 
 /**
  * @author Roland
@@ -118,22 +119,24 @@ public class ActivityMetricTest extends TestCase {
 		remainingTuples.put("component2", 0L);
 		remainingTuples.put("component3", 0L);
 		
+		TopologyExplorer explorer = Mockito.mock(TopologyExplorer.class);
+		
 		ComponentMonitor compMonitor = Mockito.mock(ComponentMonitor.class);
 		Mockito.when(compMonitor.getStats("component1")).thenReturn(stats1);
 		Mockito.when(compMonitor.getStats("component2")).thenReturn(stats2);
 		Mockito.when(compMonitor.getStats("component3")).thenReturn(stats3);
 		Mockito.when(compMonitor.getSamplingRate()).thenReturn(1);
-		Mockito.when(compMonitor.getFormerRemainingTuples()).thenReturn(remainingTuples);
+		Mockito.when(compMonitor.getFormerRemainingTuples(explorer)).thenReturn(remainingTuples);
 		
 		AssignmentMonitor assignmentMonitor = Mockito.mock(AssignmentMonitor.class);
 		Mockito.when(assignmentMonitor.getParallelism("component1")).thenReturn(1);
 		Mockito.when(assignmentMonitor.getParallelism("component2")).thenReturn(1);
 		Mockito.when(assignmentMonitor.getParallelism("component3")).thenReturn(1);
 		
-		ActivityMetric eprMetric = new ActivityMetric(compMonitor, assignmentMonitor);
-		assertEquals(23700.0, eprMetric.computeEstimatedLoad("component1"), 0);
-		assertEquals(450.0, eprMetric.computeEstimatedLoad("component2"), 0);
-		assertEquals(3000.0, eprMetric.computeEstimatedLoad("component3"), 0);
+		ActivityMetric activityMetric = new ActivityMetric(compMonitor, assignmentMonitor, explorer);
+		assertEquals(23700.0, activityMetric.computeEstimatedLoad("component1"), 0);
+		assertEquals(450.0, activityMetric.computeEstimatedLoad("component2"), 0);
+		assertEquals(3000.0, activityMetric.computeEstimatedLoad("component3"), 0);
 	}
 
 	/**
@@ -190,19 +193,21 @@ public class ActivityMetricTest extends TestCase {
 		remainingTuples.put("component2", 0L);
 		remainingTuples.put("component3", 0L);
 		
+		TopologyExplorer explorer = Mockito.mock(TopologyExplorer.class);
+		
 		ComponentMonitor compMonitor = Mockito.mock(ComponentMonitor.class);
 		Mockito.when(compMonitor.getStats("component1")).thenReturn(stats1);
 		Mockito.when(compMonitor.getStats("component2")).thenReturn(stats2);
 		Mockito.when(compMonitor.getStats("component3")).thenReturn(stats3);
 		Mockito.when(compMonitor.getSamplingRate()).thenReturn(1);
-		Mockito.when(compMonitor.getFormerRemainingTuples()).thenReturn(remainingTuples);
+		Mockito.when(compMonitor.getFormerRemainingTuples(explorer)).thenReturn(remainingTuples);
 			
 		AssignmentMonitor assignmentMonitor = Mockito.mock(AssignmentMonitor.class);
 		Mockito.when(assignmentMonitor.getParallelism("component1")).thenReturn(1);
 		Mockito.when(assignmentMonitor.getParallelism("component2")).thenReturn(1);
 		Mockito.when(assignmentMonitor.getParallelism("component3")).thenReturn(1);
 		
-		ActivityMetric eprMetric = new ActivityMetric(compMonitor, assignmentMonitor);
+		ActivityMetric eprMetric = new ActivityMetric(compMonitor, assignmentMonitor, explorer);
 		assertEquals(3000.0, eprMetric.computeAvgCapacity("component1"), 0);
 		assertEquals(1309.4, eprMetric.computeAvgCapacity("component2"), 0.1);
 		assertEquals(1309.5, eprMetric.computeAvgCapacity("component3"), 0.1);
@@ -377,6 +382,8 @@ public class ActivityMetricTest extends TestCase {
 		remainingTuples.put("component8", 0L);
 		remainingTuples.put("component9", 0L);
 		
+		TopologyExplorer explorer = Mockito.mock(TopologyExplorer.class);
+		
 		ComponentMonitor compMonitor = Mockito.mock(ComponentMonitor.class);
 		Mockito.when(compMonitor.getStats("component1")).thenReturn(stats1);
 		Mockito.when(compMonitor.getStats("component2")).thenReturn(stats2);
@@ -388,7 +395,7 @@ public class ActivityMetricTest extends TestCase {
 		Mockito.when(compMonitor.getStats("component8")).thenReturn(stats8);
 		Mockito.when(compMonitor.getStats("component9")).thenReturn(stats9);
 		Mockito.when(compMonitor.getSamplingRate()).thenReturn(1);
-		Mockito.when(compMonitor.getFormerRemainingTuples()).thenReturn(remainingTuples);
+		Mockito.when(compMonitor.getFormerRemainingTuples(explorer)).thenReturn(remainingTuples);
 		
 		AssignmentMonitor assignmentMonitor = Mockito.mock(AssignmentMonitor.class);
 		Mockito.when(assignmentMonitor.getParallelism("component1")).thenReturn(1);
@@ -401,7 +408,7 @@ public class ActivityMetricTest extends TestCase {
 		Mockito.when(assignmentMonitor.getParallelism("component8")).thenReturn(1);
 		Mockito.when(assignmentMonitor.getParallelism("component9")).thenReturn(1);
 		
-		ActivityMetric eprMetric = new ActivityMetric(compMonitor, assignmentMonitor);
+		ActivityMetric eprMetric = new ActivityMetric(compMonitor, assignmentMonitor, explorer);
 		assertEquals(1, eprMetric.compute("component1"), 0);
 		assertEquals(2.29, eprMetric.compute("component2"), 0.01);
 		assertEquals(2.29, eprMetric.compute("component3"), 0.01);

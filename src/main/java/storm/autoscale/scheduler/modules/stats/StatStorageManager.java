@@ -44,11 +44,11 @@ public class StatStorageManager /*implements Runnable*/{
 	private final Connection connection;
 	private final static String ALLTIME = ":all-time";
 	
-	private final static String TABLE_SPOUT = "all_time_spouts_stats";
-	private final static String TABLE_BOLT = "all_time_bolts_stats";
-	private final static String TABLE_TOPOLOGY = "topologies_status";
-	private final static String TABLE_ACTIVITY = "operators_activity";
-	private final static String TABLE_LOAD = "operators_loads";
+	public final static String TABLE_SPOUT = "all_time_spouts_stats";
+	public final static String TABLE_BOLT = "all_time_bolts_stats";
+	public final static String TABLE_TOPOLOGY = "topologies_status";
+	public final static String TABLE_ACTIVITY = "operators_activity";
+	public final static String TABLE_LOAD = "operators_loads";
 	
 	private final static String COL_TOTAL_EXEC = "total_executed";
 	private final static String COL_TOTAL_OUTPUT = "total_outputs";
@@ -60,7 +60,6 @@ public class StatStorageManager /*implements Runnable*/{
 	private final static String COL_UPDT_LOSS = "update_losses";
 	private final static String COL_AVG_LATENCY = "execute_ms_avg";
 	private final static String COL_SELECTIVITY = "selectivity";
-	private final static String COL_REMAIN_TUPLES = "remaining_tuples";
 	
 	private final static Integer LARGE_WINDOW_SIZE = 120;
 	
@@ -652,22 +651,39 @@ public class StatStorageManager /*implements Runnable*/{
 		return result;
 	}
 	
-	public Long getFormerRemainingTuples(Integer timestamp, String component){
+	public Long getCurrentTotalOutput(Integer timestamp, String component, String table){
 		Long result = 0L;
-		Integer previousTimestamp = timestamp - 1;
-		Integer oldestTimestamp = timestamp - LARGE_WINDOW_SIZE;
-		String query = "SELECT " + COL_REMAIN_TUPLES + " FROM " + TABLE_ACTIVITY
-				+ " WHERE component = '" + component + "' " +
-				" AND timestamp BETWEEN " + oldestTimestamp + " AND " + previousTimestamp;
+		String query = "SELECT timestamp, SUM(" + COL_TOTAL_OUTPUT + ") AS outputs FROM " + table +
+				" WHERE component = '" + component + "' " + 
+				" AND timestamp = " + timestamp +
+				" GROUP BY timestamp, component";
 		try {
-				Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-				ResultSet results = statement.executeQuery(query);
-				if(results.last()){
-					result += results.getLong(COL_REMAIN_TUPLES);
-				}
-			} catch (SQLException e) {
-				logger.severe("Unable to retrieve former value of remaining tuples to process because of " + e);
+			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			ResultSet results = statement.executeQuery(query);
+			if(results.first()){
+				result = results.getLong("outputs");
 			}
+		} catch (SQLException e) {
+			logger.severe("Unable to retrieve former value of total outcoming tuples because of " + e);
+		}
+		return result;
+	}
+	
+	public Long getCurrentTotalExecuted(Integer timestamp, String component, String table){
+		Long result = 0L;
+		String query = "SELECT timestamp, SUM(" + COL_TOTAL_EXEC + ") AS executed FROM " + table +
+				" WHERE component = '" + component + "' " + 
+				" AND timestamp = " + timestamp +
+				" GROUP BY timestamp, component";
+		try {
+			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			ResultSet results = statement.executeQuery(query);
+			if(results.first()){
+				result = results.getLong("executed");
+			}
+		} catch (SQLException e) {
+			logger.severe("Unable to retrieve former value of total executed tuples because of " + e);
+		}
 		return result;
 	}
 	

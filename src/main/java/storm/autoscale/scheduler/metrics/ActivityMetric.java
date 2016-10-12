@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
+import storm.autoscale.scheduler.modules.TopologyExplorer;
 import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 import storm.autoscale.scheduler.util.RegressionTools;
@@ -19,6 +20,7 @@ public class ActivityMetric implements IMetric {
 
 	ComponentMonitor cm;
 	AssignmentMonitor am;
+	TopologyExplorer explorer;
 	HashMap<String, Long> remainingTuples;
 	HashMap<String, HashMap<String, BigDecimal>> activityInfo;
 	public static final String REMAINING = "remaining_tuples";
@@ -28,10 +30,11 @@ public class ActivityMetric implements IMetric {
 	/**
 	 * 
 	 */
-	public ActivityMetric(ComponentMonitor cm, AssignmentMonitor am) {
+	public ActivityMetric(ComponentMonitor cm, AssignmentMonitor am, TopologyExplorer explorer) {
 		this.cm = cm;
 		this.am = am;
-		this.remainingTuples = this.cm.getFormerRemainingTuples();
+		this.explorer = explorer;
+		this.remainingTuples = this.cm.getFormerRemainingTuples(this.explorer);
 		this.activityInfo = new HashMap<>();
 	}
 
@@ -50,17 +53,14 @@ public class ActivityMetric implements IMetric {
 	public Double computeEstimatedLoad(String component){
 		Double result = 0.0;
 		//Get the remaining tuples for the component
-		Long formerRemaining = this.remainingTuples.get(component);
+		Long remainingTuples = this.cm.getStats(component).getTotalInput() - this.cm.getStats(component).getTotalExecuted();
 		//System.out.println("Tuples remaining at the start of the window : " + formerRemaining);
-		//compute the remaining tuples at the end of the current window (remaining from the last one + total input - total executed)
-		Long currentRemainingTuples = formerRemaining + this.cm.getStats(component).getTotalInput() - this.cm.getStats(component).getTotalExecuted();
-		currentRemainingTuples = Math.max(0, currentRemainingTuples);// to correct rare negative values due to the accuracy of Storm's internal metric
 		//System.out.println("Tuples remaining now: " + currentRemainingTuples);
 		if(!this.activityInfo.containsKey(component)){
 			this.activityInfo.put(component, new HashMap<String, BigDecimal>());
 		}
 		HashMap<String, BigDecimal> info = this.activityInfo.get(component);
-		info.put(REMAINING, new BigDecimal(currentRemainingTuples));
+		info.put(REMAINING, new BigDecimal(remainingTuples));
 		//Determine the min and the max of input records
 		HashMap<Integer, Long> inputRecords = this.cm.getStats(component).getInputRecords();
 		//From those points, compute the equation of the line
@@ -80,7 +80,7 @@ public class ActivityMetric implements IMetric {
 			//System.out.println("timestamp : " + i  + " estimation : " + estimation);
 		}
 		//sum the remaining tuples at the end of the current window to the estimated value of incoming tuples into result variable
-		result = currentRemainingTuples + estimIncomingTuples;
+		result = remainingTuples + estimIncomingTuples;
 		return result;
 	}
 	

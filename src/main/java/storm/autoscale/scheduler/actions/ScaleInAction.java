@@ -89,12 +89,12 @@ public class ScaleInAction implements IAction {
 				tTransport.open();
 			}
 			for(String component : this.validateActions){
-				Double crValue = this.compMonitor.getActivityValue(component);
+				Double activityValue = this.compMonitor.getActivityValue(component);
 	
 				int maxParallelism = this.assignMonitor.getAllSortedTasks(component).size();
 
 				int currentParallelism = this.assignMonitor.getParallelism(component);
-				int estimatedParallelism  = (int) Math.round(crValue * currentParallelism);
+				int estimatedParallelism  = Math.max(1, (int) Math.round(activityValue * currentParallelism));
 		
 				int newParallelism = Math.min(maxParallelism, estimatedParallelism);
 				
@@ -116,7 +116,8 @@ public class ScaleInAction implements IAction {
 				Thread.sleep(1000);
 			}
 		}catch (TException | InterruptedException e) {
-			logger.severe("Unable to scale topology " + explorer.getTopologyName() + " because of " + e);
+			logger.fine("Unable to scale topology " + explorer.getTopologyName() + " because of " + e);
+			//e.printStackTrace();
 		}
 	}
 
