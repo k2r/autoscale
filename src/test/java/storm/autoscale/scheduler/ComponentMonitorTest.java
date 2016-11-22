@@ -8,12 +8,12 @@ import java.util.HashMap;
 
 import org.mockito.Mockito;
 
-import backtype.storm.generated.Bolt;
-import backtype.storm.generated.ComponentCommon;
-import backtype.storm.generated.GlobalStreamId;
-import backtype.storm.generated.Grouping;
-import backtype.storm.generated.SpoutSpec;
-import backtype.storm.generated.StormTopology;
+import org.apache.storm.generated.Bolt;
+import org.apache.storm.generated.ComponentCommon;
+import org.apache.storm.generated.GlobalStreamId;
+import org.apache.storm.generated.Grouping;
+import org.apache.storm.generated.SpoutSpec;
+import org.apache.storm.generated.StormTopology;
 import junit.framework.TestCase;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
 import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
@@ -62,7 +62,7 @@ public class ComponentMonitorTest extends TestCase {
 		cm.updateStats(cws1.getId(), cws1);
 		cm.updateStats(cws2.getId(), cws2);
 		
-		assertEquals(false, cm.isInputDecreasing("component1"));
+		assertEquals(true, cm.isInputDecreasing("component1"));
 		assertEquals(true, cm.isInputDecreasing("component2"));
 	}
 
@@ -140,7 +140,7 @@ public class ComponentMonitorTest extends TestCase {
 		cm.updateStats(cws1.getId(), cws1);
 		cm.updateStats(cws2.getId(), cws2);
 		
-		assertEquals(false, cm.isInputIncreasing("component1"));
+		assertEquals(true, cm.isInputIncreasing("component1"));
 		assertEquals(true, cm.isInputIncreasing("component2"));
 	}
 

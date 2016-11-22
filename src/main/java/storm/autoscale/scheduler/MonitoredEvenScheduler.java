@@ -7,11 +7,11 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import backtype.storm.scheduler.Cluster;
-import backtype.storm.scheduler.EvenScheduler;
-import backtype.storm.scheduler.IScheduler;
-import backtype.storm.scheduler.Topologies;
-import backtype.storm.scheduler.TopologyDetails;
+import org.apache.storm.scheduler.Cluster;
+import org.apache.storm.scheduler.EvenScheduler;
+import org.apache.storm.scheduler.IScheduler;
+import org.apache.storm.scheduler.Topologies;
+import org.apache.storm.scheduler.TopologyDetails;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
 import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
@@ -43,7 +43,7 @@ public class MonitoredEvenScheduler implements IScheduler{
 	public void prepare(Map conf) {
 		this.nimbusHost = (String) conf.get("nimbus.host");
 		this.nimbusPort = (Integer) conf.get("nimbus.thrift.port");
-		this.password = "storm";
+		this.password = null;//"storm";
 	}
 
 	@Override

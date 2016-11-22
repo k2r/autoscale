@@ -6,8 +6,8 @@ package storm.autoscale.scheduler.allocation;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import backtype.storm.scheduler.SupervisorDetails;
-import backtype.storm.scheduler.WorkerSlot;
+import org.apache.storm.scheduler.SupervisorDetails;
+import org.apache.storm.scheduler.WorkerSlot;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
 import storm.autoscale.scheduler.modules.stats.ComponentMonitor;

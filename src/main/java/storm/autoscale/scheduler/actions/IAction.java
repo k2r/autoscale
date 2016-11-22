@@ -5,7 +5,7 @@ package storm.autoscale.scheduler.actions;
 
 import java.util.HashMap;
 
-import backtype.storm.scheduler.WorkerSlot;
+import org.apache.storm.scheduler.WorkerSlot;
 
 /**
  * @author Roland

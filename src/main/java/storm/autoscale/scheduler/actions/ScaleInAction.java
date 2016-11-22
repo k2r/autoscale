@@ -14,14 +14,14 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import org.apache.thrift7.TException;
-import org.apache.thrift7.protocol.TBinaryProtocol;
-import org.apache.thrift7.transport.TFramedTransport;
-import org.apache.thrift7.transport.TSocket;
+import org.apache.storm.thrift.TException;
+import org.apache.storm.thrift.protocol.TBinaryProtocol;
+import org.apache.storm.thrift.transport.TFramedTransport;
+import org.apache.storm.thrift.transport.TSocket;
 
-import backtype.storm.generated.Nimbus;
-import backtype.storm.generated.RebalanceOptions;
-import backtype.storm.scheduler.WorkerSlot;
+import org.apache.storm.generated.Nimbus;
+import org.apache.storm.generated.RebalanceOptions;
+import org.apache.storm.scheduler.WorkerSlot;
 import storm.autoscale.scheduler.allocation.IAllocationStrategy;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.TopologyExplorer;

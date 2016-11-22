@@ -6,11 +6,11 @@ package storm.autoscale.scheduler.modules;
 import java.util.ArrayList;
 import java.util.Map;
 
-import backtype.storm.generated.Bolt;
-import backtype.storm.generated.ComponentCommon;
-import backtype.storm.generated.GlobalStreamId;
-import backtype.storm.generated.SpoutSpec;
-import backtype.storm.generated.StormTopology;
+import org.apache.storm.generated.Bolt;
+import org.apache.storm.generated.ComponentCommon;
+import org.apache.storm.generated.GlobalStreamId;
+import org.apache.storm.generated.SpoutSpec;
+import org.apache.storm.generated.StormTopology;
 
 /**
  * @author Roland

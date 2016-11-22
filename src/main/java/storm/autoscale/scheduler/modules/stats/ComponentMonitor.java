@@ -35,7 +35,7 @@ public class ComponentMonitor {
 	private HashMap<String, Double> loadValues;
 	public static final Integer WINDOW_SIZE = 60;
 	public static final Integer STABIL_COEFF = 1;
-	public static final Double VAR_THRESHOLD = 0.5;
+	public static final Double VAR_THRESHOLD = 0.2;
 	public static final Double LOW_ACTIVITY_THRESHOLD = 0.4;
 	public static final Double HIGH_ACTIVITY_THRESHOLD = 0.8;
 	private static Logger logger = Logger.getLogger("ComponentMonitor");

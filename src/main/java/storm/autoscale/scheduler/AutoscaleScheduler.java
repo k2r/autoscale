@@ -8,11 +8,11 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import backtype.storm.scheduler.Cluster;
-import backtype.storm.scheduler.EvenScheduler;
-import backtype.storm.scheduler.IScheduler;
-import backtype.storm.scheduler.Topologies;
-import backtype.storm.scheduler.TopologyDetails;
+import org.apache.storm.scheduler.Cluster;
+import org.apache.storm.scheduler.EvenScheduler;
+import org.apache.storm.scheduler.IScheduler;
+import org.apache.storm.scheduler.Topologies;
+import org.apache.storm.scheduler.TopologyDetails;
 import storm.autoscale.scheduler.actions.IAction;
 import storm.autoscale.scheduler.actions.ScaleInAction;
 import storm.autoscale.scheduler.actions.ScaleOutAction;
@@ -54,7 +54,7 @@ public class AutoscaleScheduler implements IScheduler {
 	public void prepare(Map conf) {
 		this.nimbusHost = (String) conf.get("nimbus.host");
 		this.nimbusPort = (Integer) conf.get("nimbus.thrift.port");
-		this.password = "storm";
+		this.password = null;//"storm";
 	}
 
 	/* (non-Javadoc)

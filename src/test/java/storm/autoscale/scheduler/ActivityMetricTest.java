@@ -23,7 +23,7 @@ public class ActivityMetricTest extends TestCase {
 	/**
 	 * Test method for {@link storm.autoscale.scheduler.metrics.ActivityMetric#getActivityInfo(java.lang.String)}.
 	 */
-	public void testGetEPRInfo() {
+	public void testGetActivityInfo() {
 	}
 
 	/**

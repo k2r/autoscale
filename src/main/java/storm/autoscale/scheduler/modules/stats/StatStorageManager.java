@@ -15,19 +15,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import org.apache.thrift7.TException;
-import org.apache.thrift7.transport.TFramedTransport;
+import org.apache.storm.thrift.TException;
+import org.apache.storm.thrift.transport.TFramedTransport;
 
-import backtype.storm.generated.BoltStats;
-import backtype.storm.generated.ExecutorInfo;
-import backtype.storm.generated.ExecutorSpecificStats;
-import backtype.storm.generated.ExecutorStats;
-import backtype.storm.generated.ExecutorSummary;
-import backtype.storm.generated.GlobalStreamId;
-import backtype.storm.generated.Nimbus;
-import backtype.storm.generated.SpoutStats;
-import backtype.storm.generated.TopologyInfo;
-import backtype.storm.generated.TopologySummary;
+import org.apache.storm.generated.BoltStats;
+import org.apache.storm.generated.ExecutorInfo;
+import org.apache.storm.generated.ExecutorSpecificStats;
+import org.apache.storm.generated.ExecutorStats;
+import org.apache.storm.generated.ExecutorSummary;
+import org.apache.storm.generated.GlobalStreamId;
+import org.apache.storm.generated.Nimbus;
+import org.apache.storm.generated.SpoutStats;
+import org.apache.storm.generated.TopologyInfo;
+import org.apache.storm.generated.TopologySummary;
 import storm.autoscale.scheduler.modules.listener.NimbusListener;
 
 /**
