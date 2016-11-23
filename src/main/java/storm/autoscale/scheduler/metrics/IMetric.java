@@ -3,7 +3,7 @@
  */
 package storm.autoscale.scheduler.metrics;
 
-import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
+import storm.autoscale.scheduler.modules.ComponentMonitor;
 
 /**
  * @author Roland

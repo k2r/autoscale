@@ -3,17 +3,22 @@
  */
 package storm.autoscale.scheduler;
 
+import java.io.IOException;
 import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.xml.sax.SAXException;
+
 import junit.framework.TestCase;
-import storm.autoscale.scheduler.modules.stats.StatStorageManager;
+import storm.autoscale.scheduler.config.XmlConfigParser;
+import storm.autoscale.scheduler.connector.database.IJDBCConnector;
+import storm.autoscale.scheduler.connector.database.MySQLConnector;
+import storm.autoscale.scheduler.modules.StatStorageManager;
 
 /**
  * @author Roland
@@ -22,11 +27,14 @@ import storm.autoscale.scheduler.modules.stats.StatStorageManager;
 public class StatStorageManagerTest extends TestCase {
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#storeSpoutExecutorStats(java.lang.Integer, java.lang.String, java.lang.Integer, java.lang.String, java.lang.String, java.lang.Integer, java.lang.Integer, java.lang.Long, java.lang.Long, java.lang.Long, java.lang.Double)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.StatStorageManager#storeSpoutExecutorStats(java.lang.Integer, java.lang.String, java.lang.Integer, java.lang.String, java.lang.String, java.lang.Integer, java.lang.Integer, java.lang.Long, java.lang.Long, java.lang.Long, java.lang.Double)}.
 	 */
 	public void testStoreSpoutExecutorStats() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
+			XmlConfigParser parser = new XmlConfigParser("autoscale_parameters.xml");
+			parser.initParameters();
+			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			Integer timestamp = 0;
 			String host = "testHost";
 			Integer port = 0;
@@ -43,15 +51,8 @@ public class StatStorageManagerTest extends TestCase {
 			Double avgLatency = 500.0; 
 			manager.storeSpoutExecutorStats(timestamp, host, port, topology, component, startTask, endTask, totalOutputs, updateOutputs, totalThroughput, updateThroughput, totalLosses, updateLosses, avgLatency);
 			
-			String jdbcDriver = "com.mysql.jdbc.Driver";
-			String dbUrl = "jdbc:mysql://localhost/benchmarks";
-			String user = "root";
-			Class.forName(jdbcDriver);
-			
-			Connection connection = DriverManager.getConnection(dbUrl,user, null);
-			Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			String testSpoutStorageQuery = "SELECT * FROM all_time_spouts_stats";
-			ResultSet result = statement.executeQuery(testSpoutStorageQuery);
+			ResultSet result = connector.executeQuery(testSpoutStorageQuery);
 			
 			Integer actualTimestamp = null;
 			String actualHost = null;
@@ -99,18 +100,21 @@ public class StatStorageManagerTest extends TestCase {
 			assertEquals(avgLatency, actualAvgLatency, 0);
 			
 			String testCleanQuery = "DELETE FROM all_time_spouts_stats";
-			statement.executeUpdate(testCleanQuery);
-		} catch (ClassNotFoundException | SQLException e) {
+			connector.executeUpdate(testCleanQuery);
+		} catch (ClassNotFoundException | SQLException | ParserConfigurationException | SAXException | IOException e) {
 			e.printStackTrace();
 		}
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#storeBoltExecutorStats(java.lang.Integer, java.lang.String, java.lang.Integer, java.lang.String, java.lang.String, java.lang.Integer, java.lang.Integer, java.lang.Long, java.lang.Long, java.lang.Double, java.lang.Double)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.StatStorageManager#storeBoltExecutorStats(java.lang.Integer, java.lang.String, java.lang.Integer, java.lang.String, java.lang.String, java.lang.Integer, java.lang.Integer, java.lang.Long, java.lang.Long, java.lang.Double, java.lang.Double)}.
 	 */
 	public void testStoreBoltExecutorStats() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
+			XmlConfigParser parser = new XmlConfigParser("autoscale_parameters.xml");
+			parser.initParameters();
+			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			Integer timestamp = 0;
 			String host = "testHost";
 			Integer port = 0;
@@ -126,15 +130,8 @@ public class StatStorageManagerTest extends TestCase {
 			Double selectivity = 0.8;
 			manager.storeBoltExecutorStats(timestamp, host, port, topology, component, startTask, endTask, totalExecuted, updateExecuted, totalOutputs, updateOutputs, avgLatency, selectivity);
 
-			String jdbcDriver = "com.mysql.jdbc.Driver";
-			String dbUrl = "jdbc:mysql://localhost/benchmarks";
-			String user = "root";
-			Class.forName(jdbcDriver);
-
-			Connection connection = DriverManager.getConnection(dbUrl,user, null);
-			Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			String testBolttStorageQuery = "SELECT * FROM all_time_bolts_stats";
-			ResultSet result = statement.executeQuery(testBolttStorageQuery);
+			ResultSet result = connector.executeQuery(testBolttStorageQuery);
 
 			Integer actualTimestamp = null;
 			String actualHost = null;
@@ -179,36 +176,33 @@ public class StatStorageManagerTest extends TestCase {
 			assertEquals(selectivity, actualSelectivity, 0);
 
 			String testCleanQuery = "DELETE FROM all_time_bolts_stats";
-			statement.executeUpdate(testCleanQuery);
-		} catch (ClassNotFoundException | SQLException e) {
+			connector.executeUpdate(testCleanQuery);
+		} catch (ClassNotFoundException | SQLException | ParserConfigurationException | SAXException | IOException e) {
 			e.printStackTrace();
 		}
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#storeActivityInfo(java.lang.Integer, java.lang.String, java.lang.String, java.lang.String, java.lang.Double, java.lang.Integer, java.lang.Double)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.StatStorageManager#storeActivityInfo(java.lang.Integer, java.lang.String, java.lang.String, java.lang.String, java.lang.Double, java.lang.Integer, java.lang.Double)}.
 	 */
 	public void testStoreActivityInfo() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
+			XmlConfigParser parser = new XmlConfigParser("autoscale_parameters.xml");
+			parser.initParameters();
+			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			Integer timestamp = 1;
 			String topology = "testTopology";
 			String component = "testComponent";
 			Double activityValue = 0.85;
 			Integer remaining = 50;
-			Double processingRate = 30.0;
+			Double capacity = 30.0;
+			Double estimatedLoad = 25.0;
+	
+			manager.storeActivityInfo(timestamp, topology, component, activityValue, remaining, capacity, estimatedLoad);
 			
-			manager.storeActivityInfo(timestamp, topology, component, activityValue, remaining, processingRate);
-			
-			String jdbcDriver = "com.mysql.jdbc.Driver";
-			String dbUrl = "jdbc:mysql://localhost/benchmarks";
-			String user = "root";
-			Class.forName(jdbcDriver);
-
-			Connection connection = DriverManager.getConnection(dbUrl,user, null);
-			Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			String testCRStorageQuery = "SELECT * FROM operators_activity";
-			ResultSet result = statement.executeQuery(testCRStorageQuery);
+			ResultSet result = connector.executeQuery(testCRStorageQuery);
 			
 			Integer actualTimestamp = null;
 			String actualTopology = null;
@@ -230,22 +224,24 @@ public class StatStorageManagerTest extends TestCase {
 			assertEquals(component, actualComponent);
 			assertEquals(activityValue, actualCRValue);
 			assertEquals(remaining, actualRemaining);
-			assertEquals(processingRate, actualProcessingRate);
+			assertEquals(capacity, actualProcessingRate);
 			
 			String testCleanQuery = "DELETE FROM operators_activity";
-			statement.executeUpdate(testCleanQuery);
-		} catch (ClassNotFoundException | SQLException e) {
+			connector.executeUpdate(testCleanQuery);
+		} catch (ClassNotFoundException | SQLException | ParserConfigurationException | SAXException | IOException e) {
 			e.printStackTrace();
 		}
 	}
 	
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#getWorkers(java.lang.String, java.lang.Integer)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.StatStorageManager#getWorkers(java.lang.String, java.lang.Integer)}.
 	 */
 	public void testGetWorkers() {
 		try {
-			
-			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
+			XmlConfigParser parser = new XmlConfigParser("autoscale_parameters.xml");
+			parser.initParameters();
+			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			Integer timestamp1 = 1;
 			Integer timestamp2 = 10;
 			String topology = "testTopology";
@@ -292,27 +288,22 @@ public class StatStorageManagerTest extends TestCase {
 			expectedWorkers.put(timestamp2, expectedWorkersTimestamp2);
 			assertEquals(expectedWorkers, actualWorkers);
 			
-			String jdbcDriver = "com.mysql.jdbc.Driver";
-			String dbUrl = "jdbc:mysql://localhost/benchmarks";
-			String user = "root";
-			Class.forName(jdbcDriver);
-			
-			Connection connection = DriverManager.getConnection(dbUrl,user, null);
-			Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			
 			String testCleanQuery = "DELETE FROM all_time_bolts_stats";
-			statement.executeUpdate(testCleanQuery);
-		} catch (ClassNotFoundException | SQLException e) {
+			connector.executeUpdate(testCleanQuery);
+		} catch (ClassNotFoundException | SQLException | ParserConfigurationException | SAXException | IOException e) {
 			e.printStackTrace();
 		}
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#getExecuted(java.lang.String, java.lang.Integer)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.StatStorageManager#getExecuted(java.lang.String, java.lang.Integer)}.
 	 */
 	public void testGetExecuted() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
+			XmlConfigParser parser = new XmlConfigParser("autoscale_parameters.xml");
+			parser.initParameters();
+			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			Integer timestamp1 = 1;
 			Integer timestamp2 = 10;
 			String topology = "testTopology";
@@ -359,27 +350,22 @@ public class StatStorageManagerTest extends TestCase {
 			
 			assertEquals(expectedExecuted, actualExecuted);
 			
-			String jdbcDriver = "com.mysql.jdbc.Driver";
-			String dbUrl = "jdbc:mysql://localhost/benchmarks";
-			String user = "root";
-			Class.forName(jdbcDriver);
-			
-			Connection connection = DriverManager.getConnection(dbUrl,user, null);
-			Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			
 			String testCleanQuery = "DELETE FROM all_time_bolts_stats";
-			statement.executeUpdate(testCleanQuery);
-		} catch (ClassNotFoundException | SQLException e) {
+			connector.executeUpdate(testCleanQuery);
+		} catch (ClassNotFoundException | SQLException | ParserConfigurationException | SAXException | IOException e) {
 			e.printStackTrace();
 		}
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#getOutputs(java.lang.String, java.lang.Integer)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.StatStorageManager#getOutputs(java.lang.String, java.lang.Integer)}.
 	 */
 	public void testGetOutputs() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
+			XmlConfigParser parser = new XmlConfigParser("autoscale_parameters.xml");
+			parser.initParameters();
+			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			Integer timestamp1 = 1;
 			Integer timestamp2 = 10;
 			String topology = "testTopology";
@@ -426,27 +412,22 @@ public class StatStorageManagerTest extends TestCase {
 			
 			assertEquals(expectedOutputs, actualOutputs);
 			
-			String jdbcDriver = "com.mysql.jdbc.Driver";
-			String dbUrl = "jdbc:mysql://localhost/benchmarks";
-			String user = "root";
-			Class.forName(jdbcDriver);
-			
-			Connection connection = DriverManager.getConnection(dbUrl,user, null);
-			Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			
 			String testCleanQuery = "DELETE FROM all_time_bolts_stats";
-			statement.executeUpdate(testCleanQuery);
-		} catch (ClassNotFoundException | SQLException e) {
+			connector.executeUpdate(testCleanQuery);
+		} catch (ClassNotFoundException | SQLException | ParserConfigurationException | SAXException | IOException e) {
 			e.printStackTrace();
 		}
 	}
 	
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#getAvgLatency(java.lang.String, java.lang.Integer)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.StatStorageManager#getAvgLatency(java.lang.String, java.lang.Integer)}.
 	 */
 	public void testGetAvgLatency() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
+			XmlConfigParser parser = new XmlConfigParser("autoscale_parameters.xml");
+			parser.initParameters();
+			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			Integer timestamp1 = 1;
 			Integer timestamp2 = 10;
 			String topology = "testTopology";
@@ -493,27 +474,22 @@ public class StatStorageManagerTest extends TestCase {
 			
 			assertEquals(expectedAvgLatency, actualAvgLatency);
 			
-			String jdbcDriver = "com.mysql.jdbc.Driver";
-			String dbUrl = "jdbc:mysql://localhost/benchmarks";
-			String user = "root";
-			Class.forName(jdbcDriver);
-			
-			Connection connection = DriverManager.getConnection(dbUrl,user, null);
-			Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			
 			String testCleanQuery = "DELETE FROM all_time_bolts_stats";
-			statement.executeUpdate(testCleanQuery);
-		} catch (ClassNotFoundException | SQLException e) {
+			connector.executeUpdate(testCleanQuery);
+		} catch (ClassNotFoundException | SQLException | ParserConfigurationException | SAXException | IOException e) {
 			e.printStackTrace();
 		}
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#getSelectivity(java.lang.String, java.lang.Integer)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.StatStorageManager#getSelectivity(java.lang.String, java.lang.Integer)}.
 	 */
 	public void testGetSelectivity() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
+			XmlConfigParser parser = new XmlConfigParser("autoscale_parameters.xml");
+			parser.initParameters();
+			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			Integer timestamp1 = 1;
 			Integer timestamp2 = 10;
 			String topology = "testTopology";
@@ -560,27 +536,22 @@ public class StatStorageManagerTest extends TestCase {
 			
 			assertEquals(expectedSelectivity, actualSelectivity);
 			
-			String jdbcDriver = "com.mysql.jdbc.Driver";
-			String dbUrl = "jdbc:mysql://localhost/benchmarks";
-			String user = "root";
-			Class.forName(jdbcDriver);
-			
-			Connection connection = DriverManager.getConnection(dbUrl,user, null);
-			Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			
 			String testCleanQuery = "DELETE FROM all_time_bolts_stats";
-			statement.executeUpdate(testCleanQuery);
-		} catch (ClassNotFoundException | SQLException e) {
+			connector.executeUpdate(testCleanQuery);
+		} catch (ClassNotFoundException | SQLException | ParserConfigurationException | SAXException | IOException e) {
 			e.printStackTrace();
 		}
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#getTopologyThroughput(java.lang.String, java.lang.Integer)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.StatStorageManager#getTopologyThroughput(java.lang.String, java.lang.Integer)}.
 	 */
 	public void testGetTopologyThroughput() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
+			XmlConfigParser parser = new XmlConfigParser("autoscale_parameters.xml");
+			parser.initParameters();
+			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			Integer timestamp1 = 1;
 			Integer timestamp2 = 9;
 			String topology = "testTopology";
@@ -630,27 +601,22 @@ public class StatStorageManagerTest extends TestCase {
 			
 			assertEquals(expectedThroughput, actualThroughput);
 			
-			String jdbcDriver = "com.mysql.jdbc.Driver";
-			String dbUrl = "jdbc:mysql://localhost/benchmarks";
-			String user = "root";
-			Class.forName(jdbcDriver);
-			
-			Connection connection = DriverManager.getConnection(dbUrl,user, null);
-			Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			
 			String testCleanQuery = "DELETE FROM all_time_spouts_stats";
-			statement.executeUpdate(testCleanQuery);
-		} catch (ClassNotFoundException | SQLException e) {
+			connector.executeUpdate(testCleanQuery);
+		} catch (ClassNotFoundException | SQLException | ParserConfigurationException | SAXException | IOException e) {
 			e.printStackTrace();
 		}
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#getTopologyLosses(java.lang.String, java.lang.Integer)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.StatStorageManager#getTopologyLosses(java.lang.String, java.lang.Integer)}.
 	 */
 	public void testGetTopologyLosses() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
+			XmlConfigParser parser = new XmlConfigParser("autoscale_parameters.xml");
+			parser.initParameters();
+			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			Integer timestamp1 = 1;
 			Integer timestamp2 = 10;
 			String topology = "testTopology";
@@ -700,27 +666,22 @@ public class StatStorageManagerTest extends TestCase {
 			
 			assertEquals(expectedLosses, actualLosses);
 			
-			String jdbcDriver = "com.mysql.jdbc.Driver";
-			String dbUrl = "jdbc:mysql://localhost/benchmarks";
-			String user = "root";
-			Class.forName(jdbcDriver);
-			
-			Connection connection = DriverManager.getConnection(dbUrl,user, null);
-			Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			
 			String testCleanQuery = "DELETE FROM all_time_spouts_stats";
-			statement.executeUpdate(testCleanQuery);
-		} catch (ClassNotFoundException | SQLException e) {
+			connector.executeUpdate(testCleanQuery);
+		} catch (ClassNotFoundException | SQLException | ParserConfigurationException | SAXException | IOException e) {
 			e.printStackTrace();
 		}
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#getTopologyAvgLatency(java.lang.String, java.lang.Integer)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.StatStorageManager#getTopologyAvgLatency(java.lang.String, java.lang.Integer)}.
 	 */
 	public void testGetTopologyAvgLatency() {
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
+			XmlConfigParser parser = new XmlConfigParser("autoscale_parameters.xml");
+			parser.initParameters();
+			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			Integer timestamp1 = 1;
 			Integer timestamp2 = 10;
 			String topology = "testTopology";
@@ -770,25 +731,19 @@ public class StatStorageManagerTest extends TestCase {
 			
 			assertEquals(expectedAvgLatency, actualAvgLatency);
 			
-			String jdbcDriver = "com.mysql.jdbc.Driver";
-			String dbUrl = "jdbc:mysql://localhost/benchmarks";
-			String user = "root";
-			Class.forName(jdbcDriver);
-			
-			Connection connection = DriverManager.getConnection(dbUrl,user, null);
-			Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			
 			String testCleanQuery = "DELETE FROM all_time_spouts_stats";
-			statement.executeUpdate(testCleanQuery);
-		} catch (ClassNotFoundException | SQLException e) {
+			connector.executeUpdate(testCleanQuery);
+		} catch (ClassNotFoundException | SQLException | ParserConfigurationException | SAXException | IOException e) {
 			e.printStackTrace();
 		}
 	}
 
 	public void testGetFormerValue(){
 		try {
-			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
-
+			XmlConfigParser parser = new XmlConfigParser("autoscale_parameters.xml");
+			parser.initParameters();
+			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			Integer timestamp1 = 1;
 			Integer timestamp2 = 10;
 			Integer timestamp3 = 21;
@@ -842,85 +797,10 @@ public class StatStorageManagerTest extends TestCase {
 			assertEquals(15L, actual4, 0);
 			assertEquals(1L, actual5, 0);
 
-			String jdbcDriver = "com.mysql.jdbc.Driver";
-			String dbUrl = "jdbc:mysql://localhost/benchmarks";
-			String user = "root";
-			Class.forName(jdbcDriver);
-
-			Connection connection = DriverManager.getConnection(dbUrl,user, null);
-			Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-
 			String testCleanQuery = "DELETE FROM all_time_spouts_stats";
-			statement.executeUpdate(testCleanQuery);
-		} catch (ClassNotFoundException | SQLException e) {
+			connector.executeUpdate(testCleanQuery);
+		} catch (ClassNotFoundException | SQLException | ParserConfigurationException | SAXException | IOException e) {
 			e.printStackTrace();
 		}
 	}
-	
-	/*public void testGetFormerRemainingTuples(){
-		try {
-			String jdbcDriver = "com.mysql.jdbc.Driver";
-			String dbUrl = "jdbc:mysql://localhost/benchmarks";
-			Class.forName(jdbcDriver);
-			Connection connection = DriverManager.getConnection(dbUrl, "root", null);
-			ArrayList<String> queries = new ArrayList<>();
-			String queryA1 = "INSERT INTO operators_activity VALUES('1', 'topologyTest', 'A', '1', '0', '10')";
-			String queryB1 = "INSERT INTO operators_activity VALUES('1', 'topologyTest', 'B', '1', '5', '5')";
-			String queryA2 = "INSERT INTO operators_activity VALUES('2', 'topologyTest', 'A', '1', '4', '10')";
-			String queryB2 = "INSERT INTO operators_activity VALUES('2', 'topologyTest', 'B', '1', '3', '5')";
-			String queryA3 = "INSERT INTO operators_activity VALUES('3', 'topologyTest', 'A', '1', '8', '10')";
-			String queryB3 = "INSERT INTO operators_activity VALUES('3', 'topologyTest', 'B', '1', '6', '10')";
-
-			queries.add(queryA1);
-			queries.add(queryB1);
-			queries.add(queryA2);
-			queries.add(queryB2);
-			queries.add(queryA3);
-			queries.add(queryB3);
-			
-			for(String query : queries){
-				try {
-					Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-					statement.executeUpdate(query);
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-			}
-			TopologyExplorer explorer = Mockito.mock(TopologyExplorer.class);
-			
-			StatStorageManager manager = StatStorageManager.getManager("localhost", null);
-			
-			assertEquals(0, manager.getFormerRemainingTuples(1, "A"), 0);
-			assertEquals(0, manager.getFormerRemainingTuples(2, "A"), 0);
-			assertEquals(4, manager.getFormerRemainingTuples(3, "A"), 0);
-			assertEquals(8, manager.getFormerRemainingTuples(4, "A"), 0);
-			assertEquals(0,manager.getFormerRemainingTuples(1, "B"), 0);
-			assertEquals(5, manager.getFormerRemainingTuples(2, "B"), 0);
-			assertEquals(3, manager.getFormerRemainingTuples(3, "B"), 0);
-			assertEquals(6, manager.getFormerRemainingTuples(4, "B"), 0);
-			
-			String cleanQuery1 = "DELETE FROM all_time_spouts_stats";
-			String cleanQuery2 = "DELETE FROM all_time_bolts_stats";
-			String cleanQuery3 = "DELETE FROM operators_activity";
-			String cleanQuery4 = "DELETE FROM topologies_status";
-			
-			ArrayList<String> cleanQueries = new ArrayList<>();
-			cleanQueries.add(cleanQuery1);
-			cleanQueries.add(cleanQuery2);
-			cleanQueries.add(cleanQuery3);
-			cleanQueries.add(cleanQuery4);
-			
-			for(String query : cleanQueries){
-				try {
-					Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-					statement.executeUpdate(query);
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-			}
-		}catch (ClassNotFoundException | SQLException e) {
-			e.printStackTrace();		
-		}	
-	}
-*/
 }

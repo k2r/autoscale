@@ -3,11 +3,14 @@
  */
 package storm.autoscale.scheduler;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.mockito.Mockito;
+import javax.xml.parsers.ParserConfigurationException;
 
+import org.mockito.Mockito;
+import org.xml.sax.SAXException;
 import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.generated.GlobalStreamId;
@@ -15,8 +18,9 @@ import org.apache.storm.generated.Grouping;
 import org.apache.storm.generated.SpoutSpec;
 import org.apache.storm.generated.StormTopology;
 import junit.framework.TestCase;
+import storm.autoscale.scheduler.config.XmlConfigParser;
+import storm.autoscale.scheduler.modules.ComponentMonitor;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
-import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 
 /**
@@ -28,7 +32,7 @@ public class ComponentMonitorTest extends TestCase {
 	Long scaleFactor = 5L;
 	
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.stats.ComponentMonitor#isInputDecreasing(java.lang.String)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.ComponentMonitor#isInputDecreasing(java.lang.String)}.
 	 */
 	public void testIsInputDecreasing() {
 		HashMap<Integer, Long> inputRecords1 = new HashMap<>();
@@ -57,8 +61,14 @@ public class ComponentMonitorTest extends TestCase {
 		
 		ComponentWindowedStats cws1 = new ComponentWindowedStats("component1", inputRecords1, null, null, null, null);
 		ComponentWindowedStats cws2 = new ComponentWindowedStats("component2", inputRecords2, null, null, null, null);
-		
-		ComponentMonitor cm = new ComponentMonitor(null, null, null, null, null);
+		XmlConfigParser parser = null;
+		try {
+			 parser = new XmlConfigParser("autoscale_parameters.xml");
+			 parser.initParameters();
+		} catch (ParserConfigurationException | SAXException | IOException e) {
+			e.printStackTrace();
+		}
+		ComponentMonitor cm = new ComponentMonitor(parser, null, null);
 		cm.updateStats(cws1.getId(), cws1);
 		cm.updateStats(cws2.getId(), cws2);
 		
@@ -67,20 +77,20 @@ public class ComponentMonitorTest extends TestCase {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.stats.ComponentMonitor#isInputStable(java.lang.String)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.ComponentMonitor#isInputStable(java.lang.String)}.
 	 */
 	public void testIsInputStable() {
 		HashMap<Integer, Long> inputRecords1 = new HashMap<>();
 		inputRecords1.put(10, 1350L / this.scaleFactor);
 		inputRecords1.put(9, 1300L / this.scaleFactor);
-		inputRecords1.put(8, 1400L / this.scaleFactor);
+		inputRecords1.put(8, 1330L / this.scaleFactor);
 		inputRecords1.put(7, 1340L / this.scaleFactor);
 		inputRecords1.put(6, 1340L / this.scaleFactor);
-		inputRecords1.put(5, 1370L / this.scaleFactor);
+		inputRecords1.put(5, 1350L / this.scaleFactor);
 		inputRecords1.put(4, 1350L / this.scaleFactor);
-		inputRecords1.put(3, 1350L / this.scaleFactor);
+		inputRecords1.put(3, 1320L / this.scaleFactor);
 		inputRecords1.put(2, 1345L / this.scaleFactor);
-		inputRecords1.put(1, 1350L / this.scaleFactor);
+		inputRecords1.put(1, 1320L / this.scaleFactor);
 	
 		HashMap<Integer, Long> inputRecords2 = new HashMap<>();
 		inputRecords2.put(10, 220L / this.scaleFactor);
@@ -97,7 +107,14 @@ public class ComponentMonitorTest extends TestCase {
 		ComponentWindowedStats cws1 = new ComponentWindowedStats("component1", inputRecords1, null, null, null, null);
 		ComponentWindowedStats cws2 = new ComponentWindowedStats("component2", inputRecords2, null, null, null, null);
 		
-		ComponentMonitor cm = new ComponentMonitor(null, null, null, null, null);
+		XmlConfigParser parser = null;
+		try {
+			 parser = new XmlConfigParser("autoscale_parameters.xml");
+			 parser.initParameters();
+		} catch (ParserConfigurationException | SAXException | IOException e) {
+			e.printStackTrace();
+		}
+		ComponentMonitor cm = new ComponentMonitor(parser, null, null);
 		cm.updateStats(cws1.getId(), cws1);
 		cm.updateStats(cws2.getId(), cws2);
 		
@@ -106,7 +123,7 @@ public class ComponentMonitorTest extends TestCase {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.stats.ComponentMonitor#isInputIncreasing(java.lang.String)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.ComponentMonitor#isInputIncreasing(java.lang.String)}.
 	 */
 	public void testIsInputIncreasing() {
 		HashMap<Integer, Long> inputRecords1 = new HashMap<>();
@@ -136,7 +153,14 @@ public class ComponentMonitorTest extends TestCase {
 		ComponentWindowedStats cws1 = new ComponentWindowedStats("component1", inputRecords1, null, null, null, null);
 		ComponentWindowedStats cws2 = new ComponentWindowedStats("component2", inputRecords2, null, null, null, null);
 		
-		ComponentMonitor cm = new ComponentMonitor(null, null, null, null, null);
+		XmlConfigParser parser = null;
+		try {
+			 parser = new XmlConfigParser("autoscale_parameters.xml");
+			 parser.initParameters();
+		} catch (ParserConfigurationException | SAXException | IOException e) {
+			e.printStackTrace();
+		}
+		ComponentMonitor cm = new ComponentMonitor(parser, null, null);
 		cm.updateStats(cws1.getId(), cws1);
 		cm.updateStats(cws2.getId(), cws2);
 		
@@ -145,9 +169,9 @@ public class ComponentMonitorTest extends TestCase {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.stats.ComponentMonitor#needScaleOut(java.lang.String)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.ComponentMonitor#needScaleOut(java.lang.String)}.
 	 */
-	public void testIsCongested() {
+	public void testNeedScaleOut() {
 		HashMap<Integer, Long> inputRecords1 = new HashMap<>();
 		inputRecords1.put(10, 1350L / this.scaleFactor);
 		inputRecords1.put(9, 1225L / this.scaleFactor);
@@ -201,7 +225,14 @@ public class ComponentMonitorTest extends TestCase {
 		ComponentWindowedStats cws3 = new ComponentWindowedStats("component3", inputRecords2, executedRecords1, null, null, null);
 		ComponentWindowedStats cws4 = new ComponentWindowedStats("component4", inputRecords2, executedRecords2, null, null, null);
 		
-		ComponentMonitor cm = new ComponentMonitor(null, null, null, null, null);
+		XmlConfigParser parser = null;
+		try {
+			 parser = new XmlConfigParser("autoscale_parameters.xml");
+			 parser.initParameters();
+		} catch (ParserConfigurationException | SAXException | IOException e) {
+			e.printStackTrace();
+		}
+		ComponentMonitor cm = new ComponentMonitor(parser, null, null);
 		cm.updateStats(cws1.getId(), cws1);
 		cm.updateStats(cws2.getId(), cws2);
 		cm.updateStats(cws3.getId(), cws3);
@@ -214,9 +245,9 @@ public class ComponentMonitorTest extends TestCase {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.stats.ComponentMonitor#getScaleOutDecisions()}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.ComponentMonitor#getScaleOutDecisions()}.
 	 */
-	public void testGetCongested() {
+	public void testGetScaleOutDecisions() {
 		HashMap<Integer, Long> inputRecords1 = new HashMap<>();
 		inputRecords1.put(10, 1350L / this.scaleFactor);
 		inputRecords1.put(9, 1225L / this.scaleFactor);
@@ -270,7 +301,14 @@ public class ComponentMonitorTest extends TestCase {
 		ComponentWindowedStats cws3 = new ComponentWindowedStats("component3", inputRecords2, executedRecords1, null, null, null);
 		ComponentWindowedStats cws4 = new ComponentWindowedStats("component4", inputRecords2, executedRecords2, null, null, null);
 		
-		ComponentMonitor cm = new ComponentMonitor(null, null, null, null, null);
+		XmlConfigParser parser = null;
+		try {
+			 parser = new XmlConfigParser("autoscale_parameters.xml");
+			 parser.initParameters();
+		} catch (ParserConfigurationException | SAXException | IOException e) {
+			e.printStackTrace();
+		}
+		ComponentMonitor cm = new ComponentMonitor(parser, null, null);
 		cm.updateStats(cws1.getId(), cws1);
 		cm.updateStats(cws2.getId(), cws2);
 		cm.updateStats(cws3.getId(), cws3);
@@ -364,7 +402,14 @@ public class ComponentMonitorTest extends TestCase {
 		
 		TopologyExplorer explorer = new TopologyExplorer("test", topology);
 		
-		ComponentMonitor compMonitor = new ComponentMonitor(null, null, null, null, null);
+		XmlConfigParser parser = null;
+		try {
+			 parser = new XmlConfigParser("autoscale_parameters.xml");
+			 parser.initParameters();
+		} catch (ParserConfigurationException | SAXException | IOException e) {
+			e.printStackTrace();
+		}
+		ComponentMonitor cm = new ComponentMonitor(parser, null, null);
 		
 		HashMap<String, Double> eprValues = new HashMap<>();
 		eprValues.put("A", -1.0);
@@ -382,11 +427,11 @@ public class ComponentMonitorTest extends TestCase {
 		scaleOutRequirements.add("C");
 		scaleOutRequirements.add("F");
 		
-		compMonitor.setScaleInRequirements(scaleInRequirements);
-		compMonitor.setScaleOutRequirements(scaleOutRequirements);
-		compMonitor.setActivityValues(eprValues);
+		cm.setScaleInRequirements(scaleInRequirements);
+		cm.setScaleOutRequirements(scaleOutRequirements);
+		cm.setActivityValues(eprValues);
 		
-		compMonitor.autoscaleAlgorithm(explorer.getSpouts(), explorer);
+		cm.autoscaleAlgorithm(explorer.getSpouts(), explorer);
 		
 		ArrayList<String> expectedScaleIn = new ArrayList<>();
 		expectedScaleIn.add("B");
@@ -395,7 +440,7 @@ public class ComponentMonitorTest extends TestCase {
 		expectedScaleOut.add("C");
 		expectedScaleOut.add("F");
 		
-		assertEquals(expectedScaleIn, compMonitor.getScaleInRequirements());
-		assertEquals(expectedScaleOut, compMonitor.getScaleOutRequirements());
+		assertEquals(expectedScaleIn, cm.getScaleInRequirements());
+		assertEquals(expectedScaleOut, cm.getScaleOutRequirements());
 	}
 }

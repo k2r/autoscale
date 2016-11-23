@@ -1,7 +1,7 @@
 /**
  * 
  */
-package storm.autoscale.scheduler.modules.listener;
+package storm.autoscale.scheduler.connector.nimbus;
 
 
 import org.apache.storm.generated.Nimbus;

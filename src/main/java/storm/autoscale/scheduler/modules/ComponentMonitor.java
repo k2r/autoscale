@@ -1,7 +1,7 @@
 /**
  * 
  */
-package storm.autoscale.scheduler.modules.stats;
+package storm.autoscale.scheduler.modules;
 
 //import java.io.IOException;
 import java.math.BigDecimal;
@@ -13,11 +13,10 @@ import java.util.Set;
 import java.util.logging.Logger;
 //import java.util.logging.SimpleFormatter;
 
+import storm.autoscale.scheduler.config.XmlConfigParser;
 import storm.autoscale.scheduler.metrics.ActivityMetric;
-import storm.autoscale.scheduler.metrics.LoadMetric;
-import storm.autoscale.scheduler.modules.AssignmentMonitor;
-import storm.autoscale.scheduler.modules.TopologyExplorer;
-import storm.autoscale.scheduler.util.RegressionTools;
+import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
+import storm.autoscale.scheduler.regression.LinearRegressionTools;
 
 /**
  * @author Roland
@@ -28,57 +27,44 @@ public class ComponentMonitor {
 	private HashMap<String, ComponentWindowedStats> stats;
 	private StatStorageManager manager;
 	private Integer timestamp;
-	private Integer samplingRate;
+	private Integer monitFrequency;
 	private ArrayList<String> scaleOutRequirements;
 	private ArrayList<String> scaleInRequirements;
 	private HashMap<String, Double> activityValues;
-	private HashMap<String, Double> loadValues;
-	public static final Integer WINDOW_SIZE = 60;
-	public static final Integer STABIL_COEFF = 1;
-	public static final Double VAR_THRESHOLD = 0.2;
-	public static final Double LOW_ACTIVITY_THRESHOLD = 0.4;
-	public static final Double HIGH_ACTIVITY_THRESHOLD = 0.8;
+	public XmlConfigParser parser;
 	private static Logger logger = Logger.getLogger("ComponentMonitor");
-	//private static FileHandler fh;
 	
 	/**
 	 * 
 	 */
-	public ComponentMonitor(String dbHost, String password, String nimbusHost, Integer nimbusPort, Integer rate) {
-		this.stats = new HashMap<>();
-		this.scaleInRequirements = new ArrayList<>();
-		this.scaleOutRequirements = new ArrayList<>();
-		this.activityValues = new HashMap<>();
-		this.loadValues = new HashMap<>();
-		this.samplingRate = rate; 
+	public ComponentMonitor(XmlConfigParser parser, String nimbusHost, Integer nimbusPort) {
+		this.parser = parser;
+		this.monitFrequency = this.parser.getMonitoringFrequency(); 
 		if(nimbusHost != null && nimbusPort != null){
 			try {
-				this.manager = StatStorageManager.getManager(dbHost, password, nimbusHost, nimbusPort, rate);
+				this.manager = StatStorageManager.getManager(this.parser.getDbHost(), this.parser.getDbName(), 
+						this.parser.getDbUser(), this.parser.getDbPassword(), 
+						nimbusHost, nimbusPort, this.parser.getMonitoringFrequency());
 				this.timestamp = this.manager.getCurrentTimestamp();
 			} catch (SQLException | ClassNotFoundException e) {
 				e.printStackTrace();
 			}
 		}
-		// This block configure the logger with handler and formatter  
-        /*try {
-			fh = new FileHandler("scaling.log");
-			logger.addHandler(fh);
-	        SimpleFormatter formatter = new SimpleFormatter();  
-	        fh.setFormatter(formatter);
-	        logger.setUseParentHandlers(false);
-		} catch (SecurityException | IOException e) {
-			logger.severe("Unable to create the log file for scaling decisions because " + e);
-		}*/ 
+		this.stats = new HashMap<>();
+		this.scaleInRequirements = new ArrayList<>();
+		this.scaleOutRequirements = new ArrayList<>();
+		this.activityValues = new HashMap<>();
 	}
 
 	public void getStatistics(TopologyExplorer explorer){
 		this.reset();
 		this.timestamp = this.manager.getCurrentTimestamp(); 
 		ArrayList<String> spouts = explorer.getSpouts();
+		Integer windowSize = this.parser.getWindowSize();
 		for(String spout : spouts){
 			
-			HashMap<Integer, Long> outputRecords = this.manager.getSpoutOutputs(spout, this.timestamp, WINDOW_SIZE);
-			HashMap<Integer, Double> avgTopLatencyRecords = this.manager.getTopologyAvgLatency(explorer.getTopologyName(), this.timestamp, WINDOW_SIZE);
+			HashMap<Integer, Long> outputRecords = this.manager.getSpoutOutputs(spout, this.timestamp, windowSize);
+			HashMap<Integer, Double> avgTopLatencyRecords = this.manager.getTopologyAvgLatency(explorer.getTopologyName(), this.timestamp, windowSize);
 		
 			HashMap<Integer, Long> inputRecords = new HashMap<>();
 			HashMap<Integer, Long> executedRecords = new HashMap<>();
@@ -103,10 +89,10 @@ public class ComponentMonitor {
 					parentOutputRecords = this.stats.get(parent).getOutputRecords();
 				}else{
 					if(explorer.getSpouts().contains(parent)){
-						parentOutputRecords = this.manager.getSpoutOutputs(parent, this.timestamp, WINDOW_SIZE);
+						parentOutputRecords = this.manager.getSpoutOutputs(parent, this.timestamp, windowSize);
 					}
 					if(explorer.getBolts().contains(parent)){
-						parentOutputRecords = this.manager.getBoltOutputs(parent, this.timestamp, WINDOW_SIZE);
+						parentOutputRecords = this.manager.getBoltOutputs(parent, this.timestamp, windowSize);
 					}else{
 						logger.warning("The parent component " + parent + " should not belong to the topology!");
 					}
@@ -122,10 +108,10 @@ public class ComponentMonitor {
 					inputRecords.put(timestamp, inputs);
 				}
 			}
-			HashMap<Integer, Long> executedRecords = this.manager.getExecuted(bolt, this.timestamp, WINDOW_SIZE);
-			HashMap<Integer, Long> outputRecords = this.manager.getBoltOutputs(bolt, this.timestamp, WINDOW_SIZE);
-			HashMap<Integer, Double> avgLatencyRecords = this.manager.getAvgLatency(bolt, this.timestamp, WINDOW_SIZE);
-			HashMap<Integer, Double> selectivityRecords = this.manager.getSelectivity(bolt, this.timestamp, WINDOW_SIZE);
+			HashMap<Integer, Long> executedRecords = this.manager.getExecuted(bolt, this.timestamp, windowSize);
+			HashMap<Integer, Long> outputRecords = this.manager.getBoltOutputs(bolt, this.timestamp, windowSize);
+			HashMap<Integer, Double> avgLatencyRecords = this.manager.getAvgLatency(bolt, this.timestamp, windowSize);
+			HashMap<Integer, Double> selectivityRecords = this.manager.getSelectivity(bolt, this.timestamp, windowSize);
 			ComponentWindowedStats component = new ComponentWindowedStats(bolt, inputRecords, executedRecords, outputRecords, avgLatencyRecords, selectivityRecords);
 			this.stats.put(bolt, component);
 		}
@@ -212,29 +198,40 @@ public class ComponentMonitor {
 		return this.activityValues.get(component);
 	}
 	
-	public Integer getSamplingRate(){
-		return this.samplingRate;
+	public Integer getMonitoringFrequency(){
+		return this.monitFrequency;
 	}
 	
+	/**
+	 * @return the parser
+	 */
+	public XmlConfigParser getParser() {
+		return parser;
+	}
+
 	public boolean isInputDecreasing(String component){
 		HashMap<Integer, Long> inputRecords = this.getStats(component).getInputRecords();
-		Double coeff = RegressionTools.linearRegressionCoeff(inputRecords);
-		return (coeff < -VAR_THRESHOLD);
+		Double coeff = LinearRegressionTools.linearRegressionCoeff(inputRecords);
+		Double decreaseThreshold = this.parser.getSlopeThreshold() * -1.0;
+		return (coeff < decreaseThreshold);
 	}
 	
 	public boolean isInputStable(String component){
 		HashMap<Integer, Long> inputRecords = this.getStats(component).getInputRecords();
-		Double coeff = RegressionTools.linearRegressionCoeff(inputRecords);
-		return (coeff >= -VAR_THRESHOLD && coeff <= VAR_THRESHOLD);
+		Double coeff = LinearRegressionTools.linearRegressionCoeff(inputRecords);
+		Double decreaseThreshold = this.parser.getSlopeThreshold() * -1.0;
+		Double increaseThreshold = this.parser.getSlopeThreshold();
+		return (coeff >= decreaseThreshold && coeff <= increaseThreshold);
 	}
 	
 	public boolean isInputIncreasing(String component){
 		HashMap<Integer, Long> inputRecords = this.getStats(component).getInputRecords();
-		Double coeff = RegressionTools.linearRegressionCoeff(inputRecords);
-		return (coeff > VAR_THRESHOLD);
+		Double coeff = LinearRegressionTools.linearRegressionCoeff(inputRecords);
+		Double increaseThreshold = this.parser.getSlopeThreshold();
+		return (coeff > increaseThreshold);
 	}
 	
-	public HashMap<String, Long> getFormerRemainingTuples(TopologyExplorer explorer){
+	public HashMap<String, Long> getPendingTuples(TopologyExplorer explorer){
 		HashMap<String, Long> result = new HashMap<>();
 		for(String component : this.stats.keySet()){
 			ArrayList<String> parents = explorer.getParents(component);
@@ -253,27 +250,28 @@ public class ComponentMonitor {
 	}
 	
 	public void buildActionGraph(TopologyExplorer explorer, AssignmentMonitor assignmentMonitor){
+		Double lowActivityThreshold = this.parser.getLowActivityThreshold();
+		Double highActivityThreshold = this.parser.getHighActivityThreshold();
 		//Initialize an activity and load metric for the current topology
 		ActivityMetric activityMetric = new ActivityMetric(this, assignmentMonitor, explorer);
-		LoadMetric loadMetric = new LoadMetric(this, assignmentMonitor);
 		for(String component : this.getRegisteredComponents()){
 			if(hasRecords(component)){
 				//Compute the activity level/ load and expose monitoring info concerning the activity/ load for storage
 				Double activityValue = activityMetric.compute(component);
 				this.activityValues.put(component, activityValue);
 				HashMap<String, BigDecimal> activityInfo = activityMetric.getActivityInfo(component);
-				this.manager.storeActivityInfo(this.timestamp, explorer.getTopologyName(), component, activityValue, activityInfo.get(ActivityMetric.REMAINING).intValue(), activityInfo.get(ActivityMetric.CAPPERSEC).doubleValue());
+				this.manager.storeActivityInfo(this.timestamp, explorer.getTopologyName(), component, activityValue,
+						activityInfo.get(ActivityMetric.REMAINING).intValue(),
+						activityInfo.get(ActivityMetric.CAPPERSEC).doubleValue(),
+						activityInfo.get(ActivityMetric.ESTIMLOAD).doubleValue());
+		
 				
-				Double loadValue = loadMetric.compute(component);
-				this.loadValues.put(component, loadValue);
-				HashMap<String, BigDecimal> loadInfo = loadMetric.getLoadInfo(component);
-				this.manager.storeLoadInfo(this.timestamp, explorer.getTopologyName(), component, loadValue, loadInfo.get(LoadMetric.LOAD).doubleValue());
 				//Apply rules to take local decisions
-				if(activityValue <= LOW_ACTIVITY_THRESHOLD && !isInputIncreasing(component)){
+				if(activityValue <= lowActivityThreshold && !isInputIncreasing(component)){
 					this.scaleInRequirements.add(component);
 					//System.out.println("Timestamp: " + this.timestamp + " Component " + component + " required scale in. Activity value: " + activityValue + " and input decreasing or constant.");
 				}else{
-					if(activityValue > HIGH_ACTIVITY_THRESHOLD && activityValue <= 1 && isInputIncreasing(component)){
+					if(activityValue > highActivityThreshold && activityValue <= 1 && isInputIncreasing(component)){
 						this.scaleOutRequirements.add(component);
 						//System.out.println("Timestamp: " + this.timestamp + " Component " + component + " required scale out. Activity value: " + activityValue + " and input increasing.");
 					}else{

@@ -8,11 +8,11 @@ import java.util.HashMap;
 import org.mockito.Mockito;
 
 import junit.framework.TestCase;
-import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
-import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 import storm.autoscale.scheduler.metrics.ActivityMetric;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
+import storm.autoscale.scheduler.modules.ComponentMonitor;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
+import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 
 /**
  * @author Roland
@@ -125,8 +125,8 @@ public class ActivityMetricTest extends TestCase {
 		Mockito.when(compMonitor.getStats("component1")).thenReturn(stats1);
 		Mockito.when(compMonitor.getStats("component2")).thenReturn(stats2);
 		Mockito.when(compMonitor.getStats("component3")).thenReturn(stats3);
-		Mockito.when(compMonitor.getSamplingRate()).thenReturn(1);
-		Mockito.when(compMonitor.getFormerRemainingTuples(explorer)).thenReturn(remainingTuples);
+		Mockito.when(compMonitor.getMonitoringFrequency()).thenReturn(1);
+		Mockito.when(compMonitor.getPendingTuples(explorer)).thenReturn(remainingTuples);
 		
 		AssignmentMonitor assignmentMonitor = Mockito.mock(AssignmentMonitor.class);
 		Mockito.when(assignmentMonitor.getParallelism("component1")).thenReturn(1);
@@ -199,8 +199,8 @@ public class ActivityMetricTest extends TestCase {
 		Mockito.when(compMonitor.getStats("component1")).thenReturn(stats1);
 		Mockito.when(compMonitor.getStats("component2")).thenReturn(stats2);
 		Mockito.when(compMonitor.getStats("component3")).thenReturn(stats3);
-		Mockito.when(compMonitor.getSamplingRate()).thenReturn(1);
-		Mockito.when(compMonitor.getFormerRemainingTuples(explorer)).thenReturn(remainingTuples);
+		Mockito.when(compMonitor.getMonitoringFrequency()).thenReturn(1);
+		Mockito.when(compMonitor.getPendingTuples(explorer)).thenReturn(remainingTuples);
 			
 		AssignmentMonitor assignmentMonitor = Mockito.mock(AssignmentMonitor.class);
 		Mockito.when(assignmentMonitor.getParallelism("component1")).thenReturn(1);
@@ -394,8 +394,8 @@ public class ActivityMetricTest extends TestCase {
 		Mockito.when(compMonitor.getStats("component7")).thenReturn(stats7);
 		Mockito.when(compMonitor.getStats("component8")).thenReturn(stats8);
 		Mockito.when(compMonitor.getStats("component9")).thenReturn(stats9);
-		Mockito.when(compMonitor.getSamplingRate()).thenReturn(1);
-		Mockito.when(compMonitor.getFormerRemainingTuples(explorer)).thenReturn(remainingTuples);
+		Mockito.when(compMonitor.getMonitoringFrequency()).thenReturn(1);
+		Mockito.when(compMonitor.getPendingTuples(explorer)).thenReturn(remainingTuples);
 		
 		AssignmentMonitor assignmentMonitor = Mockito.mock(AssignmentMonitor.class);
 		Mockito.when(assignmentMonitor.getParallelism("component1")).thenReturn(1);

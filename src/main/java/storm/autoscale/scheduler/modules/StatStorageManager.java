@@ -1,14 +1,11 @@
 /**
  * 
  */
-package storm.autoscale.scheduler.modules.stats;
+package storm.autoscale.scheduler.modules;
 
 import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +14,10 @@ import java.util.logging.Logger;
 
 import org.apache.storm.thrift.TException;
 import org.apache.storm.thrift.transport.TFramedTransport;
+
+import storm.autoscale.scheduler.connector.database.IJDBCConnector;
+import storm.autoscale.scheduler.connector.database.MySQLConnector;
+import storm.autoscale.scheduler.connector.nimbus.NimbusListener;
 
 import org.apache.storm.generated.BoltStats;
 import org.apache.storm.generated.ExecutorInfo;
@@ -28,27 +29,25 @@ import org.apache.storm.generated.Nimbus;
 import org.apache.storm.generated.SpoutStats;
 import org.apache.storm.generated.TopologyInfo;
 import org.apache.storm.generated.TopologySummary;
-import storm.autoscale.scheduler.modules.listener.NimbusListener;
 
 /**
  * @author Roland
  *
  */
-public class StatStorageManager /*implements Runnable*/{
+public class StatStorageManager{
 
 	private static StatStorageManager manager = null;
 	private NimbusListener listener;
+	private IJDBCConnector connector;
 	private Integer timestamp;
 	private Integer rate;
 	private HashMap<String, Boolean> topStatus;
-	private final Connection connection;
 	private final static String ALLTIME = ":all-time";
 	
 	public final static String TABLE_SPOUT = "all_time_spouts_stats";
 	public final static String TABLE_BOLT = "all_time_bolts_stats";
 	public final static String TABLE_TOPOLOGY = "topologies_status";
 	public final static String TABLE_ACTIVITY = "operators_activity";
-	public final static String TABLE_LOAD = "operators_loads";
 	
 	private final static String COL_TOTAL_EXEC = "total_executed";
 	private final static String COL_TOTAL_OUTPUT = "total_outputs";
@@ -72,47 +71,28 @@ public class StatStorageManager /*implements Runnable*/{
 	 * @throws ClassNotFoundException 
 	 * 
 	 */
-	private StatStorageManager(String dbHost, String password, String nimbusHost, Integer nimbusPort, Integer rate) throws SQLException, ClassNotFoundException {
-		String jdbcDriver = "com.mysql.jdbc.Driver";
-		String dbUrl = "jdbc:mysql://"+ dbHost +"/benchmarks";
-		String user = "root";
-		Class.forName(jdbcDriver);
-		this.connection = DriverManager.getConnection(dbUrl,user, password);
+	private StatStorageManager(String dbHost, String dbName, String dbUser, String password, String nimbusHost, Integer nimbusPort, Integer rate) throws SQLException, ClassNotFoundException {
+		this.connector = new MySQLConnector(dbHost, dbName, dbUser, password);
 		this.listener = NimbusListener.getInstance(nimbusHost, nimbusPort);
 		this.timestamp = 0;
 		this.rate = rate;
 		this.topStatus = new HashMap<>();
-		/*this.thread = new Thread(this);
-		try {
-			thread.start();
-			logger.fine("Statistic manager started successfully!");
-		} catch (IllegalThreadStateException e) {
-			logger.warning("Statistic storage manager has met an issue, restarting in few seconds...");
-		}*/
 	}
 	
-	private StatStorageManager(String dbHost, String password) throws ClassNotFoundException, SQLException{
-		String jdbcDriver = "com.mysql.jdbc.Driver";
-		String dbUrl = "jdbc:mysql://"+ dbHost +"/benchmarks";
-		String user = "root";
-		Class.forName(jdbcDriver);
-		this.connection = DriverManager.getConnection(dbUrl,user, password);
+	private StatStorageManager(String dbHost, String dbName, String dbUser, String password) throws ClassNotFoundException, SQLException{
+		this.connector = new MySQLConnector(dbHost, dbName, dbUser, password);
 	}
 	
-	public static StatStorageManager getManager(String dbHost, String password, String nimbusHost, Integer nimbusPort, Integer rate) throws ClassNotFoundException, SQLException{
+	public static StatStorageManager getManager(String dbHost, String dbName, String dbUser, String password, String nimbusHost, Integer nimbusPort, Integer rate) throws ClassNotFoundException, SQLException{
 		if(StatStorageManager.manager == null){
-			StatStorageManager.manager = new StatStorageManager(dbHost, password , nimbusHost, nimbusPort, rate);
+			StatStorageManager.manager = new StatStorageManager(dbHost, dbName, dbUser, password , nimbusHost, nimbusPort, rate);
 		}
-		/*if(!manager.thread.isAlive()){
-			manager.thread = new Thread(manager);
-			manager.thread.start();
-		}*/
 		return StatStorageManager.manager;
 	}
 	
-	public static StatStorageManager getManager(String dbHost, String password) throws ClassNotFoundException, SQLException{
+	public static StatStorageManager getManager(String dbHost, String dbName, String dbUser, String password) throws ClassNotFoundException, SQLException{
 		if(StatStorageManager.manager == null){
-			StatStorageManager.manager = new StatStorageManager(dbHost, password);
+			StatStorageManager.manager = new StatStorageManager(dbHost, dbName, dbUser, password);
 		}
 		return StatStorageManager.manager;
 	}
@@ -315,8 +295,7 @@ public class StatStorageManager /*implements Runnable*/{
 					+ "'" + totalOutputs + "', " + "'" + updateOutputs + "', " + "'" + totalThroughput + "', " + "'" + updateThroughput + "', " 
 						+ "'" + totalLosses + "', " + "'" + updateLosses + "', " + "'" + avgLatency + "')";
 		try {
-			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			statement.executeUpdate(query);
+			this.connector.executeUpdate(query);
 		} catch (SQLException e) {
 			logger.severe("Unable to store spout executor stats because of " + e);
 		}
@@ -329,8 +308,7 @@ public class StatStorageManager /*implements Runnable*/{
 					+ "'" + totalExecuted + "', " + "'" + updateExecuted + "', " + "'" + totalOutputs + "', " + "'" + updateOutputs + "', "
 						+ "'" + avgLatency + "', " + "'" + selectivity + "')";
 		try {
-			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			statement.executeUpdate(query);
+			this.connector.executeUpdate(query);
 		} catch (SQLException e) {
 			logger.severe("Unable to store bolt executor stats because of " + e);
 		}
@@ -339,32 +317,19 @@ public class StatStorageManager /*implements Runnable*/{
 	public void storeTopologyState(Integer timestamp, String topology, String status){
 		String query = "INSERT INTO " + TABLE_TOPOLOGY + " VALUES('" + timestamp + "', '" + topology + "', '" + status + "')";
 		try{
-			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			statement.executeUpdate(query);
+			this.connector.executeUpdate(query);
 		}  catch (SQLException e) {
 			logger.severe("Unable to store topology state because of " + e);
 		}
 	}
 	
-	public void storeActivityInfo(Integer timestamp, String topology, String component, Double cr, Integer remaining, Double capacity){
+	public void storeActivityInfo(Integer timestamp, String topology, String component, Double cr, Integer remaining, Double capacity, Double estimatedLoad){
 		String query = "INSERT INTO " + TABLE_ACTIVITY + " VALUES ('" + timestamp + "', '"
-				+ topology + "', '" + component + "', '" + cr + "', '" + remaining + "', '" + capacity + "')";
+				+ topology + "', '" + component + "', '" + cr + "', '" + remaining + "', '" + capacity + "', '" + estimatedLoad + "')";
 		try{
-			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			statement.executeUpdate(query);
+			this.connector.executeUpdate(query);
 		} catch (SQLException e){
 			logger.fine("Unable to store activity info because of " + e);
-		}
-	}
-	
-	public void storeLoadInfo(Integer timestamp, String topology, String component, Double pl, Double il){
-		String query = "INSERT INTO " + TABLE_LOAD + " VALUES ('" + timestamp + "', '"
-				+ topology + "', '" + component + "', '" + pl + "', '" + il + "')";
-		try{
-			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			statement.executeUpdate(query);
-		} catch (SQLException e){
-			logger.fine("Unable to store load info because of " + e);
 		}
 	}
 	
@@ -376,8 +341,7 @@ public class StatStorageManager /*implements Runnable*/{
 				+ "AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp + " "
 				+ "ORDER BY timestamp;";
 		try {
-			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			ResultSet resultSpouts = statement.executeQuery(querySpouts);
+			ResultSet resultSpouts = this.connector.executeQuery(querySpouts);
 			int currentTimestamp = 0;
 			ArrayList<String> workers = new ArrayList<>();
 			while(resultSpouts.next()){
@@ -411,8 +375,7 @@ public class StatStorageManager /*implements Runnable*/{
 				+ "AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp + " "
 				+ "ORDER BY timestamp;";
 		try {
-			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			ResultSet resultBolts = statement.executeQuery(queryBolts);
+			ResultSet resultBolts = this.connector.executeQuery(queryBolts);
 			int currentTimestamp = 0;
 			ArrayList<String> workers = new ArrayList<>();
 			while(resultBolts.next()){
@@ -446,8 +409,7 @@ public class StatStorageManager /*implements Runnable*/{
 					+ " WHERE component = '" + component 
 					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp
 					+ " GROUP BY timestamp, component";
-			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			ResultSet results = statement.executeQuery(query);
+			ResultSet results = this.connector.executeQuery(query);
 			while(results.next()){
 				Integer readTimestamp = results.getInt("timestamp");
 				Long nbExecuted = results.getLong("nbExecuted");
@@ -468,8 +430,7 @@ public class StatStorageManager /*implements Runnable*/{
 					+ " WHERE component = '" + component 
 					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp 
 					+ " GROUP BY timestamp, component;";
-			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			ResultSet results = statement.executeQuery(query);
+			ResultSet results = this.connector.executeQuery(query);
 			while(results.next()){
 				Integer readTimestamp = results.getInt("timestamp");
 				Long nbOutput = results.getLong("nbOutputs"); 
@@ -490,8 +451,7 @@ public class StatStorageManager /*implements Runnable*/{
 					+ " WHERE component = '" + component 
 					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp 
 					+ " GROUP BY timestamp, component;";
-			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			ResultSet results = statement.executeQuery(query);
+			ResultSet results = this.connector.executeQuery(query);
 			while(results.next()){
 				Integer readTimestamp = results.getInt("timestamp");
 				Long nbOutput = results.getLong("nbOutputs");
@@ -512,8 +472,7 @@ public class StatStorageManager /*implements Runnable*/{
 					+ " WHERE component = '" + component 
 					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp 
 					+ " GROUP BY timestamp, component;";
-			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			ResultSet results = statement.executeQuery(query);
+			ResultSet results = this.connector.executeQuery(query);
 			while(results.next()){
 				Integer readTimestamp = results.getInt("timestamp");
 				Double avgLatency = results.getDouble("avgLatency");
@@ -534,8 +493,7 @@ public class StatStorageManager /*implements Runnable*/{
 					+ " WHERE component = '" + component 
 					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp 
 					+ " GROUP BY timestamp, component;";
-			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			ResultSet results = statement.executeQuery(query);
+			ResultSet results = this.connector.executeQuery(query);
 			while(results.next()){
 				Integer readTimestamp = results.getInt("timestamp");
 				Double avgSelectivity = new BigDecimal(results.getDouble("avgSelectivity")).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
@@ -556,8 +514,7 @@ public class StatStorageManager /*implements Runnable*/{
 					+ " WHERE topology = '" + topology 
 					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp 
 					+ " GROUP BY timestamp, topology;";
-			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			ResultSet results = statement.executeQuery(query);
+			ResultSet results = this.connector.executeQuery(query);
 			while(results.next()){
 				Integer readTimestamp = results.getInt("timestamp");
 				Long losses = results.getLong("topLosses");
@@ -578,8 +535,7 @@ public class StatStorageManager /*implements Runnable*/{
 					+ " WHERE topology = '" + topology 
 					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp 
 					+ " GROUP BY timestamp, topology;";
-			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			ResultSet results = statement.executeQuery(query);
+			ResultSet results = this.connector.executeQuery(query);
 			while(results.next()){
 				Integer readTimestamp = results.getInt("timestamp");
 				Long throughput = results.getLong("topThroughput");
@@ -600,8 +556,7 @@ public class StatStorageManager /*implements Runnable*/{
 					+ " WHERE topology = '" + topology 
 					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp
 					+ " GROUP BY timestamp, topology;";
-			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			ResultSet results = statement.executeQuery(query);
+			ResultSet results = this.connector.executeQuery(query);
 			while(results.next()){
 				Integer readTimestamp = results.getInt("timestamp");
 				Double topLatency = results.getDouble("topLatency");
@@ -624,8 +579,7 @@ public class StatStorageManager /*implements Runnable*/{
 					" AND timestamp BETWEEN " + oldestTimestamp + " AND " + previousTimestamp + 
 					" AND start_task = " + startTask + " AND end_task = " + endTask;
 			try {
-				Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-				ResultSet results = statement.executeQuery(query);
+				ResultSet results = this.connector.executeQuery(query);
 				if(results.last()){
 					result = results.getLong(attribute);
 				}
@@ -639,8 +593,7 @@ public class StatStorageManager /*implements Runnable*/{
 					" AND timestamp BETWEEN " + oldestTimestamp + " AND " + previousTimestamp + 
 					" AND start_task = " + startTask + " AND end_task = " + endTask;
 			try {
-				Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-				ResultSet results = statement.executeQuery(query);
+				ResultSet results = this.connector.executeQuery(query);
 				if(results.last()){
 					result = results.getLong(attribute);
 				}
@@ -658,8 +611,7 @@ public class StatStorageManager /*implements Runnable*/{
 				" AND timestamp = " + timestamp +
 				" GROUP BY timestamp, component";
 		try {
-			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			ResultSet results = statement.executeQuery(query);
+			ResultSet results = this.connector.executeQuery(query);
 			if(results.first()){
 				result = results.getLong("outputs");
 			}
@@ -676,8 +628,7 @@ public class StatStorageManager /*implements Runnable*/{
 				" AND timestamp = " + timestamp +
 				" GROUP BY timestamp, component";
 		try {
-			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			ResultSet results = statement.executeQuery(query);
+			ResultSet results = this.connector.executeQuery(query);
 			if(results.first()){
 				result = results.getLong("executed");
 			}
@@ -686,9 +637,4 @@ public class StatStorageManager /*implements Runnable*/{
 		}
 		return result;
 	}
-	
-	/*@Override
-	public void run() {
-		this.storeStatistics();
-	}*/	
 }

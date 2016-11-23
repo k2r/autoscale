@@ -1,7 +1,7 @@
 /**
  * 
  */
-package storm.autoscale.scheduler.util;
+package storm.autoscale.scheduler.regression;
 
 import java.util.HashMap;
 
@@ -9,7 +9,7 @@ import java.util.HashMap;
  * @author Roland
  *
  */
-public class RegressionTools {
+public class LinearRegressionTools {
 	
 	public static <T extends Number, U extends Number> Integer nbPoints(HashMap<T, U> coordinates){
 		return coordinates.size();
@@ -51,22 +51,22 @@ public class RegressionTools {
 	}
 	
 	public static <T extends Number, U extends Number> Double avgXCoordinate(HashMap<T, U> coordinates){
-		return RegressionTools.sumXCoordinate(coordinates) / RegressionTools.nbPoints(coordinates);
+		return LinearRegressionTools.sumXCoordinate(coordinates) / LinearRegressionTools.nbPoints(coordinates);
 	}
 	
 	public static <T extends Number, U extends Number> Double avgYCoordinate(HashMap<T, U> coordinates){
-		return RegressionTools.sumYCoordinate(coordinates) / RegressionTools.nbPoints(coordinates);
+		return LinearRegressionTools.sumYCoordinate(coordinates) / LinearRegressionTools.nbPoints(coordinates);
 	}
 	
 	public static <T extends Number, U extends Number> Double linearRegressionCoeff(HashMap<T, U> coordinates){
-		Double dividend = (RegressionTools.nbPoints(coordinates) * RegressionTools.sumProdXYCoordinates(coordinates)) 
-				- (RegressionTools.sumXCoordinate(coordinates) * RegressionTools.sumYCoordinate(coordinates));
-		Double divisor = (RegressionTools.nbPoints(coordinates) * RegressionTools.sumSqXCoordinates(coordinates))
-				- (Math.pow(RegressionTools.sumXCoordinate(coordinates), 2));
+		Double dividend = (LinearRegressionTools.nbPoints(coordinates) * LinearRegressionTools.sumProdXYCoordinates(coordinates)) 
+				- (LinearRegressionTools.sumXCoordinate(coordinates) * LinearRegressionTools.sumYCoordinate(coordinates));
+		Double divisor = (LinearRegressionTools.nbPoints(coordinates) * LinearRegressionTools.sumSqXCoordinates(coordinates))
+				- (Math.pow(LinearRegressionTools.sumXCoordinate(coordinates), 2));
 		return dividend / divisor;
 	}
 	
 	public static <T extends Number, U extends Number> Double linearRegressionOffset(HashMap<T, U> coordinates){
-		return RegressionTools.avgYCoordinate(coordinates) - (RegressionTools.linearRegressionCoeff(coordinates) * RegressionTools.avgXCoordinate(coordinates));
+		return LinearRegressionTools.avgYCoordinate(coordinates) - (LinearRegressionTools.linearRegressionCoeff(coordinates) * LinearRegressionTools.avgXCoordinate(coordinates));
 	}
 }

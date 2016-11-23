@@ -3,11 +3,8 @@
  */
 package storm.autoscale.scheduler.actions;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -23,9 +20,11 @@ import org.apache.storm.generated.Nimbus;
 import org.apache.storm.generated.RebalanceOptions;
 import org.apache.storm.scheduler.WorkerSlot;
 import storm.autoscale.scheduler.allocation.IAllocationStrategy;
+import storm.autoscale.scheduler.connector.database.IJDBCConnector;
+import storm.autoscale.scheduler.connector.database.MySQLConnector;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
+import storm.autoscale.scheduler.modules.ComponentMonitor;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
-import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
 
 /**
  * @author Roland
@@ -33,39 +32,38 @@ import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
  */
 public class ScaleOutAction implements IAction {
 
-	private ComponentMonitor compMonitor;
+	private ComponentMonitor cm;
 	private TopologyExplorer explorer;
-	private AssignmentMonitor assignMonitor;
+	private AssignmentMonitor am;
 	private IAllocationStrategy allocStrategy;
 	private String nimbusHost;
 	private Integer nimbusPort;
-	private String password;
-	private Connection connection;
+	private IJDBCConnector connector;
 	private Set<String> validateActions;
 	private Logger logger = Logger.getLogger("ScaleOutAction");
 	
 	public ScaleOutAction(ComponentMonitor compMonitor, TopologyExplorer explorer,
 			AssignmentMonitor assignMonitor, IAllocationStrategy allocStrategy, String nimbusHost,
-			Integer nimbusPort, String password) {
-		this.compMonitor = compMonitor;
+			Integer nimbusPort) {
+		this.cm = compMonitor;
 		this.explorer = explorer;
-		this.assignMonitor = assignMonitor;
+		this.am = assignMonitor;
 		this.allocStrategy = allocStrategy;
 		this.nimbusHost = nimbusHost;
 		this.nimbusPort = nimbusPort;
-		this.password = password;
-		ArrayList<String> actions = this.compMonitor.getScaleOutRequirements();
+		ArrayList<String> actions = this.cm.getScaleOutRequirements();
 		this.validateActions = new HashSet<>();
 		for(String action : actions){
 			this.validateActions.add(action);
 		}
-		String jdbcDriver = "com.mysql.jdbc.Driver";
-		String dbUrl = "jdbc:mysql://localhost/benchmarks";
 		try {
-			Class.forName(jdbcDriver);
-			this.connection = DriverManager.getConnection(dbUrl, "root", this.password);
-		} catch (SQLException | ClassNotFoundException e) {
-			logger.severe("Unable to scale in components because " + e);
+			String host = this.cm.getParser().getDbHost();
+			String name = this.cm.getParser().getDbName();
+			String user = this.cm.getParser().getDbUser();
+			String pwd = this.cm.getParser().getDbPassword();
+			this.connector = new MySQLConnector(host, name, user, pwd);
+		} catch (ClassNotFoundException | SQLException e) {
+			logger.severe("Unable to perform the scale-out action because " + e);
 		}
 		Thread thread = new Thread(this);
 		thread.start();
@@ -83,17 +81,17 @@ public class ScaleOutAction implements IAction {
 				tTransport.open();
 			}
 			for(String component : this.validateActions){
-				Double crValue = this.compMonitor.getActivityValue(component);
-				int maxParallelism = this.assignMonitor.getAllSortedTasks(component).size();
+				Double crValue = this.cm.getActivityValue(component);
+				int maxParallelism = this.am.getAllSortedTasks(component).size();
 
-				int currentParallelism = this.assignMonitor.getParallelism(component);
+				int currentParallelism = this.am.getParallelism(component);
 				int estimatedParallelism  = (int) Math.round(crValue * currentParallelism);
 		
 				int newParallelism = Math.min(maxParallelism, estimatedParallelism);
 				if(newParallelism > currentParallelism && !isGracePeriod(component)){
 					RebalanceOptions options = new RebalanceOptions();
 					options.put_to_num_executors(component, newParallelism);
-					options.set_num_workers(this.assignMonitor.getNbWorkers());
+					options.set_num_workers(this.am.getNbWorkers());
 					options.set_wait_secs(0);
 
 					logger.fine("Changing parallelism degree of component " + component + " from " + currentParallelism + " to " + newParallelism + "...");
@@ -137,9 +135,8 @@ public class ScaleOutAction implements IAction {
 	@Override
 	public void storeAction(String component, Integer currentDegree, Integer newDegree) {
 		try {
-			String query = "INSERT INTO scales VALUES('" + this.compMonitor.getTimestamp() + "', '" + component + "', 'scale out', '" + currentDegree + "', '" + newDegree + "')";
-			Statement statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			statement.executeUpdate(query);
+			String query = "INSERT INTO scales VALUES('" + this.cm.getTimestamp() + "', '" + component + "', 'scale out', '" + currentDegree + "', '" + newDegree + "')";
+			this.connector.executeUpdate(query);
 		} catch(SQLException e) {
 			logger.severe("Unable to store the scale out action for component " + component +  " because " + e);
 		}
@@ -148,13 +145,11 @@ public class ScaleOutAction implements IAction {
 	@Override
 	public boolean isGracePeriod(String component) {
 		boolean isGrace = false;
-		Integer previousTimestamp = this.compMonitor.getTimestamp() - 1;
-		Integer oldTimestamp = previousTimestamp - (ComponentMonitor.WINDOW_SIZE * ComponentMonitor.STABIL_COEFF);
+		Integer previousTimestamp = this.cm.getTimestamp() - 1;
+		Integer oldTimestamp = (int) (previousTimestamp - Math.round((this.cm.getParser().getWindowSize() * this.cm.getParser().getStabilizationCoeff())));
 		String query = "SELECT * FROM scales WHERE component = '" + component + "' AND timestamp BETWEEN " + oldTimestamp + " AND " + previousTimestamp;
-		Statement statement;
 		try {
-			statement = this.connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			ResultSet result = statement.executeQuery(query);
+			ResultSet result = this.connector.executeQuery(query);
 			if(result.next()){
 				isGrace = true;
 			}

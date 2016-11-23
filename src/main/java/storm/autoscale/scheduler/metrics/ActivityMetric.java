@@ -7,10 +7,10 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
+import storm.autoscale.scheduler.modules.ComponentMonitor;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
-import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
-import storm.autoscale.scheduler.util.RegressionTools;
+import storm.autoscale.scheduler.regression.LinearRegressionTools;
 
 /**
  * @author Roland
@@ -26,6 +26,7 @@ public class ActivityMetric implements IMetric {
 	public static final String REMAINING = "remaining_tuples";
 	public static final String ACTIVITY = "activity_level";
 	public static final String CAPPERSEC = "capacity_per_second";
+	public static final String ESTIMLOAD = "estimated_load";
 	
 	/**
 	 * 
@@ -34,7 +35,7 @@ public class ActivityMetric implements IMetric {
 		this.cm = cm;
 		this.am = am;
 		this.explorer = explorer;
-		this.remainingTuples = this.cm.getFormerRemainingTuples(this.explorer);
+		this.remainingTuples = this.cm.getPendingTuples(this.explorer);
 		this.activityInfo = new HashMap<>();
 	}
 
@@ -54,8 +55,6 @@ public class ActivityMetric implements IMetric {
 		Double result = 0.0;
 		//Get the remaining tuples for the component
 		Long remainingTuples = this.cm.getStats(component).getTotalInput() - this.cm.getStats(component).getTotalExecuted();
-		//System.out.println("Tuples remaining at the start of the window : " + formerRemaining);
-		//System.out.println("Tuples remaining now: " + currentRemainingTuples);
 		if(!this.activityInfo.containsKey(component)){
 			this.activityInfo.put(component, new HashMap<String, BigDecimal>());
 		}
@@ -64,21 +63,18 @@ public class ActivityMetric implements IMetric {
 		//Determine the min and the max of input records
 		HashMap<Integer, Long> inputRecords = this.cm.getStats(component).getInputRecords();
 		//From those points, compute the equation of the line
-		Double coeff = RegressionTools.linearRegressionCoeff(inputRecords);
-		Double offset = RegressionTools.linearRegressionOffset(inputRecords);
-		//System.out.println("Linear coefficient : " + coeff);
-		//System.out.println("Linear offset : " + offset);
+		Double coeff = LinearRegressionTools.linearRegressionCoeff(inputRecords);
+		Double offset = LinearRegressionTools.linearRegressionOffset(inputRecords);
 		//determine each estimated value and sum them
 		Integer lastTimestamp = ComponentWindowedStats.getRecordedTimestamps(inputRecords).get(0);
-		Integer nextWindowEnd = lastTimestamp + ComponentMonitor.WINDOW_SIZE;
-		Integer samplingRate = this.cm.getSamplingRate();
+		Integer nextWindowEnd = lastTimestamp + this.cm.getParser().getWindowSize();
+		Integer monitoringFrequency = this.cm.getMonitoringFrequency();
 		Double estimIncomingTuples = 0.0;
-		//System.out.println("Estimation : ");
-		for(int i = lastTimestamp + samplingRate; i <= nextWindowEnd; i += samplingRate){
+		for(int i = lastTimestamp + monitoringFrequency; i <= nextWindowEnd; i += monitoringFrequency){
 			Double estimation = Math.max(0, coeff * i + offset);
 			estimIncomingTuples += estimation;
-			//System.out.println("timestamp : " + i  + " estimation : " + estimation);
 		}
+		info.put(ESTIMLOAD, new BigDecimal(estimIncomingTuples));
 		//sum the remaining tuples at the end of the current window to the estimated value of incoming tuples into result variable
 		result = remainingTuples + estimIncomingTuples;
 		return result;
@@ -87,37 +83,19 @@ public class ActivityMetric implements IMetric {
 	public Double computeAvgCapacity(String component){
 		Double result = 0.0;
 		//Get the window size
-		Integer windowSize = ComponentMonitor.WINDOW_SIZE;
+		Integer windowSize = this.cm.getParser().getWindowSize();
 		HashMap<Integer, Double> latencyRecords = this.cm.getStats(component).getAvgLatencyRecords();
 		HashMap<Integer, Double> processingRates = new HashMap<>();
 		for(Integer timestamp : latencyRecords.keySet()){
 			processingRates.put(timestamp, 1000 / latencyRecords.get(timestamp));
 		}
-		Double averageSeqCapacity = RegressionTools.avgYCoordinate(processingRates);
-		//Double coeff = RegressionTools.linearRegressionCoeff(processingRates);
-		//Double offset = RegressionTools.linearRegressionOffset(processingRates);
-		//System.out.println("Linear coefficient : " + coeff);
-		//System.out.println("Linear offset : " + offset);
-		//determine each estimated value and calculate the average
-		//Integer lastTimestamp = ComponentWindowedStats.getRecordedTimestamps(latencyRecords).get(0);
-		//Integer nextWindowEnd = lastTimestamp + windowSize;
-		/*Integer samplingRate = this.cm.getSamplingRate();
-		Double estimSumProcRate = 0.0;
-		Double count = 0.0;
-		for(int i = lastTimestamp + samplingRate; i <= nextWindowEnd; i += samplingRate){
-			Double estimProcRate = Math.max(0, coeff * i + offset);
-			estimSumProcRate += estimProcRate;
-			count++;
-			//System.out.println("timstamp : " + i + " estimated number of processed tuples : " + estimProcRate);
-		}*/
+		Double averageSeqCapacity = LinearRegressionTools.avgYCoordinate(processingRates);
 		Integer parallelism = this.am.getParallelism(component); 
 		Double avgCapacity = averageSeqCapacity * parallelism;
 		if(avgCapacity.isInfinite() || avgCapacity.isNaN()){
 			avgCapacity = 0.0;
 		}
-		//System.out.println("Estimated processing rate : " + estimAvgProcRate);
 		result = windowSize * avgCapacity;
-		//System.out.println("Estimated number of processed tuples on the next window: " + result);
 		if(!this.activityInfo.containsKey(component)){
 			this.activityInfo.put(component, new HashMap<String, BigDecimal>());
 		}

@@ -9,8 +9,8 @@ import java.util.HashMap;
 import org.apache.storm.scheduler.SupervisorDetails;
 import org.apache.storm.scheduler.WorkerSlot;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
+import storm.autoscale.scheduler.modules.ComponentMonitor;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
-import storm.autoscale.scheduler.modules.stats.ComponentMonitor;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 
 /**

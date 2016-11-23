@@ -5,7 +5,6 @@ package storm.autoscale.scheduler;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -18,10 +17,6 @@ import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.xml.sax.SAXException;
 
-import storm.autoscale.scheduler.actions.IAction;
-import storm.autoscale.scheduler.actions.ScaleInAction;
-import storm.autoscale.scheduler.actions.ScaleOutAction;
-import storm.autoscale.scheduler.allocation.DelegatedAllocationStrategy;
 import storm.autoscale.scheduler.config.XmlConfigParser;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.ComponentMonitor;
@@ -32,28 +27,22 @@ import storm.autoscale.scheduler.modules.TopologyExplorer;
  * @author Roland
  *
  */
+public class MonitoredResourceAwareScheduler implements IScheduler {
 
-public class AutoscaleScheduler implements IScheduler {
-	
 	private ComponentMonitor compMonitor;
 	private AssignmentMonitor assignMonitor;
 	private TopologyExplorer explorer;
-	private ArrayList<String> needScaleOut;
-	private ArrayList<String> needScaleIn;
 	private String nimbusHost;
 	private Integer nimbusPort;
 	private XmlConfigParser parser;
-	private static Logger logger = Logger.getLogger("AutoscaleScheduler");
-
-	/**
-	 * 
-	 */
-	public AutoscaleScheduler() {
-		logger.info("The auto-scaling scheduler for Storm is starting...");
+	private static Logger logger = Logger.getLogger("MonitoredResourceAwareScheduler");
+	
+	
+	public MonitoredResourceAwareScheduler() {
+		logger.info("Monitoring the storm resource aware scheduler...");
 	}
-
 	/* (non-Javadoc)
-	 * @see backtype.storm.scheduler.IScheduler#prepare(java.util.Map)
+	 * @see org.apache.storm.scheduler.IScheduler#prepare(java.util.Map)
 	 */
 	@SuppressWarnings("rawtypes")
 	@Override
@@ -69,9 +58,8 @@ public class AutoscaleScheduler implements IScheduler {
 	}
 
 	/* (non-Javadoc)
-	 * @see backtype.storm.scheduler.IScheduler#schedule(backtype.storm.scheduler.Topologies, backtype.storm.scheduler.Cluster)
+	 * @see org.apache.storm.scheduler.IScheduler#schedule(org.apache.storm.scheduler.Topologies, org.apache.storm.scheduler.Cluster)
 	 */
-	@SuppressWarnings("unused")
 	@Override
 	public void schedule(Topologies topologies, Cluster cluster) {
 		String host = this.parser.getDbHost();
@@ -87,8 +75,6 @@ public class AutoscaleScheduler implements IScheduler {
 		} catch (ClassNotFoundException | SQLException e1) {
 			logger.severe("Unable to start the StatStorageManage because of " + e1);
 		}
-
-		/*In a first time, we take all scaling decisions*/
 		for(TopologyDetails topology : topologies.getTopologies()){
 			if(!manager.isActive(topology.getId())){
 				logger.fine("Topology " + topology.getName() + " is inactive, killed or being rebalanced...");
@@ -98,41 +84,14 @@ public class AutoscaleScheduler implements IScheduler {
 				this.explorer = new TopologyExplorer(topology.getName(), topology.getTopology());
 				this.assignMonitor.update();
 				this.compMonitor.getStatistics(explorer);
-				Integer timestamp = manager.getCurrentTimestamp();
 				if(!this.compMonitor.getRegisteredComponents().isEmpty()){
 					this.compMonitor.buildActionGraph(explorer, assignMonitor);
-					this.compMonitor.autoscaleAlgorithm(explorer.getSpouts(), explorer);
-					this.needScaleOut = this.compMonitor.getScaleOutRequirements();
-					this.needScaleIn = this.compMonitor.getScaleInRequirements();
-
-					if(this.needScaleOut.isEmpty()){
-						logger.fine("No component to scale out!");
-					}else{
-						String scaleOutInfo = "Components requiring scale out: ";
-						for(String component : this.needScaleOut){
-							scaleOutInfo += component + " ";
-						}
-						scaleOutInfo += "have required a scale out!";
-						logger.fine(scaleOutInfo);
-						IAction action = new ScaleOutAction(this.compMonitor, this.explorer, this.assignMonitor, new DelegatedAllocationStrategy(assignMonitor), this.nimbusHost, this.nimbusPort);
-					}
-
-					if(this.needScaleIn.isEmpty()){
-						logger.fine("No component to scale in!");
-					}else{
-						String scaleInInfo = "Components requiring scale in: ";
-						for(String component : this.needScaleIn){
-							scaleInInfo += component + " ";
-						}
-						scaleInInfo += "have required a scale in!";
-						logger.fine(scaleInInfo);
-						IAction action = new ScaleInAction(this.compMonitor, this.explorer, this.assignMonitor, new DelegatedAllocationStrategy(assignMonitor), this.nimbusHost, this.nimbusPort);
-					}
+					this.compMonitor.autoscaleAlgorithm(explorer.getSpouts(), explorer);			
 				}
 			}
-			/*Then we let the default scheduler balance the load*/
-			ResourceAwareScheduler scheduler = new ResourceAwareScheduler();
-			scheduler.schedule(topologies, cluster);
 		}
+		ResourceAwareScheduler scheduler = new ResourceAwareScheduler();
+		scheduler.schedule(topologies, cluster);
 	}
+
 }
