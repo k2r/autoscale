@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 
 import storm.autoscale.scheduler.config.XmlConfigParser;
 import storm.autoscale.scheduler.metrics.ActivityMetric;
+import storm.autoscale.scheduler.metrics.ImpactMetric;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 import storm.autoscale.scheduler.regression.LinearRegressionTools;
 
@@ -320,8 +321,63 @@ public class ComponentMonitor {
 		} 
 	}
 	
-	public void autoscaleAlgorithmWithImpact(){
-		
+	public void autoscaleAlgorithmWithImpact(ArrayList<String> ancestors, TopologyExplorer explorer, AssignmentMonitor assignMonitor){
+		for(String ancestor : ancestors){
+			ArrayList<String> children = explorer.getChildren(ancestor);
+			boolean isAncestorCritical = this.scaleOutActions.containsKey(ancestor);
+			if(isAncestorCritical){
+				for(String child : children){
+					boolean isChildUnderUsed = this.scaleInActions.containsKey(child);
+					boolean isChildRegularUsed = this.nothingActions.containsKey(child);
+					boolean isChildCritical = this.scaleOutActions.containsKey(child);
+					
+					ImpactMetric impact = new ImpactMetric(this, explorer);
+					Double impactValue = impact.compute(child);
+					Integer currentDegree = this.getCurrentDegree(child);
+					Integer impactDegree = impact.getImpactDegrees().get(child);
+					Integer maxParallelism = assignMonitor.getAllSortedTasks(child).size();
+					
+					if(isChildRegularUsed){
+						Integer adequateDegree = Math.max(currentDegree, impactDegree);//It could also be Math.min depending on user strategy
+						adequateDegree = Math.max(maxParallelism, adequateDegree);//to ask only for feasible scale-out actions
+						if(adequateDegree > currentDegree){
+							this.nothingActions.remove(child);
+							this.scaleOutActions.put(child, adequateDegree);
+							this.estimatedLoads.put(child, impactValue);// to propagate the effect on next components						
+						}
+					}else{
+						if(isChildUnderUsed){
+							Integer localRequiredDegree = this.scaleInActions.get(child);
+							Integer adequateDegree = Math.max(localRequiredDegree, impactDegree);//It could also be Math.min depending on user strategy
+							adequateDegree = Math.max(maxParallelism, adequateDegree);//to ask only for feasible scale-out actions
+							if(adequateDegree < currentDegree){//the impact confirms a scale-in action, we just set the degree
+								this.scaleInActions.put(child, adequateDegree);
+							}else{
+								if(adequateDegree == currentDegree){
+									this.scaleInActions.remove(child);
+									this.nothingActions.put(child, adequateDegree);//the impact turns a scale-in into a nothing action, so we cancel the action
+								}else{
+									if(adequateDegree > currentDegree){
+										this.scaleInActions.remove(child);
+										this.scaleOutActions.put(child, adequateDegree);
+									}
+								}
+							}
+						}else{
+							if(isChildCritical){
+								Integer localRequiredDegree = this.scaleOutActions.get(child);
+								Integer adequateDegree = Math.max(localRequiredDegree, impactDegree);//It could also be Math.min depending on user strategy
+								adequateDegree = Math.max(maxParallelism, adequateDegree);//to ask only for feasible scale-out actions
+								if(adequateDegree > localRequiredDegree){
+									this.scaleOutActions.put(child, adequateDegree);//considering the impact confirms the scale-out and we consider a max strategy all we need is to now if we have to revise the degree
+								}
+							}
+						}
+					}
+					
+				}
+			}
+		}
 	}
 	
 	public void reset(){
