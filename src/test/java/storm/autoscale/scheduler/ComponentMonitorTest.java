@@ -232,13 +232,14 @@ public class ComponentMonitorTest extends TestCase {
 		} catch (ParserConfigurationException | SAXException | IOException e) {
 			e.printStackTrace();
 		}
+		
 		ComponentMonitor cm = new ComponentMonitor(parser, null, null);
 		cm.updateStats(cws1.getId(), cws1);
 		cm.updateStats(cws2.getId(), cws2);
 		cm.updateStats(cws3.getId(), cws3);
 		cm.updateStats(cws4.getId(), cws4);
 		
-		assertEquals(false, cm.needScaleOut("component1"));
+		assertEquals(false, cm.getScaleOutActions()("component1"));
 		assertEquals(false, cm.needScaleOut("component2"));
 		assertEquals(false, cm.needScaleOut("component3"));
 		assertEquals(false, cm.needScaleOut("component4"));

@@ -24,14 +24,24 @@ import storm.autoscale.scheduler.regression.LinearRegressionTools;
  */
 public class ComponentMonitor {
 	
-	private HashMap<String, ComponentWindowedStats> stats;
+	
 	private StatStorageManager manager;
+	public XmlConfigParser parser;
+	
 	private Integer timestamp;
 	private Integer monitFrequency;
-	private ArrayList<String> scaleOutRequirements;
-	private ArrayList<String> scaleInRequirements;
+	
+	private HashMap<String, ComponentWindowedStats> stats;
 	private HashMap<String, Double> activityValues;
-	public XmlConfigParser parser;
+	private HashMap<String, Double> estimatedLoads;
+	private HashMap<String, Double> capacities;
+	private HashMap<String, Integer> degrees; 
+	private HashMap<String, Integer> scaleOutActions;
+
+	private HashMap<String, Integer> scaleInActions;
+	private HashMap<String, Integer> nothingActions;
+	
+	
 	private static Logger logger = Logger.getLogger("ComponentMonitor");
 	
 	/**
@@ -51,9 +61,13 @@ public class ComponentMonitor {
 			}
 		}
 		this.stats = new HashMap<>();
-		this.scaleInRequirements = new ArrayList<>();
-		this.scaleOutRequirements = new ArrayList<>();
 		this.activityValues = new HashMap<>();
+		this.estimatedLoads = new HashMap<>();
+		this.capacities = new HashMap<>();
+		this.degrees = new HashMap<>();
+		this.scaleOutActions = new HashMap<>();
+		this.scaleInActions = new HashMap<>();
+		this.nothingActions = new HashMap<>();
 	}
 
 	public void getStatistics(TopologyExplorer explorer){
@@ -144,58 +158,20 @@ public class ComponentMonitor {
 		return timestamp;
 	}
 
-	/**
-	 * @return the scaleOutRequirements
-	 */
-	public ArrayList<String> getScaleOutRequirements() {
-		return scaleOutRequirements;
-	}
-
-	/**
-	 * @param scaleOutRequirements the scaleOutRequirements to set
-	 */
-	public void setScaleOutRequirements(ArrayList<String> scaleOutRequirements) {
-		this.scaleOutRequirements = scaleOutRequirements;
-	}
-
-	/**
-	 * @return the scaleInRequirements
-	 */
-	public ArrayList<String> getScaleInRequirements() {
-		return scaleInRequirements;
-	}
-
-	/**
-	 * @param scaleInRequirements the scaleInRequirements to set
-	 */
-	public void setScaleInRequirements(ArrayList<String> scaleInRequirements) {
-		this.scaleInRequirements = scaleInRequirements;
-	}
-
-	public boolean needScaleOut(String component){
-		return this.scaleOutRequirements.contains(component);
-	}
-	
-	public boolean needScaleIn(String component){
-		return this.scaleInRequirements.contains(component);
-	}
-	
-	/**
-	 * @return the activityValues
-	 */
-	public HashMap<String, Double> getActivityValues() {
-		return activityValues;
-	}
-
-	/**
-	 * @param activityValues the activityValues to set
-	 */
-	public void setActivityValues(HashMap<String, Double> activityValues) {
-		this.activityValues = activityValues;
-	}
-
 	public Double getActivityValue(String component){
 		return this.activityValues.get(component);
+	}
+	
+	public Double getEstimatedLoad(String component){
+		return this.estimatedLoads.get(component);
+	}
+	
+	public Double getCapacity(String component){
+		return this.capacities.get(component);
+	}
+	
+	public Integer getCurrentDegree(String component){
+		return this.degrees.get(component);
 	}
 	
 	public Integer getMonitoringFrequency(){
@@ -209,6 +185,20 @@ public class ComponentMonitor {
 		return parser;
 	}
 
+	/**
+	 * @return the scaleOutActions
+	 */
+	public HashMap<String, Integer> getScaleOutActions() {
+		return scaleOutActions;
+	}
+
+	/**
+	 * @return the scaleInActions
+	 */
+	public HashMap<String, Integer> getScaleInActions() {
+		return scaleInActions;
+	}
+	
 	public boolean isInputDecreasing(String component){
 		HashMap<Integer, Long> inputRecords = this.getStats(component).getInputRecords();
 		Double coeff = LinearRegressionTools.linearRegressionCoeff(inputRecords);
@@ -249,14 +239,24 @@ public class ComponentMonitor {
 		return result;
 	}
 	
+	public void buildDegreeMap(AssignmentMonitor assignmentMonitor){
+		Set<String> components = this.getRegisteredComponents();
+		for(String component : components){
+			Integer degree = assignmentMonitor.getParallelism(component);
+			if(degree > 0){
+				this.degrees.put(component, degree);
+			}
+		}
+	}
+	
 	public void buildActionGraph(TopologyExplorer explorer, AssignmentMonitor assignmentMonitor){
 		Double lowActivityThreshold = this.parser.getLowActivityThreshold();
 		Double highActivityThreshold = this.parser.getHighActivityThreshold();
-		//Initialize an activity and load metric for the current topology
-		ActivityMetric activityMetric = new ActivityMetric(this, assignmentMonitor, explorer);
+		//Initialize an activity metric for the current topology
+		ActivityMetric activityMetric = new ActivityMetric(this, explorer);
 		for(String component : this.getRegisteredComponents()){
 			if(hasRecords(component)){
-				//Compute the activity level/ load and expose monitoring info concerning the activity/ load for storage
+				//Compute the activity level and expose monitoring info concerning the activity for storage
 				Double activityValue = activityMetric.compute(component);
 				this.activityValues.put(component, activityValue);
 				HashMap<String, BigDecimal> activityInfo = activityMetric.getActivityInfo(component);
@@ -265,19 +265,25 @@ public class ComponentMonitor {
 						activityInfo.get(ActivityMetric.CAPPERSEC).doubleValue(),
 						activityInfo.get(ActivityMetric.ESTIMLOAD).doubleValue());
 		
+				this.estimatedLoads.put(component, activityInfo.get(ActivityMetric.ESTIMLOAD).doubleValue());
+				this.capacities.put(component, activityInfo.get(ActivityMetric.CAPPERSEC).doubleValue());
+				//Compute the adequate parallelism degree thanks to local (activity level) estimations
+				Integer maxParallelism = assignmentMonitor.getAllSortedTasks(component).size();
+				Integer currentParallelism = this.getCurrentDegree(component);
+				Integer estimatedParallelism = Math.max(1, (int) Math.round(currentParallelism * activityValue));
+				Integer degree = (Integer) Math.min(maxParallelism, estimatedParallelism);
 				
 				//Apply rules to take local decisions
-				if(activityValue <= lowActivityThreshold && !isInputIncreasing(component)){
-					this.scaleInRequirements.add(component);
-					//System.out.println("Timestamp: " + this.timestamp + " Component " + component + " required scale in. Activity value: " + activityValue + " and input decreasing or constant.");
+				if(activityValue <= lowActivityThreshold && activityValue != -1.0 && !isInputIncreasing(component)){
+					this.scaleInActions.put(component, degree);
 				}else{
 					if(activityValue > highActivityThreshold && activityValue <= 1 && isInputIncreasing(component)){
-						this.scaleOutRequirements.add(component);
-						//System.out.println("Timestamp: " + this.timestamp + " Component " + component + " required scale out. Activity value: " + activityValue + " and input increasing.");
+						this.scaleOutActions.put(component, degree);
 					}else{
 						if(activityValue > 1){
-							this.scaleOutRequirements.add(component);
-							//System.out.println("Timestamp: " + this.timestamp + " Component " + component + " required scale out. Activity value: " + activityValue);
+							this.scaleOutActions.put(component, degree);
+						}else{
+							this.nothingActions.put(component, currentParallelism);
 						}
 					}
 				}
@@ -285,81 +291,37 @@ public class ComponentMonitor {
 		}
 	}
 	
-	public boolean validateScaleIn(String component, TopologyExplorer explorer){
-		boolean validate = false;
-		Double activityValue = this.getActivityValue(component);
-		//System.out.println(component + " has epr = " + activityValue);
-		if(activityValue != null){
-			if(activityValue == -1.0){
-				//System.out.println("Timestamp: " + this.timestamp + " Component " + component + " cannot scale in because of epr = -1");
-				return false;
-			}
-			ArrayList<String> antecedents = explorer.getAntecedents(component);
-			for(String antecedent : antecedents){
-				Double antecedentActivivityValue = this.getActivityValue(antecedent);
-				if(antecedentActivivityValue != null){
-					if(antecedentActivivityValue >= 1){
-						//System.out.println("Timestamp: " + this.timestamp + " Component " + component + " cannot scale in because " + antecedent + " can scale out");
-						return false;
+	public void autoscaleAlgorithm(ArrayList<String> ancestors, TopologyExplorer explorer){
+		for(String ancestor : ancestors){
+			ArrayList<String> children = explorer.getChildren(ancestor);
+			boolean isAncestorCritical = this.scaleOutActions.containsKey(ancestor);
+			if(isAncestorCritical){
+				for(String child : children){
+					boolean isChildUnderUsed = this.scaleInActions.containsKey(child);
+					boolean isChildRegularUsed = this.nothingActions.containsKey(child);
+					boolean isChildCritical = this.scaleOutActions.containsKey(child);
+					if(isChildRegularUsed){
+						Integer currentDegree = this.nothingActions.remove(child);
+						this.scaleOutActions.put(child, currentDegree + 1);
+					}else{
+						if(isChildUnderUsed){
+							this.scaleInActions.remove(child);
+							this.nothingActions.put(child, this.getCurrentDegree(child));
+						}else{
+							if(isChildCritical){
+								Integer adequateDegree = this.scaleOutActions.remove(child);
+								this.scaleOutActions.put(child, adequateDegree + 1);
+							}
+						}
 					}
 				}
+				autoscaleAlgorithm(children, explorer);
 			}
-			if(this.needScaleIn(component)){
-				//System.out.println("Timestamp: " + this.timestamp + " Component " + component + " can scale in");
-				validate = true;
-			}
-		}
-		return validate;
+		} 
 	}
 	
-	public boolean validateScaleOut(String component, TopologyExplorer explorer){
-		boolean validate = false;
-		Double activityValue = this.getActivityValue(component);
-		//System.out.println(component + " has epr = " + eprValue);
-		if(activityValue != null){
-			if(activityValue == -1.0){
-				//logger.info("Timestamp: " + this.timestamp + " Component " + component + " cannot scale out because of epr = -1");
-				return false;
-			}
-			ArrayList<String> parents = explorer.getParents(component);
-			for(String parent : parents){
-				if(this.validateScaleOut(parent, explorer)){
-					//logger.info("Timestamp: " + this.timestamp + " Component " + component + " will scale out instead remaining in the same state because " + parent + " will scale out");
-					validate = true;
-					break;
-				}
-			}
-			if(this.needScaleOut(component)){
-				validate = true;
-			}
-			
-		}
-		return validate;
-	}
-	
-	public void autoscaleAlgorithm(ArrayList<String> parents, TopologyExplorer explorer){
-		for(String parent : parents){
-			ArrayList<String> children = explorer.getChildren(parent);
-			for(String child : children){
-				if(this.needScaleIn(child)){
-					boolean validate = this.validateScaleIn(child, explorer);
-					if(!validate){
-						this.scaleInRequirements.remove(child);
-					}
-				}else{
-					boolean validate = this.validateScaleOut(child, explorer);
-					if(!validate){
-						this.scaleOutRequirements.remove(child);
-					}
-				}
-			}
-			for(String child : children){
-				ArrayList<String> grandChildren = explorer.getChildren(child);
-				if(!grandChildren.isEmpty()){
-					autoscaleAlgorithm(children, explorer);
-				}
-			}
-		}
+	public void autoscaleAlgorithmWithImpact(){
+		
 	}
 	
 	public void reset(){

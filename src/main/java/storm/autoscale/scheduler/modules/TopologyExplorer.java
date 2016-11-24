@@ -159,4 +159,21 @@ public class TopologyExplorer {
 	public boolean isSink(String component){
 		return this.getChildren(component).isEmpty();
 	}
+	
+	/**
+	 * 
+	 * @return the list of bolts receiving tuples directly from Spouts
+	 */
+	public ArrayList<String> getAncestors(){
+		ArrayList<String> result = this.getBolts();
+		for(String bolt : result){
+			ArrayList<String> parents = this.getParents(bolt);
+			for(String parent : parents){
+				if(result.contains(parent)){
+					result.remove(bolt);
+				}
+			}
+		}
+		return result;
+	}
 }

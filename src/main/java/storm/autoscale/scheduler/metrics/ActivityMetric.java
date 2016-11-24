@@ -6,7 +6,6 @@ package storm.autoscale.scheduler.metrics;
 import java.math.BigDecimal;
 import java.util.HashMap;
 
-import storm.autoscale.scheduler.modules.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.ComponentMonitor;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
@@ -19,7 +18,6 @@ import storm.autoscale.scheduler.regression.LinearRegressionTools;
 public class ActivityMetric implements IMetric {
 
 	ComponentMonitor cm;
-	AssignmentMonitor am;
 	TopologyExplorer explorer;
 	HashMap<String, Long> remainingTuples;
 	HashMap<String, HashMap<String, BigDecimal>> activityInfo;
@@ -31,9 +29,8 @@ public class ActivityMetric implements IMetric {
 	/**
 	 * 
 	 */
-	public ActivityMetric(ComponentMonitor cm, AssignmentMonitor am, TopologyExplorer explorer) {
+	public ActivityMetric(ComponentMonitor cm, TopologyExplorer explorer) {
 		this.cm = cm;
-		this.am = am;
 		this.explorer = explorer;
 		this.remainingTuples = this.cm.getPendingTuples(this.explorer);
 		this.activityInfo = new HashMap<>();
@@ -45,6 +42,11 @@ public class ActivityMetric implements IMetric {
 	@Override
 	public ComponentMonitor getComponentMonitor() {
 		return this.cm;
+	}
+	
+	@Override
+	public TopologyExplorer getTopologyExplorer() {
+		return this.explorer;
 	}
 
 	public HashMap<String, BigDecimal> getActivityInfo(String component){
@@ -90,7 +92,7 @@ public class ActivityMetric implements IMetric {
 			processingRates.put(timestamp, 1000 / latencyRecords.get(timestamp));
 		}
 		Double averageSeqCapacity = LinearRegressionTools.avgYCoordinate(processingRates);
-		Integer parallelism = this.am.getParallelism(component); 
+		Integer parallelism = this.cm.getCurrentDegree(component); 
 		Double avgCapacity = averageSeqCapacity * parallelism;
 		if(avgCapacity.isInfinite() || avgCapacity.isNaN()){
 			avgCapacity = 0.0;
@@ -111,16 +113,16 @@ public class ActivityMetric implements IMetric {
 	@Override
 	public Double compute(String component) {
 		Integer nbRecords = ComponentWindowedStats.getRecordedTimestamps(this.cm.getStats(component).getInputRecords()).size();
-		Double epr = this.computeEstimatedLoad(component) / this.computeAvgCapacity(component);
+		Double activity = this.computeEstimatedLoad(component) / this.computeAvgCapacity(component);
 		//In the case, we estimate that no tuples will be processed, we affect a special value to let a grace period 
-		if(epr.isInfinite() || epr.isNaN() || nbRecords < 4){
-			epr = -1.0;
+		if(activity.isInfinite() || activity.isNaN() || nbRecords < 4){
+			activity = -1.0;
 		}
 		if(!this.activityInfo.containsKey(component)){
 			this.activityInfo.put(component, new HashMap<String, BigDecimal>());
 		}
 		HashMap<String, BigDecimal> info = this.activityInfo.get(component);
-		info.put(ACTIVITY, new BigDecimal(epr));
-		return epr;
+		info.put(ACTIVITY, new BigDecimal(activity));
+		return activity;
 	}
 }

@@ -3,17 +3,11 @@
  */
 package storm.autoscale.scheduler.actions;
 
-import java.util.HashMap;
-
-import org.apache.storm.scheduler.WorkerSlot;
-
 /**
  * @author Roland
  *
  */
 public interface IAction extends Runnable{
-	
-	public HashMap<String, WorkerSlot> getBestLocation();
 	
 	public void storeAction(String component, Integer currentDegree, Integer newDegree);
 	

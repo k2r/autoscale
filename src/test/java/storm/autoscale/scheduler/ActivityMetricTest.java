@@ -133,7 +133,7 @@ public class ActivityMetricTest extends TestCase {
 		Mockito.when(assignmentMonitor.getParallelism("component2")).thenReturn(1);
 		Mockito.when(assignmentMonitor.getParallelism("component3")).thenReturn(1);
 		
-		ActivityMetric activityMetric = new ActivityMetric(compMonitor, assignmentMonitor, explorer);
+		ActivityMetric activityMetric = new ActivityMetric(compMonitor, explorer);
 		assertEquals(23700.0, activityMetric.computeEstimatedLoad("component1"), 0);
 		assertEquals(450.0, activityMetric.computeEstimatedLoad("component2"), 0);
 		assertEquals(3000.0, activityMetric.computeEstimatedLoad("component3"), 0);
@@ -207,7 +207,7 @@ public class ActivityMetricTest extends TestCase {
 		Mockito.when(assignmentMonitor.getParallelism("component2")).thenReturn(1);
 		Mockito.when(assignmentMonitor.getParallelism("component3")).thenReturn(1);
 		
-		ActivityMetric eprMetric = new ActivityMetric(compMonitor, assignmentMonitor, explorer);
+		ActivityMetric eprMetric = new ActivityMetric(compMonitor, explorer);
 		assertEquals(3000.0, eprMetric.computeAvgCapacity("component1"), 0);
 		assertEquals(1309.4, eprMetric.computeAvgCapacity("component2"), 0.1);
 		assertEquals(1309.5, eprMetric.computeAvgCapacity("component3"), 0.1);
@@ -408,7 +408,7 @@ public class ActivityMetricTest extends TestCase {
 		Mockito.when(assignmentMonitor.getParallelism("component8")).thenReturn(1);
 		Mockito.when(assignmentMonitor.getParallelism("component9")).thenReturn(1);
 		
-		ActivityMetric eprMetric = new ActivityMetric(compMonitor, assignmentMonitor, explorer);
+		ActivityMetric eprMetric = new ActivityMetric(compMonitor, explorer);
 		assertEquals(1, eprMetric.compute("component1"), 0);
 		assertEquals(2.29, eprMetric.compute("component2"), 0.01);
 		assertEquals(2.29, eprMetric.compute("component3"), 0.01);
