@@ -4,22 +4,21 @@
 package storm.autoscale.scheduler;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.mockito.Mockito;
 import org.xml.sax.SAXException;
-import org.apache.storm.generated.Bolt;
-import org.apache.storm.generated.ComponentCommon;
-import org.apache.storm.generated.GlobalStreamId;
-import org.apache.storm.generated.Grouping;
-import org.apache.storm.generated.SpoutSpec;
-import org.apache.storm.generated.StormTopology;
 import junit.framework.TestCase;
 import storm.autoscale.scheduler.config.XmlConfigParser;
+import storm.autoscale.scheduler.metrics.ActivityMetric;
+import storm.autoscale.scheduler.modules.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.ComponentMonitor;
+import storm.autoscale.scheduler.modules.StatStorageManager;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 
@@ -169,279 +168,240 @@ public class ComponentMonitorTest extends TestCase {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.ComponentMonitor#needScaleOut(java.lang.String)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.ComponentMonitor#buildActionGraph()}.
 	 */
-	public void testNeedScaleOut() {
-		HashMap<Integer, Long> inputRecords1 = new HashMap<>();
-		inputRecords1.put(10, 1350L / this.scaleFactor);
-		inputRecords1.put(9, 1225L / this.scaleFactor);
-		inputRecords1.put(8, 1095L / this.scaleFactor);
-		inputRecords1.put(7, 955L / this.scaleFactor);
-		inputRecords1.put(6, 780L / this.scaleFactor);
-		inputRecords1.put(5, 710L / this.scaleFactor);
-		inputRecords1.put(4, 530L / this.scaleFactor);
-		inputRecords1.put(3, 425L / this.scaleFactor);
-		inputRecords1.put(2, 260L / this.scaleFactor);
-		inputRecords1.put(1, 250L / this.scaleFactor);
+	public void testBuildActionGraph() {
 		
-		HashMap<Integer, Long> inputRecords2 = new HashMap<>();
-		inputRecords2.put(10, 250L / this.scaleFactor);
-		inputRecords2.put(9, 260L / this.scaleFactor);
-		inputRecords2.put(8, 425L / this.scaleFactor);
-		inputRecords2.put(7, 530L / this.scaleFactor);
-		inputRecords2.put(6, 710L / this.scaleFactor);
-		inputRecords2.put(5, 780L / this.scaleFactor);
-		inputRecords2.put(4, 955L / this.scaleFactor);
-		inputRecords2.put(3, 1095L / this.scaleFactor);
-		inputRecords2.put(2, 1225L / this.scaleFactor);
-		inputRecords2.put(1, 1350L / this.scaleFactor);
+		XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
+		Mockito.when(parser.getWindowSize()).thenReturn(6);
+		Mockito.when(parser.getLowActivityThreshold()).thenReturn(0.3);
+		Mockito.when(parser.getHighActivityThreshold()).thenReturn(0.8);
+		Mockito.when(parser.getSlopeThreshold()).thenReturn(0.2);
 		
-		HashMap<Integer, Long> executedRecords1 = new HashMap<>();
-		executedRecords1.put(10, 295L / this.scaleFactor);
-		executedRecords1.put(9, 305L / this.scaleFactor);
-		executedRecords1.put(8, 320L / this.scaleFactor);
-		executedRecords1.put(7, 295L / this.scaleFactor);
-		executedRecords1.put(6, 310L / this.scaleFactor);
-		executedRecords1.put(5, 300L / this.scaleFactor);
-		executedRecords1.put(4, 305L / this.scaleFactor);
-		executedRecords1.put(3, 290L / this.scaleFactor);
-		executedRecords1.put(2, 280L / this.scaleFactor);
-		executedRecords1.put(1, 275L / this.scaleFactor);
-		
-		HashMap<Integer, Long> executedRecords2 = new HashMap<>();
-		executedRecords2.put(10, 1150L / this.scaleFactor);
-		executedRecords2.put(9, 1135L / this.scaleFactor);
-		executedRecords2.put(8, 1160L / this.scaleFactor);
-		executedRecords2.put(7, 825L / this.scaleFactor);
-		executedRecords2.put(6, 795L / this.scaleFactor);
-		executedRecords2.put(5, 715L / this.scaleFactor);
-		executedRecords2.put(4, 590L / this.scaleFactor);
-		executedRecords2.put(3, 290L / this.scaleFactor);
-		executedRecords2.put(2, 280L / this.scaleFactor);
-		executedRecords2.put(1, 275L / this.scaleFactor);
-		
-		ComponentWindowedStats cws1 = new ComponentWindowedStats("component1", inputRecords1, executedRecords1, null, null, null);
-		ComponentWindowedStats cws2 = new ComponentWindowedStats("component2", inputRecords1, executedRecords2, null, null, null);
-		ComponentWindowedStats cws3 = new ComponentWindowedStats("component3", inputRecords2, executedRecords1, null, null, null);
-		ComponentWindowedStats cws4 = new ComponentWindowedStats("component4", inputRecords2, executedRecords2, null, null, null);
-		
-		XmlConfigParser parser = null;
-		try {
-			 parser = new XmlConfigParser("autoscale_parameters.xml");
-			 parser.initParameters();
-		} catch (ParserConfigurationException | SAXException | IOException e) {
-			e.printStackTrace();
+		TopologyExplorer explorer = Mockito.mock(TopologyExplorer.class);
+		Mockito.when(explorer.getTopologyName()).thenReturn("topologyTest");
+		ArrayList<Integer> tasks = new ArrayList<>();
+		for(int i = 0; i < 10; i++){
+			tasks.add(i);
 		}
 		
-		ComponentMonitor cm = new ComponentMonitor(parser, null, null);
-		cm.updateStats(cws1.getId(), cws1);
-		cm.updateStats(cws2.getId(), cws2);
-		cm.updateStats(cws3.getId(), cws3);
-		cm.updateStats(cws4.getId(), cws4);
+		AssignmentMonitor assignMonitor = Mockito.mock(AssignmentMonitor.class);
+		Mockito.when(assignMonitor.getAllSortedTasks("component1")).thenReturn(tasks);
+		Mockito.when(assignMonitor.getAllSortedTasks("component2")).thenReturn(tasks);
+		Mockito.when(assignMonitor.getAllSortedTasks("component3")).thenReturn(tasks);
+		Mockito.when(assignMonitor.getAllSortedTasks("component4")).thenReturn(tasks);
+		Mockito.when(assignMonitor.getAllSortedTasks("component5")).thenReturn(tasks);
+		Mockito.when(assignMonitor.getAllSortedTasks("component6")).thenReturn(tasks);
+		Mockito.when(assignMonitor.getAllSortedTasks("component7")).thenReturn(tasks);
 		
-		assertEquals(false, cm.getScaleOutActions()("component1"));
-		assertEquals(false, cm.needScaleOut("component2"));
-		assertEquals(false, cm.needScaleOut("component3"));
-		assertEquals(false, cm.needScaleOut("component4"));
+		StatStorageManager manager = Mockito.mock(StatStorageManager.class);
+		Mockito.when(manager.getCurrentTimestamp()).thenReturn(1);
+		
+		ActivityMetric metric = Mockito.mock(ActivityMetric.class);
+		
+		Mockito.when(metric.getTopologyExplorer()).thenReturn(explorer);
+		Mockito.when(metric.compute("component1")).thenReturn(0.1);
+		Mockito.when(metric.compute("component2")).thenReturn(0.1);
+		Mockito.when(metric.compute("component3")).thenReturn(0.5);
+		Mockito.when(metric.compute("component4")).thenReturn(0.5);
+		Mockito.when(metric.compute("component5")).thenReturn(0.9);
+		Mockito.when(metric.compute("component6")).thenReturn(0.9);
+		Mockito.when(metric.compute("component7")).thenReturn(2.0);
+		
+		HashMap<String, BigDecimal> lowActivity = new HashMap<>();
+		lowActivity.put(ActivityMetric.ACTIVITY, new BigDecimal("0.1"));
+		lowActivity.put(ActivityMetric.CAPPERSEC, new BigDecimal("0.0"));
+		lowActivity.put(ActivityMetric.ESTIMLOAD, new BigDecimal("0.0"));
+		lowActivity.put(ActivityMetric.REMAINING, new BigDecimal("0.0"));
+		HashMap<String, BigDecimal> mediumActivity = new HashMap<>();
+		mediumActivity.put(ActivityMetric.ACTIVITY, new BigDecimal("0.5"));
+		mediumActivity.put(ActivityMetric.CAPPERSEC, new BigDecimal("0.0"));
+		mediumActivity.put(ActivityMetric.ESTIMLOAD, new BigDecimal("0.0"));
+		mediumActivity.put(ActivityMetric.REMAINING, new BigDecimal("0.0"));
+		HashMap<String, BigDecimal> highActivity = new HashMap<>();
+		highActivity.put(ActivityMetric.ACTIVITY, new BigDecimal("0.9"));
+		highActivity.put(ActivityMetric.CAPPERSEC, new BigDecimal("0.0"));
+		highActivity.put(ActivityMetric.ESTIMLOAD, new BigDecimal("0.0"));
+		highActivity.put(ActivityMetric.REMAINING, new BigDecimal("0.0"));
+		HashMap<String, BigDecimal> criticalActivity = new HashMap<>();
+		criticalActivity.put(ActivityMetric.ACTIVITY, new BigDecimal("2.0"));
+		criticalActivity.put(ActivityMetric.CAPPERSEC, new BigDecimal("0.0"));
+		criticalActivity.put(ActivityMetric.ESTIMLOAD, new BigDecimal("0.0"));
+		criticalActivity.put(ActivityMetric.REMAINING, new BigDecimal("0.0"));
+	
+		Mockito.when(metric.getActivityInfo("component1")).thenReturn(lowActivity);
+		Mockito.when(metric.getActivityInfo("component2")).thenReturn(lowActivity);
+		Mockito.when(metric.getActivityInfo("component3")).thenReturn(mediumActivity);
+		Mockito.when(metric.getActivityInfo("component4")).thenReturn(mediumActivity);
+		Mockito.when(metric.getActivityInfo("component5")).thenReturn(highActivity);
+		Mockito.when(metric.getActivityInfo("component6")).thenReturn(highActivity);
+		Mockito.when(metric.getActivityInfo("component7")).thenReturn(criticalActivity);
+		
+		HashMap<String, Integer> degrees = new HashMap<>();
+		degrees.put("component1", 4);
+		degrees.put("component2", 4);
+		degrees.put("component3", 4);
+		degrees.put("component4", 4);
+		degrees.put("component5", 4);
+		degrees.put("component6", 4);
+		degrees.put("component7", 4);
+		
+		HashMap<Integer, Long> inputRecordsIncr = new HashMap<>();
+		inputRecordsIncr.put(0, 100L);
+		inputRecordsIncr.put(1, 110L);
+		inputRecordsIncr.put(2, 120L);
+		inputRecordsIncr.put(3, 130L);
+		inputRecordsIncr.put(4, 140L);
+		inputRecordsIncr.put(5, 150L);
+		inputRecordsIncr.put(6, 160L);
+		inputRecordsIncr.put(7, 170L);
+		inputRecordsIncr.put(8, 180L);
+		inputRecordsIncr.put(9, 190L);
+		
+		HashMap<Integer, Long> inputRecordsDecr = new HashMap<>();
+		inputRecordsDecr.put(0, 190L);
+		inputRecordsDecr.put(1, 180L);
+		inputRecordsDecr.put(2, 170L);
+		inputRecordsDecr.put(3, 160L);
+		inputRecordsDecr.put(4, 150L);
+		inputRecordsDecr.put(5, 140L);
+		inputRecordsDecr.put(6, 130L);
+		inputRecordsDecr.put(7, 120L);
+		inputRecordsDecr.put(8, 110L);
+		inputRecordsDecr.put(9, 100L);
+		
+		HashMap<Integer, Long> inputRecordsConst = new HashMap<>();
+		inputRecordsConst.put(0, 50L);
+		inputRecordsConst.put(1, 50L);
+		inputRecordsConst.put(2, 50L);
+		inputRecordsConst.put(3, 50L);
+		inputRecordsConst.put(4, 50L);
+		inputRecordsConst.put(5, 50L);
+		inputRecordsConst.put(6, 50L);
+		inputRecordsConst.put(7, 50L);
+		inputRecordsConst.put(8, 50L);
+		inputRecordsConst.put(9, 50L);
+		
+		HashMap<Integer, Long> mockLongRecords = new HashMap<>();
+		mockLongRecords.put(0, 0L);
+		HashMap<Integer, Double> mockDoubleRecords = new HashMap<>();
+		mockDoubleRecords.put(0, 0.0);
+		
+		ComponentWindowedStats cwsIncr = Mockito.mock(ComponentWindowedStats.class);
+		Mockito.when(cwsIncr.getInputRecords()).thenReturn(inputRecordsIncr);
+		Mockito.when(cwsIncr.getExecutedRecords()).thenReturn(mockLongRecords);
+		Mockito.when(cwsIncr.getOutputRecords()).thenReturn(mockLongRecords);
+		Mockito.when(cwsIncr.getAvgLatencyRecords()).thenReturn(mockDoubleRecords);
+		Mockito.when(cwsIncr.getSelectivityRecords()).thenReturn(mockDoubleRecords);
+		Mockito.when(cwsIncr.hasRecords()).thenReturn(true);
+		
+		ComponentWindowedStats cwsDecr = Mockito.mock(ComponentWindowedStats.class);
+		Mockito.when(cwsDecr.getInputRecords()).thenReturn(inputRecordsDecr);
+		Mockito.when(cwsDecr.getExecutedRecords()).thenReturn(mockLongRecords);
+		Mockito.when(cwsDecr.getOutputRecords()).thenReturn(mockLongRecords);
+		Mockito.when(cwsDecr.getAvgLatencyRecords()).thenReturn(mockDoubleRecords);
+		Mockito.when(cwsDecr.getSelectivityRecords()).thenReturn(mockDoubleRecords);
+		Mockito.when(cwsDecr.hasRecords()).thenReturn(true);
+		
+		ComponentWindowedStats cwsConst = Mockito.mock(ComponentWindowedStats.class);
+		Mockito.when(cwsConst.getInputRecords()).thenReturn(inputRecordsConst);
+		Mockito.when(cwsConst.getExecutedRecords()).thenReturn(mockLongRecords);
+		Mockito.when(cwsConst.getOutputRecords()).thenReturn(mockLongRecords);
+		Mockito.when(cwsConst.getAvgLatencyRecords()).thenReturn(mockDoubleRecords);
+		Mockito.when(cwsConst.getSelectivityRecords()).thenReturn(mockDoubleRecords);
+		Mockito.when(cwsConst.hasRecords()).thenReturn(true);
+		
+		ComponentMonitor cm = new ComponentMonitor(parser, null, null);
+		cm.setManager(manager);
+		cm.setDegrees(degrees);
+		cm.updateStats("component1", cwsDecr);
+		cm.updateStats("component2", cwsIncr);
+		cm.updateStats("component3", cwsDecr);
+		cm.updateStats("component4", cwsConst);
+		cm.updateStats("component5", cwsDecr);
+		cm.updateStats("component6", cwsIncr);
+		cm.updateStats("component7", cwsConst);
+		
+		cm.buildActionGraph(metric, assignMonitor);
+		
+		HashMap<String, Integer> expectedScaleIn = new HashMap<>();
+		expectedScaleIn.put("component1", 1);
+		
+		HashMap<String, Integer> expectedScaleOut = new HashMap<>();
+		expectedScaleOut.put("component6", 5);
+		expectedScaleOut.put("component7", 8);
+		
+		assertEquals(expectedScaleIn, cm.getScaleInActions());
+		assertEquals(expectedScaleOut, cm.getScaleOutActions());
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.ComponentMonitor#getScaleOutDecisions()}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.ComponentMonitor#autoscaleAlgorithm()}.
 	 */
-	public void testGetScaleOutDecisions() {
-		HashMap<Integer, Long> inputRecords1 = new HashMap<>();
-		inputRecords1.put(10, 1350L / this.scaleFactor);
-		inputRecords1.put(9, 1225L / this.scaleFactor);
-		inputRecords1.put(8, 1095L / this.scaleFactor);
-		inputRecords1.put(7, 955L / this.scaleFactor);
-		inputRecords1.put(6, 780L / this.scaleFactor);
-		inputRecords1.put(5, 710L / this.scaleFactor);
-		inputRecords1.put(4, 530L / this.scaleFactor);
-		inputRecords1.put(3, 425L / this.scaleFactor);
-		inputRecords1.put(2, 260L / this.scaleFactor);
-		inputRecords1.put(1, 250L / this.scaleFactor);
+	public void testAutoscaleAglorithm(){
+		XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
 		
-		HashMap<Integer, Long> inputRecords2 = new HashMap<>();
-		inputRecords2.put(10, 250L / this.scaleFactor);
-		inputRecords2.put(9, 260L / this.scaleFactor);
-		inputRecords2.put(8, 425L / this.scaleFactor);
-		inputRecords2.put(7, 530L / this.scaleFactor);
-		inputRecords2.put(6, 710L / this.scaleFactor);
-		inputRecords2.put(5, 780L / this.scaleFactor);
-		inputRecords2.put(4, 955L / this.scaleFactor);
-		inputRecords2.put(3, 1095L / this.scaleFactor);
-		inputRecords2.put(2, 1225L / this.scaleFactor);
-		inputRecords2.put(1, 1350L / this.scaleFactor);
+		TopologyExplorer explorer = Mockito.mock(TopologyExplorer.class);
+		ArrayList<String> childrenA = new ArrayList<>();
+		childrenA.add("B");
+		childrenA.add("C");
+		ArrayList<String> childrenB = new ArrayList<>();
+		childrenB.add("D");
+		childrenB.add("E");
+		ArrayList<String> childrenC = new ArrayList<>();
+		childrenB.add("E");
+		ArrayList<String> childrenE = new ArrayList<>();
+		childrenB.add("F");
 		
-		HashMap<Integer, Long> executedRecords1 = new HashMap<>();
-		executedRecords1.put(10, 295L / this.scaleFactor);
-		executedRecords1.put(9, 305L / this.scaleFactor);
-		executedRecords1.put(8, 320L / this.scaleFactor);
-		executedRecords1.put(7, 295L / this.scaleFactor);
-		executedRecords1.put(6, 310L / this.scaleFactor);
-		executedRecords1.put(5, 300L / this.scaleFactor);
-		executedRecords1.put(4, 305L / this.scaleFactor);
-		executedRecords1.put(3, 290L / this.scaleFactor);
-		executedRecords1.put(2, 280L / this.scaleFactor);
-		executedRecords1.put(1, 275L / this.scaleFactor);
+		Mockito.when(explorer.getChildren("A")).thenReturn(childrenA);
+		Mockito.when(explorer.getChildren("B")).thenReturn(childrenB);
+		Mockito.when(explorer.getChildren("C")).thenReturn(childrenC);
+		Mockito.when(explorer.getChildren("D")).thenReturn(new ArrayList<String>());
+		Mockito.when(explorer.getChildren("E")).thenReturn(childrenE);
+		Mockito.when(explorer.getChildren("F")).thenReturn(new ArrayList<String>());
 		
-		HashMap<Integer, Long> executedRecords2 = new HashMap<>();
-		executedRecords2.put(10, 1150L / this.scaleFactor);
-		executedRecords2.put(9, 1135L / this.scaleFactor);
-		executedRecords2.put(8, 1160L / this.scaleFactor);
-		executedRecords2.put(7, 825L / this.scaleFactor);
-		executedRecords2.put(6, 795L / this.scaleFactor);
-		executedRecords2.put(5, 715L / this.scaleFactor);
-		executedRecords2.put(4, 590L / this.scaleFactor);
-		executedRecords2.put(3, 290L / this.scaleFactor);
-		executedRecords2.put(2, 280L / this.scaleFactor);
-		executedRecords2.put(1, 275L / this.scaleFactor);
+		HashSet<String> ancestors = new HashSet<>();
+		ancestors.add("A");
 		
-		ComponentWindowedStats cws1 = new ComponentWindowedStats("component1", inputRecords1, executedRecords1, null, null, null);
-		ComponentWindowedStats cws2 = new ComponentWindowedStats("component2", inputRecords1, executedRecords2, null, null, null);
-		ComponentWindowedStats cws3 = new ComponentWindowedStats("component3", inputRecords2, executedRecords1, null, null, null);
-		ComponentWindowedStats cws4 = new ComponentWindowedStats("component4", inputRecords2, executedRecords2, null, null, null);
+		HashMap<String, Integer> degrees = new HashMap<>();
+		degrees.put("A", 4);
+		degrees.put("B", 4);
+		degrees.put("C", 4);
+		degrees.put("D", 4);
+		degrees.put("E", 4);
+		degrees.put("F", 4);
+		degrees.put("G", 4);
 		
-		XmlConfigParser parser = null;
-		try {
-			 parser = new XmlConfigParser("autoscale_parameters.xml");
-			 parser.initParameters();
-		} catch (ParserConfigurationException | SAXException | IOException e) {
-			e.printStackTrace();
-		}
-		ComponentMonitor cm = new ComponentMonitor(parser, null, null);
-		cm.updateStats(cws1.getId(), cws1);
-		cm.updateStats(cws2.getId(), cws2);
-		cm.updateStats(cws3.getId(), cws3);
-		cm.updateStats(cws4.getId(), cws4);
-		
-		ArrayList<String> expected = new ArrayList<>();
-		assertEquals(expected, cm.getScaleOutRequirements());
-	}
+		HashMap<String, Integer> nothingActions = new HashMap<>();
+		HashMap<String, Integer> scaleInActions = new HashMap<>();
+		HashMap<String, Integer> scaleOutActions = new HashMap<>();
 
-	public void testValidateRequirements(){
-		GlobalStreamId gsA = Mockito.mock(GlobalStreamId.class);
-		Mockito.when(gsA.get_componentId()).thenReturn("A");
-		GlobalStreamId gsB = Mockito.mock(GlobalStreamId.class);
-		Mockito.when(gsB.get_componentId()).thenReturn("B");
-		GlobalStreamId gsC = Mockito.mock(GlobalStreamId.class);
-		Mockito.when(gsC.get_componentId()).thenReturn("C");
-		GlobalStreamId gsD = Mockito.mock(GlobalStreamId.class);
-		Mockito.when(gsD.get_componentId()).thenReturn("D");
-		GlobalStreamId gsE = Mockito.mock(GlobalStreamId.class);
-		Mockito.when(gsE.get_componentId()).thenReturn("E");
-		GlobalStreamId gsF = Mockito.mock(GlobalStreamId.class);
-		Mockito.when(gsF.get_componentId()).thenReturn("F");
-		Grouping grouping = Mockito.mock(Grouping.class);
+		nothingActions.put("A", 4);
+		nothingActions.put("C", 4);
+		nothingActions.put("F", 4);
+		scaleInActions.put("D", 1);
+		scaleOutActions.put("B", 8);
+		scaleOutActions.put("E", 6);
 		
-		HashMap<GlobalStreamId, Grouping> inputsA = new HashMap<>();
-		
-		HashMap<GlobalStreamId, Grouping> inputsB = new HashMap<>();
-		inputsB.put(gsA, grouping);
-		
-		HashMap<GlobalStreamId, Grouping> inputsC = new HashMap<>();
-		inputsC.put(gsB, grouping);
-		
-		HashMap<GlobalStreamId, Grouping> inputsD = new HashMap<>();
-		inputsD.put(gsC, grouping);
-		
-		HashMap<GlobalStreamId, Grouping> inputsE = new HashMap<>();
-		inputsE.put(gsC, grouping);
-		
-		HashMap<GlobalStreamId, Grouping> inputsF = new HashMap<>();
-		inputsF.put(gsE, grouping);
-		
-		ComponentCommon ccA = Mockito.mock(ComponentCommon.class);
-		Mockito.when(ccA.get_inputs()).thenReturn(inputsA);
-		
-		ComponentCommon ccB = Mockito.mock(ComponentCommon.class);
-		Mockito.when(ccB.get_inputs()).thenReturn(inputsB);
-		
-		ComponentCommon ccC = Mockito.mock(ComponentCommon.class);
-		Mockito.when(ccC.get_inputs()).thenReturn(inputsC);
-		
-		ComponentCommon ccD = Mockito.mock(ComponentCommon.class);
-		Mockito.when(ccD.get_inputs()).thenReturn(inputsD);
-		
-		ComponentCommon ccE = Mockito.mock(ComponentCommon.class);
-		Mockito.when(ccE.get_inputs()).thenReturn(inputsE);
-		
-		ComponentCommon ccF = Mockito.mock(ComponentCommon.class);
-		Mockito.when(ccF.get_inputs()).thenReturn(inputsF);
-		
-		SpoutSpec spoutA = Mockito.mock(SpoutSpec.class);
-		Mockito.when(spoutA.get_common()).thenReturn(ccA);
-		
-		Bolt boltB = Mockito.mock(Bolt.class);
-		Mockito.when(boltB.get_common()).thenReturn(ccB);
-		
-		Bolt boltC = Mockito.mock(Bolt.class);
-		Mockito.when(boltC.get_common()).thenReturn(ccC);
-		
-		Bolt boltD = Mockito.mock(Bolt.class);
-		Mockito.when(boltD.get_common()).thenReturn(ccD);
-		
-		Bolt boltE = Mockito.mock(Bolt.class);
-		Mockito.when(boltE.get_common()).thenReturn(ccE);
-		
-		Bolt boltF = Mockito.mock(Bolt.class);
-		Mockito.when(boltF.get_common()).thenReturn(ccF);
-		
-		HashMap<String, SpoutSpec> spouts = new HashMap<>();
-		spouts.put("A", spoutA);
-		
-		HashMap<String, Bolt> bolts = new HashMap<>();
-		bolts.put("B", boltB);
-		bolts.put("C", boltC);
-		bolts.put("D", boltD);
-		bolts.put("E", boltE);
-		bolts.put("F", boltF);
-		
-		StormTopology topology = Mockito.mock(StormTopology.class);
-		Mockito.when(topology.get_bolts()).thenReturn(bolts);
-		Mockito.when(topology.get_spouts()).thenReturn(spouts);
-		
-		TopologyExplorer explorer = new TopologyExplorer("test", topology);
-		
-		XmlConfigParser parser = null;
-		try {
-			 parser = new XmlConfigParser("autoscale_parameters.xml");
-			 parser.initParameters();
-		} catch (ParserConfigurationException | SAXException | IOException e) {
-			e.printStackTrace();
-		}
 		ComponentMonitor cm = new ComponentMonitor(parser, null, null);
+		cm.setDegrees(degrees);
+		cm.setScaleInActions(scaleInActions);
+		cm.setNothingActions(nothingActions);
+		cm.setScaleOutActions(scaleOutActions);
+		cm.autoscaleAlgorithm(ancestors, explorer);
 		
-		HashMap<String, Double> eprValues = new HashMap<>();
-		eprValues.put("A", -1.0);
-		eprValues.put("B", 0.5);
-		eprValues.put("C", 2.0);
-		eprValues.put("D", -1.0);
-		eprValues.put("E", 0.5);
-		eprValues.put("F", 2.0);
+		HashMap<String, Integer> expectedNothing = new HashMap<>();
+		HashMap<String, Integer> expectedScaleIn = new HashMap<>();
+		HashMap<String, Integer> expectedScaleOut = new HashMap<>();
+		expectedNothing.put("A", 4);
+		expectedNothing.put("C", 4);
+		expectedNothing.put("D", 4);
+		expectedScaleOut.put("B", 8);
+		expectedScaleOut.put("E", 7);
+		expectedScaleOut.put("F", 5);
 		
-		ArrayList<String> scaleInRequirements = new ArrayList<>();
-		scaleInRequirements.add("B");
-		scaleInRequirements.add("E");
-		
-		ArrayList<String> scaleOutRequirements = new ArrayList<>();
-		scaleOutRequirements.add("C");
-		scaleOutRequirements.add("F");
-		
-		cm.setScaleInRequirements(scaleInRequirements);
-		cm.setScaleOutRequirements(scaleOutRequirements);
-		cm.setActivityValues(eprValues);
-		
-		cm.autoscaleAlgorithm(explorer.getSpouts(), explorer);
-		
-		ArrayList<String> expectedScaleIn = new ArrayList<>();
-		expectedScaleIn.add("B");
-		
-		ArrayList<String> expectedScaleOut = new ArrayList<>();
-		expectedScaleOut.add("C");
-		expectedScaleOut.add("F");
-		
-		assertEquals(expectedScaleIn, cm.getScaleInRequirements());
-		assertEquals(expectedScaleOut, cm.getScaleOutRequirements());
+		assertEquals(expectedNothing, cm.getNothingActions());
+		assertEquals(expectedScaleIn, cm.getScaleInActions());
+		assertEquals(expectedScaleOut, cm.getScaleOutActions());
 	}
 }

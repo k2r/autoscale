@@ -162,4 +162,39 @@ public class ComponentWindowedStats {
 		return (!inputTimestamps.isEmpty() && !executedTimestamps.isEmpty() && !outputTimestamps.isEmpty()
 				&& !avgLatencyTimestamps.isEmpty() && !selectivityTimestamps.isEmpty());
 	}
+	
+	@Override
+	public String toString(){
+		String result = "Statistics of component " + this.getId() + "\n";
+		HashMap<Integer, Long> input = this.getInputRecords();
+		HashMap<Integer, Long> executed = this.getExecutedRecords();
+		HashMap<Integer, Long> output = this.getOutputRecords();
+		HashMap<Integer, Double> latency = this.getAvgLatencyRecords();
+		HashMap<Integer, Double> selectivity = this.getSelectivityRecords();
+		result += "Inputs :";
+		for(Integer timestamp : input.keySet()){
+			result += " [" + timestamp + "->" + input.get(timestamp) + "]";
+		}
+		result += "\n";
+		result += "Executed :";
+		for(Integer timestamp : executed.keySet()){
+			result += " [" + timestamp + "->" + executed.get(timestamp) + "]";
+		}
+		result += "\n";
+		result += "Outputs :";
+		for(Integer timestamp : output.keySet()){
+			result += " [" + timestamp + "->" + output.get(timestamp) + "]";
+		}
+		result += "\n";
+		result += "Latencies :";
+		for(Integer timestamp : latency.keySet()){
+			result += " [" + timestamp + "->" + latency.get(timestamp) + "]";
+		}
+		result += "\n";
+		result += "Selectivities :";
+		for(Integer timestamp : selectivity.keySet()){
+			result += " [" + timestamp + "->" + selectivity.get(timestamp) + "]";
+		}
+		return result;
+	}
 }

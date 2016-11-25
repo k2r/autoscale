@@ -21,6 +21,8 @@ import storm.autoscale.scheduler.actions.IAction;
 import storm.autoscale.scheduler.actions.ScaleInAction;
 import storm.autoscale.scheduler.actions.ScaleOutAction;
 import storm.autoscale.scheduler.config.XmlConfigParser;
+import storm.autoscale.scheduler.metrics.ActivityMetric;
+import storm.autoscale.scheduler.metrics.IMetric;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.ComponentMonitor;
 import storm.autoscale.scheduler.modules.StatStorageManager;
@@ -92,7 +94,8 @@ public class AutoscaleSchedulerImpact implements IScheduler {
 				Integer timestamp = manager.getCurrentTimestamp();
 				if(!this.compMonitor.getRegisteredComponents().isEmpty()){
 					this.compMonitor.buildDegreeMap(assignMonitor);
-					this.compMonitor.buildActionGraph(explorer, assignMonitor);
+					IMetric activityMetric = new ActivityMetric(this.compMonitor, this.explorer);
+					this.compMonitor.buildActionGraph(activityMetric, assignMonitor);
 					this.compMonitor.autoscaleAlgorithmWithImpact(explorer.getAncestors(), explorer, assignMonitor);
 
 					if(this.compMonitor.getScaleOutActions().isEmpty()){

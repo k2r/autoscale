@@ -4,6 +4,7 @@
 package storm.autoscale.scheduler.modules;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Map;
 
 import org.apache.storm.generated.Bolt;
@@ -162,17 +163,21 @@ public class TopologyExplorer {
 	
 	/**
 	 * 
-	 * @return the list of bolts receiving tuples directly from Spouts
+	 * @return the set of bolts receiving tuples directly from Spouts
 	 */
-	public ArrayList<String> getAncestors(){
-		ArrayList<String> result = this.getBolts();
-		for(String bolt : result){
+	public HashSet<String> getAncestors(){
+		HashSet<String> result = new HashSet<>();
+		ArrayList<String> bolts = this.getBolts();
+		for(String bolt : bolts){
 			ArrayList<String> parents = this.getParents(bolt);
 			for(String parent : parents){
 				if(result.contains(parent)){
 					result.remove(bolt);
 				}
 			}
+		}
+		for(String bolt : bolts){
+			result.add(bolt);
 		}
 		return result;
 	}

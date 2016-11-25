@@ -3,6 +3,7 @@
  */
 package storm.autoscale.scheduler.metrics;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -61,7 +62,8 @@ public class ImpactMetric implements IMetric {
 		}
 		
 		Double capacityPerWindow = this.cm.getCapacity(component) * this.cm.getParser().getWindowSize();
-		int impactDegree = (int) Math.round(result / capacityPerWindow);
+		int impactDegree = new BigDecimal(this.cm.getCurrentDegree(component) * (result / capacityPerWindow)).setScale(0, BigDecimal.ROUND_UP).intValue();
+		impactDegree = Math.max(1, impactDegree);//at least one excutor must remain
 		this.impactDegrees.put(component, impactDegree);
 		return result;
 	}

@@ -18,6 +18,8 @@ import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.xml.sax.SAXException;
 
 import storm.autoscale.scheduler.config.XmlConfigParser;
+import storm.autoscale.scheduler.metrics.ActivityMetric;
+import storm.autoscale.scheduler.metrics.IMetric;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.ComponentMonitor;
 import storm.autoscale.scheduler.modules.StatStorageManager;
@@ -85,8 +87,9 @@ public class MonitoredResourceAwareScheduler implements IScheduler {
 				this.assignMonitor.update();
 				this.compMonitor.getStatistics(explorer);
 				if(!this.compMonitor.getRegisteredComponents().isEmpty()){
-					this.compMonitor.buildActionGraph(explorer, assignMonitor);
-					this.compMonitor.autoscaleAlgorithm(explorer.getSpouts(), explorer);			
+					IMetric activityMetric = new ActivityMetric(this.compMonitor, this.explorer);
+					this.compMonitor.buildActionGraph(activityMetric, assignMonitor);
+					this.compMonitor.autoscaleAlgorithm(explorer.getAncestors(), explorer);			
 				}
 			}
 		}

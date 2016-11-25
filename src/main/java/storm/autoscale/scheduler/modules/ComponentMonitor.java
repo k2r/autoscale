@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Set;
 //import java.util.logging.FileHandler;
 import java.util.logging.Logger;
@@ -15,6 +16,7 @@ import java.util.logging.Logger;
 
 import storm.autoscale.scheduler.config.XmlConfigParser;
 import storm.autoscale.scheduler.metrics.ActivityMetric;
+import storm.autoscale.scheduler.metrics.IMetric;
 import storm.autoscale.scheduler.metrics.ImpactMetric;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 import storm.autoscale.scheduler.regression.LinearRegressionTools;
@@ -37,11 +39,10 @@ public class ComponentMonitor {
 	private HashMap<String, Double> estimatedLoads;
 	private HashMap<String, Double> capacities;
 	private HashMap<String, Integer> degrees; 
+	
 	private HashMap<String, Integer> scaleOutActions;
-
 	private HashMap<String, Integer> scaleInActions;
 	private HashMap<String, Integer> nothingActions;
-	
 	
 	private static Logger logger = Logger.getLogger("ComponentMonitor");
 	
@@ -187,6 +188,20 @@ public class ComponentMonitor {
 	}
 
 	/**
+	 * @param manager the manager to set
+	 */
+	public void setManager(StatStorageManager manager) {
+		this.manager = manager;
+	}
+
+	/**
+	 * @param parser the parser to set
+	 */
+	public void setParser(XmlConfigParser parser) {
+		this.parser = parser;
+	}
+	
+	/**
 	 * @return the scaleOutActions
 	 */
 	public HashMap<String, Integer> getScaleOutActions() {
@@ -200,6 +215,48 @@ public class ComponentMonitor {
 		return scaleInActions;
 	}
 	
+	/**
+	 * @return the degrees
+	 */
+	public HashMap<String, Integer> getDegrees() {
+		return degrees;
+	}
+
+	/**
+	 * @param degrees the degrees to set
+	 */
+	public void setDegrees(HashMap<String, Integer> degrees) {
+		this.degrees = degrees;
+	}
+
+	/**
+	 * @return the nothingActions
+	 */
+	public HashMap<String, Integer> getNothingActions() {
+		return nothingActions;
+	}
+
+	/**
+	 * @param nothingActions the nothingActions to set
+	 */
+	public void setNothingActions(HashMap<String, Integer> nothingActions) {
+		this.nothingActions = nothingActions;
+	}
+
+	/**
+	 * @param scaleOutActions the scaleOutActions to set
+	 */
+	public void setScaleOutActions(HashMap<String, Integer> scaleOutActions) {
+		this.scaleOutActions = scaleOutActions;
+	}
+
+	/**
+	 * @param scaleInActions the scaleInActions to set
+	 */
+	public void setScaleInActions(HashMap<String, Integer> scaleInActions) {
+		this.scaleInActions = scaleInActions;
+	}
+
 	public boolean isInputDecreasing(String component){
 		HashMap<Integer, Long> inputRecords = this.getStats(component).getInputRecords();
 		Double coeff = LinearRegressionTools.linearRegressionCoeff(inputRecords);
@@ -250,18 +307,22 @@ public class ComponentMonitor {
 		}
 	}
 	
-	public void buildActionGraph(TopologyExplorer explorer, AssignmentMonitor assignmentMonitor){
+	public void buildActionGraph(IMetric metric, AssignmentMonitor assignmentMonitor){
 		Double lowActivityThreshold = this.parser.getLowActivityThreshold();
 		Double highActivityThreshold = this.parser.getHighActivityThreshold();
+		logger.fine("low threshold: " + lowActivityThreshold + ", high threshold: " + highActivityThreshold);
+		ActivityMetric activityMetric = (ActivityMetric) metric;//cast to the metric you want
 		//Initialize an activity metric for the current topology
-		ActivityMetric activityMetric = new ActivityMetric(this, explorer);
 		for(String component : this.getRegisteredComponents()){
+			logger.fine("Looking for component " + component);
 			if(hasRecords(component)){
+				logger.fine("Evaluating scaling requirement for component " + component);
 				//Compute the activity level and expose monitoring info concerning the activity for storage
-				Double activityValue = activityMetric.compute(component);
+				Double activityValue = metric.compute(component);
+				logger.fine("Component " + component + " has activity value: " + activityValue);
 				this.activityValues.put(component, activityValue);
 				HashMap<String, BigDecimal> activityInfo = activityMetric.getActivityInfo(component);
-				this.manager.storeActivityInfo(this.timestamp, explorer.getTopologyName(), component, activityValue,
+				this.manager.storeActivityInfo(this.timestamp, activityMetric.getTopologyExplorer().getTopologyName(), component, activityValue,
 						activityInfo.get(ActivityMetric.REMAINING).intValue(),
 						activityInfo.get(ActivityMetric.CAPPERSEC).doubleValue(),
 						activityInfo.get(ActivityMetric.ESTIMLOAD).doubleValue());
@@ -274,17 +335,27 @@ public class ComponentMonitor {
 				Integer estimatedParallelism = Math.max(1, (int) Math.round(currentParallelism * activityValue));
 				Integer degree = (Integer) Math.min(maxParallelism, estimatedParallelism);
 				
+				logger.fine("Component " + component + ": ");
+				logger.fine("Current degree: " + currentParallelism);
+				logger.fine("Estimated degree: " + estimatedParallelism);
+				logger.fine("Max degree: " + maxParallelism);
+				logger.fine("Adequate degree " + degree);
 				//Apply rules to take local decisions
 				if(activityValue <= lowActivityThreshold && activityValue != -1.0 && !isInputIncreasing(component)){
 					this.scaleInActions.put(component, degree);
+					logger.fine("Component " + component + " required a scale-in to degree " + degree);
 				}else{
 					if(activityValue > highActivityThreshold && activityValue <= 1 && isInputIncreasing(component)){
+						degree++;
 						this.scaleOutActions.put(component, degree);
+						logger.fine("Component " + component + " required a scale-out to degree " + degree);
 					}else{
 						if(activityValue > 1){
 							this.scaleOutActions.put(component, degree);
+							logger.fine("Component " + component + " required a scale-out to degree " + degree);
 						}else{
 							this.nothingActions.put(component, currentParallelism);
+							logger.fine("Component " + component + " required no action");
 						}
 					}
 				}
@@ -292,36 +363,53 @@ public class ComponentMonitor {
 		}
 	}
 	
-	public void autoscaleAlgorithm(ArrayList<String> ancestors, TopologyExplorer explorer){
+	
+
+	public void autoscaleAlgorithm(HashSet<String> ancestors, TopologyExplorer explorer){
+		HashSet<String> descendants = new HashSet<>();
+		HashSet<String> checkedComponents = new HashSet<>();
 		for(String ancestor : ancestors){
+			System.out.println("Starting from ancestor component " + ancestor);
 			ArrayList<String> children = explorer.getChildren(ancestor);
+			descendants.addAll(children);
 			boolean isAncestorCritical = this.scaleOutActions.containsKey(ancestor);
-			if(isAncestorCritical){
-				for(String child : children){
+			for(String child : children){
+				System.out.println("Checking global consistency for child component " + child);
+				if(isAncestorCritical && !checkedComponents.contains(child)){
 					boolean isChildUnderUsed = this.scaleInActions.containsKey(child);
 					boolean isChildRegularUsed = this.nothingActions.containsKey(child);
 					boolean isChildCritical = this.scaleOutActions.containsKey(child);
 					if(isChildRegularUsed){
 						Integer currentDegree = this.nothingActions.remove(child);
-						this.scaleOutActions.put(child, currentDegree + 1);
+						currentDegree++;
+						this.scaleOutActions.put(child, currentDegree);
+						checkedComponents.add(child);
+						System.out.println("Component " + child + " moved from nothing to scale-out with degree "  + currentDegree);
 					}else{
 						if(isChildUnderUsed){
 							this.scaleInActions.remove(child);
 							this.nothingActions.put(child, this.getCurrentDegree(child));
+							checkedComponents.add(child);
+							System.out.println("Component " + child + " moved from scale-in to nothing with degree " + this.getCurrentDegree(child));
 						}else{
 							if(isChildCritical){
 								Integer adequateDegree = this.scaleOutActions.remove(child);
-								this.scaleOutActions.put(child, adequateDegree + 1);
+								adequateDegree++;
+								this.scaleOutActions.put(child, adequateDegree);
+								checkedComponents.add(child);
+								System.out.println("Component " + child + " reevaluated for scale-out with new degree " + adequateDegree);
 							}
 						}
 					}
 				}
-				autoscaleAlgorithm(children, explorer);
 			}
 		} 
+		if(!descendants.isEmpty()){
+			autoscaleAlgorithm(descendants, explorer);
+		}
 	}
 	
-	public void autoscaleAlgorithmWithImpact(ArrayList<String> ancestors, TopologyExplorer explorer, AssignmentMonitor assignMonitor){
+	public void autoscaleAlgorithmWithImpact(HashSet<String> ancestors, TopologyExplorer explorer, AssignmentMonitor assignMonitor){
 		for(String ancestor : ancestors){
 			ArrayList<String> children = explorer.getChildren(ancestor);
 			boolean isAncestorCritical = this.scaleOutActions.containsKey(ancestor);
