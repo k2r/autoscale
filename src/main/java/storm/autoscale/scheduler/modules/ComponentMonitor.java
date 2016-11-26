@@ -369,12 +369,12 @@ public class ComponentMonitor {
 		HashSet<String> descendants = new HashSet<>();
 		HashSet<String> checkedComponents = new HashSet<>();
 		for(String ancestor : ancestors){
-			System.out.println("Starting from ancestor component " + ancestor);
+			logger.fine("Starting from ancestor component " + ancestor);
 			ArrayList<String> children = explorer.getChildren(ancestor);
 			descendants.addAll(children);
 			boolean isAncestorCritical = this.scaleOutActions.containsKey(ancestor);
 			for(String child : children){
-				System.out.println("Checking global consistency for child component " + child);
+				logger.fine("Checking global consistency for child component " + child);
 				if(isAncestorCritical && !checkedComponents.contains(child)){
 					boolean isChildUnderUsed = this.scaleInActions.containsKey(child);
 					boolean isChildRegularUsed = this.nothingActions.containsKey(child);
@@ -384,20 +384,20 @@ public class ComponentMonitor {
 						currentDegree++;
 						this.scaleOutActions.put(child, currentDegree);
 						checkedComponents.add(child);
-						System.out.println("Component " + child + " moved from nothing to scale-out with degree "  + currentDegree);
+						logger.fine("Component " + child + " moved from nothing to scale-out with degree "  + currentDegree);
 					}else{
 						if(isChildUnderUsed){
 							this.scaleInActions.remove(child);
 							this.nothingActions.put(child, this.getCurrentDegree(child));
 							checkedComponents.add(child);
-							System.out.println("Component " + child + " moved from scale-in to nothing with degree " + this.getCurrentDegree(child));
+							logger.fine("Component " + child + " moved from scale-in to nothing with degree " + this.getCurrentDegree(child));
 						}else{
 							if(isChildCritical){
 								Integer adequateDegree = this.scaleOutActions.remove(child);
 								adequateDegree++;
 								this.scaleOutActions.put(child, adequateDegree);
 								checkedComponents.add(child);
-								System.out.println("Component " + child + " reevaluated for scale-out with new degree " + adequateDegree);
+								logger.fine("Component " + child + " reevaluated for scale-out with new degree " + adequateDegree);
 							}
 						}
 					}
@@ -409,45 +409,59 @@ public class ComponentMonitor {
 		}
 	}
 	
-	public void autoscaleAlgorithmWithImpact(HashSet<String> ancestors, TopologyExplorer explorer, AssignmentMonitor assignMonitor){
+	public void autoscaleAlgorithmWithImpact(IMetric metric, HashSet<String> ancestors, TopologyExplorer explorer, AssignmentMonitor assignMonitor){
+		HashSet<String> descendants = new HashSet<>();
+		HashSet<String> checkedComponents = new HashSet<>();
 		for(String ancestor : ancestors){
+			logger.fine("Starting from ancestor component " + ancestor);
 			ArrayList<String> children = explorer.getChildren(ancestor);
+			descendants.addAll(children);
 			boolean isAncestorCritical = this.scaleOutActions.containsKey(ancestor);
-			if(isAncestorCritical){
-				for(String child : children){
+
+			for(String child : children){
+				logger.fine("Checking global consistency for child component " + child);
+				if(isAncestorCritical && !checkedComponents.contains(child)){
 					boolean isChildUnderUsed = this.scaleInActions.containsKey(child);
 					boolean isChildRegularUsed = this.nothingActions.containsKey(child);
 					boolean isChildCritical = this.scaleOutActions.containsKey(child);
-					
-					ImpactMetric impact = new ImpactMetric(this, explorer);
-					Double impactValue = impact.compute(child);
+
+					ImpactMetric impactMetric = (ImpactMetric) metric;//could be set by any metric for global consistency
+					Double impactValue = impactMetric.compute(child);
 					Integer currentDegree = this.getCurrentDegree(child);
-					Integer impactDegree = impact.getImpactDegrees().get(child);
+					Integer impactDegree = impactMetric.getImpactDegrees().get(child);
 					Integer maxParallelism = assignMonitor.getAllSortedTasks(child).size();
-					
+
 					if(isChildRegularUsed){
 						Integer adequateDegree = Math.max(currentDegree, impactDegree);//It could also be Math.min depending on user strategy
-						adequateDegree = Math.max(maxParallelism, adequateDegree);//to ask only for feasible scale-out actions
+						adequateDegree = Math.min(maxParallelism, adequateDegree);//to ask only for feasible scale-out actions
 						if(adequateDegree > currentDegree){
 							this.nothingActions.remove(child);
 							this.scaleOutActions.put(child, adequateDegree);
+							logger.fine("Component " + child + " moved from nothing to scale-out with degree "  + adequateDegree);
+							checkedComponents.add(child);
 							this.estimatedLoads.put(child, impactValue);// to propagate the effect on next components						
 						}
 					}else{
 						if(isChildUnderUsed){
 							Integer localRequiredDegree = this.scaleInActions.get(child);
 							Integer adequateDegree = Math.max(localRequiredDegree, impactDegree);//It could also be Math.min depending on user strategy
-							adequateDegree = Math.max(maxParallelism, adequateDegree);//to ask only for feasible scale-out actions
+							adequateDegree = Math.min(maxParallelism, adequateDegree);//to ask only for feasible scale-out actions
 							if(adequateDegree < currentDegree){//the impact confirms a scale-in action, we just set the degree
 								this.scaleInActions.put(child, adequateDegree);
+								logger.fine("Component " + child + " reevaluated for scale-in with new degree " + adequateDegree);
+								checkedComponents.add(child);
 							}else{
 								if(adequateDegree == currentDegree){
 									this.scaleInActions.remove(child);
 									this.nothingActions.put(child, adequateDegree);//the impact turns a scale-in into a nothing action, so we cancel the action
+									logger.fine("Component " + child + " moved from scale-in to nothing with degree " + adequateDegree);
+									checkedComponents.add(child);
 								}else{
 									if(adequateDegree > currentDegree){
 										this.scaleInActions.remove(child);
 										this.scaleOutActions.put(child, adequateDegree);
+										logger.fine("Component " + child + " moved from scale-in to scale-out with degree " + adequateDegree);
+										checkedComponents.add(child);
 									}
 								}
 							}
@@ -455,16 +469,21 @@ public class ComponentMonitor {
 							if(isChildCritical){
 								Integer localRequiredDegree = this.scaleOutActions.get(child);
 								Integer adequateDegree = Math.max(localRequiredDegree, impactDegree);//It could also be Math.min depending on user strategy
-								adequateDegree = Math.max(maxParallelism, adequateDegree);//to ask only for feasible scale-out actions
+								adequateDegree = Math.min(maxParallelism, adequateDegree);//to ask only for feasible scale-out actions
 								if(adequateDegree > localRequiredDegree){
 									this.scaleOutActions.put(child, adequateDegree);//considering the impact confirms the scale-out and we consider a max strategy all we need is to now if we have to revise the degree
+									logger.fine("Component " + child + " reevaluated for scale-out with new degree " + adequateDegree);
+									checkedComponents.add(child);
 								}
 							}
 						}
 					}
-					
+
 				}
 			}
+		}
+		if(!descendants.isEmpty()){
+			autoscaleAlgorithmWithImpact(metric, descendants, explorer, assignMonitor);
 		}
 	}
 	

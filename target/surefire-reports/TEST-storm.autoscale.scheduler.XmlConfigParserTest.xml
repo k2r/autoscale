@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuite tests="9" failures="0" name="storm.autoscale.scheduler.RegressionToolsTest" time="0.001" errors="0" skipped="0">
+<testsuite tests="11" failures="0" name="storm.autoscale.scheduler.XmlConfigParserTest" time="0.1" errors="0" skipped="0">
   <properties>
     <property name="java.runtime.name" value="Java(TM) SE Runtime Environment"/>
     <property name="sun.boot.library.path" value="C:\java\jre\bin"/>
@@ -63,13 +63,15 @@
     <property name="sun.desktop" value="windows"/>
     <property name="sun.cpu.isalist" value="amd64"/>
   </properties>
-  <testcase classname="storm.autoscale.scheduler.RegressionToolsTest" name="testSumProdXYCoordinates" time="0"/>
-  <testcase classname="storm.autoscale.scheduler.RegressionToolsTest" name="testSumYCoordinate" time="0"/>
-  <testcase classname="storm.autoscale.scheduler.RegressionToolsTest" name="testLinearRegressionCoeff" time="0"/>
-  <testcase classname="storm.autoscale.scheduler.RegressionToolsTest" name="testSumSqXCoordinates" time="0.001"/>
-  <testcase classname="storm.autoscale.scheduler.RegressionToolsTest" name="testAvgYCoordinate" time="0"/>
-  <testcase classname="storm.autoscale.scheduler.RegressionToolsTest" name="testAvgXCoordinate" time="0"/>
-  <testcase classname="storm.autoscale.scheduler.RegressionToolsTest" name="testSumXCoordinate" time="0"/>
-  <testcase classname="storm.autoscale.scheduler.RegressionToolsTest" name="testLinearRegressionOffset" time="0"/>
-  <testcase classname="storm.autoscale.scheduler.RegressionToolsTest" name="testNbPoints" time="0"/>
+  <testcase classname="storm.autoscale.scheduler.XmlConfigParserTest" name="testGetDbPassword" time="0.032"/>
+  <testcase classname="storm.autoscale.scheduler.XmlConfigParserTest" name="testGetHighActivityThreshold" time="0.007"/>
+  <testcase classname="storm.autoscale.scheduler.XmlConfigParserTest" name="testGetSlopeThreshold" time="0.007"/>
+  <testcase classname="storm.autoscale.scheduler.XmlConfigParserTest" name="testGetLowActivityThreshold" time="0.009"/>
+  <testcase classname="storm.autoscale.scheduler.XmlConfigParserTest" name="testGetWindowSize" time="0.006"/>
+  <testcase classname="storm.autoscale.scheduler.XmlConfigParserTest" name="testGetStabilizationCoeff" time="0.006"/>
+  <testcase classname="storm.autoscale.scheduler.XmlConfigParserTest" name="testGetMonitoringFrequency" time="0.007"/>
+  <testcase classname="storm.autoscale.scheduler.XmlConfigParserTest" name="testGetDbHost" time="0.006"/>
+  <testcase classname="storm.autoscale.scheduler.XmlConfigParserTest" name="testGetDbName" time="0.006"/>
+  <testcase classname="storm.autoscale.scheduler.XmlConfigParserTest" name="testGetDbUser" time="0.007"/>
+  <testcase classname="storm.autoscale.scheduler.XmlConfigParserTest" name="testGetFilename" time="0.007"/>
 </testsuite>

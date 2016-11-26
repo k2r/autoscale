@@ -23,6 +23,7 @@ import storm.autoscale.scheduler.actions.ScaleOutAction;
 import storm.autoscale.scheduler.config.XmlConfigParser;
 import storm.autoscale.scheduler.metrics.ActivityMetric;
 import storm.autoscale.scheduler.metrics.IMetric;
+import storm.autoscale.scheduler.metrics.ImpactMetric;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.ComponentMonitor;
 import storm.autoscale.scheduler.modules.StatStorageManager;
@@ -54,7 +55,7 @@ public class AutoscaleSchedulerImpact implements IScheduler {
 		this.nimbusHost = (String) conf.get("nimbus.host");
 		this.nimbusPort = (Integer) conf.get("nimbus.thrift.port");
 		try {
-			this.parser = new XmlConfigParser("autoscale_parameters.xml");
+			this.parser = new XmlConfigParser("conf/autoscale_parameters.xml");
 			this.parser.initParameters();
 		} catch (ParserConfigurationException | SAXException | IOException e) {
 			logger.severe("Unable to load the configuration file for AUTOSCALE because " + e);
@@ -96,7 +97,8 @@ public class AutoscaleSchedulerImpact implements IScheduler {
 					this.compMonitor.buildDegreeMap(assignMonitor);
 					IMetric activityMetric = new ActivityMetric(this.compMonitor, this.explorer);
 					this.compMonitor.buildActionGraph(activityMetric, assignMonitor);
-					this.compMonitor.autoscaleAlgorithmWithImpact(explorer.getAncestors(), explorer, assignMonitor);
+					IMetric impactMetric = new ImpactMetric(this.compMonitor, this.explorer);
+					this.compMonitor.autoscaleAlgorithmWithImpact(impactMetric, this.explorer.getAncestors(), this.explorer, this.assignMonitor);
 
 					if(this.compMonitor.getScaleOutActions().isEmpty()){
 						logger.fine("No component to scale out!");

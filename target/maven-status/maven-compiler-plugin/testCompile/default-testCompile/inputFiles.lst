@@ -3,5 +3,7 @@ C:\These\D3\Depots\storm-scheduler\src\test\java\storm\autoscale\scheduler\Regre
 C:\These\D3\Depots\storm-scheduler\src\test\java\storm\autoscale\scheduler\ComponentMonitorTest.java
 C:\These\D3\Depots\storm-scheduler\src\test\java\storm\autoscale\scheduler\ActivityMetricTest.java
 C:\These\D3\Depots\storm-scheduler\src\test\java\storm\autoscale\scheduler\ComponentWindowedStatsTest.java
+C:\These\D3\Depots\storm-scheduler\src\test\java\storm\autoscale\scheduler\ImpactMetricTest.java
 C:\These\D3\Depots\storm-scheduler\src\test\java\storm\autoscale\scheduler\StatStorageManagerTest.java
+C:\These\D3\Depots\storm-scheduler\src\test\java\storm\autoscale\scheduler\XmlConfigParserTest.java
 C:\These\D3\Depots\storm-scheduler\src\test\java\storm\autoscale\scheduler\TopologyExplorerTest.java

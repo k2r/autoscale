@@ -59,7 +59,7 @@ public class AutoscaleScheduler implements IScheduler {
 		this.nimbusHost = (String) conf.get("nimbus.host");
 		this.nimbusPort = (Integer) conf.get("nimbus.thrift.port");
 		try {
-			this.parser = new XmlConfigParser("autoscale_parameters.xml");
+			this.parser = new XmlConfigParser("conf/autoscale_parameters.xml");
 			this.parser.initParameters();
 		} catch (ParserConfigurationException | SAXException | IOException e) {
 			logger.severe("Unable to load the configuration file for AUTOSCALE because " + e);

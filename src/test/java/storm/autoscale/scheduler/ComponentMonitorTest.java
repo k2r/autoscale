@@ -3,19 +3,15 @@
  */
 package storm.autoscale.scheduler;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-
-import javax.xml.parsers.ParserConfigurationException;
-
 import org.mockito.Mockito;
-import org.xml.sax.SAXException;
 import junit.framework.TestCase;
 import storm.autoscale.scheduler.config.XmlConfigParser;
 import storm.autoscale.scheduler.metrics.ActivityMetric;
+import storm.autoscale.scheduler.metrics.ImpactMetric;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.ComponentMonitor;
 import storm.autoscale.scheduler.modules.StatStorageManager;
@@ -60,13 +56,10 @@ public class ComponentMonitorTest extends TestCase {
 		
 		ComponentWindowedStats cws1 = new ComponentWindowedStats("component1", inputRecords1, null, null, null, null);
 		ComponentWindowedStats cws2 = new ComponentWindowedStats("component2", inputRecords2, null, null, null, null);
-		XmlConfigParser parser = null;
-		try {
-			 parser = new XmlConfigParser("autoscale_parameters.xml");
-			 parser.initParameters();
-		} catch (ParserConfigurationException | SAXException | IOException e) {
-			e.printStackTrace();
-		}
+		
+		XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
+		Mockito.when(parser.getSlopeThreshold()).thenReturn(0.1);
+		
 		ComponentMonitor cm = new ComponentMonitor(parser, null, null);
 		cm.updateStats(cws1.getId(), cws1);
 		cm.updateStats(cws2.getId(), cws2);
@@ -106,13 +99,9 @@ public class ComponentMonitorTest extends TestCase {
 		ComponentWindowedStats cws1 = new ComponentWindowedStats("component1", inputRecords1, null, null, null, null);
 		ComponentWindowedStats cws2 = new ComponentWindowedStats("component2", inputRecords2, null, null, null, null);
 		
-		XmlConfigParser parser = null;
-		try {
-			 parser = new XmlConfigParser("autoscale_parameters.xml");
-			 parser.initParameters();
-		} catch (ParserConfigurationException | SAXException | IOException e) {
-			e.printStackTrace();
-		}
+		XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
+		Mockito.when(parser.getSlopeThreshold()).thenReturn(0.1);
+		
 		ComponentMonitor cm = new ComponentMonitor(parser, null, null);
 		cm.updateStats(cws1.getId(), cws1);
 		cm.updateStats(cws2.getId(), cws2);
@@ -152,13 +141,9 @@ public class ComponentMonitorTest extends TestCase {
 		ComponentWindowedStats cws1 = new ComponentWindowedStats("component1", inputRecords1, null, null, null, null);
 		ComponentWindowedStats cws2 = new ComponentWindowedStats("component2", inputRecords2, null, null, null, null);
 		
-		XmlConfigParser parser = null;
-		try {
-			 parser = new XmlConfigParser("autoscale_parameters.xml");
-			 parser.initParameters();
-		} catch (ParserConfigurationException | SAXException | IOException e) {
-			e.printStackTrace();
-		}
+		XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
+		Mockito.when(parser.getSlopeThreshold()).thenReturn(0.1);
+		 
 		ComponentMonitor cm = new ComponentMonitor(parser, null, null);
 		cm.updateStats(cws1.getId(), cws1);
 		cm.updateStats(cws2.getId(), cws2);
@@ -403,5 +388,108 @@ public class ComponentMonitorTest extends TestCase {
 		assertEquals(expectedNothing, cm.getNothingActions());
 		assertEquals(expectedScaleIn, cm.getScaleInActions());
 		assertEquals(expectedScaleOut, cm.getScaleOutActions());
+	}
+	
+	/**
+	 * Test method for {@link storm.autoscale.scheduler.modules.ComponentMonitor#autoscaleAlgorithmWithImpact()}.
+	 */
+	public void testAutoscaleAlgorithmWithImpact(){
+		XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
+		
+		TopologyExplorer explorer = Mockito.mock(TopologyExplorer.class);
+		ArrayList<String> childrenA = new ArrayList<>();
+		childrenA.add("B");
+		childrenA.add("C");
+		ArrayList<String> childrenB = new ArrayList<>();
+		childrenB.add("D");
+		childrenB.add("E");
+		ArrayList<String> childrenC = new ArrayList<>();
+		childrenB.add("E");
+		ArrayList<String> childrenE = new ArrayList<>();
+		childrenB.add("F");
+		
+		Mockito.when(explorer.getChildren("A")).thenReturn(childrenA);
+		Mockito.when(explorer.getChildren("B")).thenReturn(childrenB);
+		Mockito.when(explorer.getChildren("C")).thenReturn(childrenC);
+		Mockito.when(explorer.getChildren("D")).thenReturn(new ArrayList<String>());
+		Mockito.when(explorer.getChildren("E")).thenReturn(childrenE);
+		Mockito.when(explorer.getChildren("F")).thenReturn(new ArrayList<String>());
+		
+		HashSet<String> ancestors = new HashSet<>();
+		ancestors.add("A");
+		
+		HashMap<String, Integer> degrees = new HashMap<>();
+		degrees.put("A", 4);
+		degrees.put("B", 4);
+		degrees.put("C", 4);
+		degrees.put("D", 4);
+		degrees.put("E", 4);
+		degrees.put("F", 4);
+		degrees.put("G", 4);
+		
+		HashMap<String, Integer> nothingActions = new HashMap<>();
+		HashMap<String, Integer> scaleInActions = new HashMap<>();
+		HashMap<String, Integer> scaleOutActions = new HashMap<>();
+
+		nothingActions.put("A", 4);
+		nothingActions.put("C", 4);
+		nothingActions.put("F", 4);
+		scaleInActions.put("D", 1);
+		scaleOutActions.put("B", 8);
+		scaleOutActions.put("E", 6);
+		
+		ArrayList<Integer> tasks = new ArrayList<>();
+		for(int i = 0; i < 10; i++){
+			tasks.add(i);
+		}
+		
+		AssignmentMonitor assignMonitor = Mockito.mock(AssignmentMonitor.class);
+		Mockito.when(assignMonitor.getAllSortedTasks("A")).thenReturn(tasks);
+		Mockito.when(assignMonitor.getAllSortedTasks("B")).thenReturn(tasks);
+		Mockito.when(assignMonitor.getAllSortedTasks("C")).thenReturn(tasks);
+		Mockito.when(assignMonitor.getAllSortedTasks("D")).thenReturn(tasks);
+		Mockito.when(assignMonitor.getAllSortedTasks("E")).thenReturn(tasks);
+		Mockito.when(assignMonitor.getAllSortedTasks("F")).thenReturn(tasks);
+		
+		HashMap<String, Integer> impDegrees = new HashMap<>();
+		impDegrees.put("A", 1);
+		impDegrees.put("B", 3);
+		impDegrees.put("C", 3);
+		impDegrees.put("D", 4);
+		impDegrees.put("E", 7);
+		impDegrees.put("F", 4);
+	
+		ImpactMetric impact = Mockito.mock(ImpactMetric.class);
+		Mockito.when(impact.getImpactDegrees()).thenReturn(impDegrees);
+		Mockito.when(impact.compute("A")).thenReturn(0.0);
+		Mockito.when(impact.compute("B")).thenReturn(70.0);
+		Mockito.when(impact.compute("C")).thenReturn(70.0);
+		Mockito.when(impact.compute("D")).thenReturn(90.0);
+		Mockito.when(impact.compute("E")).thenReturn(160.0);
+		Mockito.when(impact.compute("F")).thenReturn(84.0);
+		
+		ComponentMonitor cm = new ComponentMonitor(parser, null, null);
+		cm.setParser(parser);
+		cm.setDegrees(degrees);
+		cm.setNothingActions(nothingActions);
+		cm.setScaleInActions(scaleInActions);
+		cm.setScaleOutActions(scaleOutActions);
+		
+		cm.autoscaleAlgorithmWithImpact(impact, ancestors, explorer, assignMonitor);
+		HashMap<String, Integer> expectedNothing = new HashMap<>();
+		HashMap<String, Integer> expectedScaleIn = new HashMap<>();
+		HashMap<String, Integer> expectedScaleOut = new HashMap<>();
+		expectedNothing.put("A", 4);
+		expectedNothing.put("C", 4);
+		expectedNothing.put("D", 4);
+		expectedNothing.put("F", 4);
+		expectedScaleOut.put("B", 8);
+		expectedScaleOut.put("E", 7);
+		
+		
+		assertEquals(expectedNothing, cm.getNothingActions());
+		assertEquals(expectedScaleIn, cm.getScaleInActions());
+		assertEquals(expectedScaleOut, cm.getScaleOutActions());
+		
 	}
 }
