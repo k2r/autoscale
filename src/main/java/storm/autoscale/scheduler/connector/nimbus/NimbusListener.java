@@ -3,12 +3,9 @@
  */
 package storm.autoscale.scheduler.connector.nimbus;
 
-
+import org.apache.storm.thrift.transport.*;
 import org.apache.storm.generated.Nimbus;
 import org.apache.storm.thrift.protocol.TBinaryProtocol;
-import org.apache.storm.thrift.protocol.TProtocol;
-import org.apache.storm.thrift.transport.TFramedTransport;
-import org.apache.storm.thrift.transport.TSocket;
 
 /**
  * @author Roland
@@ -29,7 +26,8 @@ public class NimbusListener {
 		this.tsocket = new TSocket(nimbusHost, nimbusPort);
 		this.tTransport = new TFramedTransport(tsocket);
 		this.tBinaryProtocol = new TBinaryProtocol(tTransport);
-		this.client = new Nimbus.Client((TProtocol) this.tBinaryProtocol); 
+		this.client = new Nimbus.Client(this.tBinaryProtocol);
+		
 	}
 	
 	public static NimbusListener getInstance(String nimbusHost, Integer nimbusPort){

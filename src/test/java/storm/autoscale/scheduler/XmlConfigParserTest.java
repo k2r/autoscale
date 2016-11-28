@@ -30,7 +30,33 @@ public class XmlConfigParserTest extends TestCase {
 		String expected = "conf/autoscale_parameters.xml";
 		assertEquals(expected, parser.getFilename());
 	}
+	
+	/**
+	 * Test method for {@link storm.autoscale.scheduler.config.XmlConfigParser#getNimbusHost()}.
+	 * @throws IOException 
+	 * @throws SAXException 
+	 * @throws ParserConfigurationException 
+	 */
+	public void testGetNimbusHost() throws ParserConfigurationException, SAXException, IOException {
+		XmlConfigParser parser = new XmlConfigParser("conf/autoscale_parameters.xml");
+		parser.initParameters();
+		String expected = "roland-spg";
+		assertEquals(expected, parser.getNimbusHost());
+	}
 
+	/**
+	 * Test method for {@link storm.autoscale.scheduler.config.XmlConfigParser#getNimbusPort()}.
+	 * @throws IOException 
+	 * @throws SAXException 
+	 * @throws ParserConfigurationException 
+	 */
+	public void testGetNimbusPort() throws ParserConfigurationException, SAXException, IOException {
+		XmlConfigParser parser = new XmlConfigParser("conf/autoscale_parameters.xml");
+		parser.initParameters();
+		Integer expected = 6627;
+		assertEquals(expected, parser.getNimbusPort(), 0);
+	}
+	
 	/**
 	 * Test method for {@link storm.autoscale.scheduler.config.XmlConfigParser#getMonitoringFrequency()}.
 	 * @throws IOException 

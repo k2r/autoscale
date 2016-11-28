@@ -10,6 +10,8 @@ package storm.autoscale.scheduler.config;
 public enum ParameterNames {
 	
 	PARAM("parameters"),
+	NIMBHOST("nimbus_host"),
+	NIMBPORT("nimbus_port"),
 	MONITFREQ("monitoring_frequency"),
 	WINSIZE("window_size"),
 	LOWACT("low_activity_threshold"),

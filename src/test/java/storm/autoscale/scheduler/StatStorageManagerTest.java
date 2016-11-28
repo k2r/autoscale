@@ -3,16 +3,13 @@
  */
 package storm.autoscale.scheduler;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import javax.xml.parsers.ParserConfigurationException;
-
-import org.xml.sax.SAXException;
+import org.mockito.Mockito;
 
 import junit.framework.TestCase;
 import storm.autoscale.scheduler.config.XmlConfigParser;
@@ -31,8 +28,12 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testStoreSpoutExecutorStats() {
 		try {
-			XmlConfigParser parser = new XmlConfigParser("autoscale_parameters.xml");
-			parser.initParameters();
+			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
+			Mockito.when(parser.getDbHost()).thenReturn("localhost");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale");
+			Mockito.when(parser.getDbUser()).thenReturn("root");
+			Mockito.when(parser.getDbPassword()).thenReturn("");
+			
 			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			Integer timestamp = 0;
@@ -101,8 +102,8 @@ public class StatStorageManagerTest extends TestCase {
 			
 			String testCleanQuery = "DELETE FROM all_time_spouts_stats";
 			connector.executeUpdate(testCleanQuery);
-		} catch (ClassNotFoundException | SQLException | ParserConfigurationException | SAXException | IOException e) {
-			e.printStackTrace();
+		} catch (ClassNotFoundException | SQLException e) {
+			fail("StatStorageManager module has failed to store and retrieve spouts logs has failed because of " + e);
 		}
 	}
 
@@ -111,8 +112,12 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testStoreBoltExecutorStats() {
 		try {
-			XmlConfigParser parser = new XmlConfigParser("autoscale_parameters.xml");
-			parser.initParameters();
+			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
+			Mockito.when(parser.getDbHost()).thenReturn("localhost");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale");
+			Mockito.when(parser.getDbUser()).thenReturn("root");
+			Mockito.when(parser.getDbPassword()).thenReturn("");
+			
 			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			Integer timestamp = 0;
@@ -177,8 +182,8 @@ public class StatStorageManagerTest extends TestCase {
 
 			String testCleanQuery = "DELETE FROM all_time_bolts_stats";
 			connector.executeUpdate(testCleanQuery);
-		} catch (ClassNotFoundException | SQLException | ParserConfigurationException | SAXException | IOException e) {
-			e.printStackTrace();
+		} catch (ClassNotFoundException | SQLException e) {
+			fail("StatStorageManager module has failed to store and retrieve bolts logs has failed because of " + e);
 		}
 	}
 
@@ -187,8 +192,12 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testStoreActivityInfo() {
 		try {
-			XmlConfigParser parser = new XmlConfigParser("autoscale_parameters.xml");
-			parser.initParameters();
+			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
+			Mockito.when(parser.getDbHost()).thenReturn("localhost");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale");
+			Mockito.when(parser.getDbUser()).thenReturn("root");
+			Mockito.when(parser.getDbPassword()).thenReturn("");
+			
 			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			Integer timestamp = 1;
@@ -228,8 +237,8 @@ public class StatStorageManagerTest extends TestCase {
 			
 			String testCleanQuery = "DELETE FROM operators_activity";
 			connector.executeUpdate(testCleanQuery);
-		} catch (ClassNotFoundException | SQLException | ParserConfigurationException | SAXException | IOException e) {
-			e.printStackTrace();
+		} catch (ClassNotFoundException | SQLException e) {
+			fail("StatStorageManager module has failed to retrieve activity level logs has failed because of " + e);
 		}
 	}
 	
@@ -238,8 +247,12 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testGetWorkers() {
 		try {
-			XmlConfigParser parser = new XmlConfigParser("autoscale_parameters.xml");
-			parser.initParameters();
+			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
+			Mockito.when(parser.getDbHost()).thenReturn("localhost");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale");
+			Mockito.when(parser.getDbUser()).thenReturn("root");
+			Mockito.when(parser.getDbPassword()).thenReturn("");
+			
 			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			Integer timestamp1 = 1;
@@ -290,8 +303,8 @@ public class StatStorageManagerTest extends TestCase {
 			
 			String testCleanQuery = "DELETE FROM all_time_bolts_stats";
 			connector.executeUpdate(testCleanQuery);
-		} catch (ClassNotFoundException | SQLException | ParserConfigurationException | SAXException | IOException e) {
-			e.printStackTrace();
+		} catch (ClassNotFoundException | SQLException e) {
+			fail("StatStorageManager module has failed to retrieve worker logs has failed because of " + e);
 		}
 	}
 
@@ -300,8 +313,12 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testGetExecuted() {
 		try {
-			XmlConfigParser parser = new XmlConfigParser("autoscale_parameters.xml");
-			parser.initParameters();
+			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
+			Mockito.when(parser.getDbHost()).thenReturn("localhost");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale");
+			Mockito.when(parser.getDbUser()).thenReturn("root");
+			Mockito.when(parser.getDbPassword()).thenReturn("");
+			
 			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			Integer timestamp1 = 1;
@@ -352,8 +369,8 @@ public class StatStorageManagerTest extends TestCase {
 			
 			String testCleanQuery = "DELETE FROM all_time_bolts_stats";
 			connector.executeUpdate(testCleanQuery);
-		} catch (ClassNotFoundException | SQLException | ParserConfigurationException | SAXException | IOException e) {
-			e.printStackTrace();
+		} catch (ClassNotFoundException | SQLException e) {
+			fail("StatStorageManager module has failed to retrieve execution logs has failed because of " + e);
 		}
 	}
 
@@ -362,8 +379,12 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testGetOutputs() {
 		try {
-			XmlConfigParser parser = new XmlConfigParser("autoscale_parameters.xml");
-			parser.initParameters();
+			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
+			Mockito.when(parser.getDbHost()).thenReturn("localhost");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale");
+			Mockito.when(parser.getDbUser()).thenReturn("root");
+			Mockito.when(parser.getDbPassword()).thenReturn("");
+			
 			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			Integer timestamp1 = 1;
@@ -414,8 +435,8 @@ public class StatStorageManagerTest extends TestCase {
 			
 			String testCleanQuery = "DELETE FROM all_time_bolts_stats";
 			connector.executeUpdate(testCleanQuery);
-		} catch (ClassNotFoundException | SQLException | ParserConfigurationException | SAXException | IOException e) {
-			e.printStackTrace();
+		} catch (ClassNotFoundException | SQLException e) {
+			fail("StatStorageManager module has failed to retrieve emission logs has failed because of " + e);
 		}
 	}
 	
@@ -424,8 +445,12 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testGetAvgLatency() {
 		try {
-			XmlConfigParser parser = new XmlConfigParser("autoscale_parameters.xml");
-			parser.initParameters();
+			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
+			Mockito.when(parser.getDbHost()).thenReturn("localhost");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale");
+			Mockito.when(parser.getDbUser()).thenReturn("root");
+			Mockito.when(parser.getDbPassword()).thenReturn("");
+			
 			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			Integer timestamp1 = 1;
@@ -476,8 +501,8 @@ public class StatStorageManagerTest extends TestCase {
 			
 			String testCleanQuery = "DELETE FROM all_time_bolts_stats";
 			connector.executeUpdate(testCleanQuery);
-		} catch (ClassNotFoundException | SQLException | ParserConfigurationException | SAXException | IOException e) {
-			e.printStackTrace();
+		} catch (ClassNotFoundException | SQLException e) {
+			fail("StatStorageManager module has failed to retrieve component latency logs has failed because of " + e);
 		}
 	}
 
@@ -486,8 +511,12 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testGetSelectivity() {
 		try {
-			XmlConfigParser parser = new XmlConfigParser("autoscale_parameters.xml");
-			parser.initParameters();
+			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
+			Mockito.when(parser.getDbHost()).thenReturn("localhost");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale");
+			Mockito.when(parser.getDbUser()).thenReturn("root");
+			Mockito.when(parser.getDbPassword()).thenReturn("");
+			
 			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			Integer timestamp1 = 1;
@@ -538,8 +567,8 @@ public class StatStorageManagerTest extends TestCase {
 			
 			String testCleanQuery = "DELETE FROM all_time_bolts_stats";
 			connector.executeUpdate(testCleanQuery);
-		} catch (ClassNotFoundException | SQLException | ParserConfigurationException | SAXException | IOException e) {
-			e.printStackTrace();
+		} catch (ClassNotFoundException | SQLException e) {
+			fail("StatStorageManager module has failed to retrieve selectivity logs has failed because of " + e);
 		}
 	}
 
@@ -548,8 +577,12 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testGetTopologyThroughput() {
 		try {
-			XmlConfigParser parser = new XmlConfigParser("autoscale_parameters.xml");
-			parser.initParameters();
+			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
+			Mockito.when(parser.getDbHost()).thenReturn("localhost");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale");
+			Mockito.when(parser.getDbUser()).thenReturn("root");
+			Mockito.when(parser.getDbPassword()).thenReturn("");
+			
 			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			Integer timestamp1 = 1;
@@ -603,8 +636,8 @@ public class StatStorageManagerTest extends TestCase {
 			
 			String testCleanQuery = "DELETE FROM all_time_spouts_stats";
 			connector.executeUpdate(testCleanQuery);
-		} catch (ClassNotFoundException | SQLException | ParserConfigurationException | SAXException | IOException e) {
-			e.printStackTrace();
+		} catch (ClassNotFoundException | SQLException e) {
+			fail("StatStorageManager module has failed to retrieve topology throughput logs has failed because of " + e);
 		}
 	}
 
@@ -613,8 +646,12 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testGetTopologyLosses() {
 		try {
-			XmlConfigParser parser = new XmlConfigParser("autoscale_parameters.xml");
-			parser.initParameters();
+			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
+			Mockito.when(parser.getDbHost()).thenReturn("localhost");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale");
+			Mockito.when(parser.getDbUser()).thenReturn("root");
+			Mockito.when(parser.getDbPassword()).thenReturn("");
+			
 			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			Integer timestamp1 = 1;
@@ -668,8 +705,8 @@ public class StatStorageManagerTest extends TestCase {
 			
 			String testCleanQuery = "DELETE FROM all_time_spouts_stats";
 			connector.executeUpdate(testCleanQuery);
-		} catch (ClassNotFoundException | SQLException | ParserConfigurationException | SAXException | IOException e) {
-			e.printStackTrace();
+		} catch (ClassNotFoundException | SQLException e) {
+			fail("StatStorageManager module has failed to retrieve failure logs has failed because of " + e);
 		}
 	}
 
@@ -678,8 +715,12 @@ public class StatStorageManagerTest extends TestCase {
 	 */
 	public void testGetTopologyAvgLatency() {
 		try {
-			XmlConfigParser parser = new XmlConfigParser("autoscale_parameters.xml");
-			parser.initParameters();
+			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
+			Mockito.when(parser.getDbHost()).thenReturn("localhost");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale");
+			Mockito.when(parser.getDbUser()).thenReturn("root");
+			Mockito.when(parser.getDbPassword()).thenReturn("");
+			
 			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			Integer timestamp1 = 1;
@@ -733,15 +774,19 @@ public class StatStorageManagerTest extends TestCase {
 			
 			String testCleanQuery = "DELETE FROM all_time_spouts_stats";
 			connector.executeUpdate(testCleanQuery);
-		} catch (ClassNotFoundException | SQLException | ParserConfigurationException | SAXException | IOException e) {
-			e.printStackTrace();
+		} catch (ClassNotFoundException | SQLException e) {
+			fail("StatStorageManager module has failed to retrieve topology latency logs has failed because of " + e);
 		}
 	}
 
 	public void testGetFormerValue(){
 		try {
-			XmlConfigParser parser = new XmlConfigParser("autoscale_parameters.xml");
-			parser.initParameters();
+			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
+			Mockito.when(parser.getDbHost()).thenReturn("localhost");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale");
+			Mockito.when(parser.getDbUser()).thenReturn("root");
+			Mockito.when(parser.getDbPassword()).thenReturn("");
+			
 			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			Integer timestamp1 = 1;
@@ -799,8 +844,8 @@ public class StatStorageManagerTest extends TestCase {
 
 			String testCleanQuery = "DELETE FROM all_time_spouts_stats";
 			connector.executeUpdate(testCleanQuery);
-		} catch (ClassNotFoundException | SQLException | ParserConfigurationException | SAXException | IOException e) {
-			e.printStackTrace();
+		} catch (ClassNotFoundException | SQLException e) {
+			fail("StatStorageManager module has failed to retrieve historical logs has failed because of " + e);
 		}
 	}
 }

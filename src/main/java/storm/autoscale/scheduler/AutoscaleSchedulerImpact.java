@@ -34,29 +34,34 @@ import storm.autoscale.scheduler.modules.TopologyExplorer;
  *
  */
 public class AutoscaleSchedulerImpact implements IScheduler {
-
+	
+	@SuppressWarnings("rawtypes")
+	Map conf;
 	private ComponentMonitor compMonitor;
 	private AssignmentMonitor assignMonitor;
 	private TopologyExplorer explorer;
 	private String nimbusHost;
 	private Integer nimbusPort;
 	private XmlConfigParser parser;
+	
 	private static Logger logger = Logger.getLogger("AutoscaleSchedulerImpact");
 	
 	public AutoscaleSchedulerImpact() {
 		logger.info("The auto-scaling scheduler for Storm is starting...");
 	}
+	
 	/* (non-Javadoc)
 	 * @see org.apache.storm.scheduler.IScheduler#prepare(java.util.Map)
 	 */
 	@SuppressWarnings("rawtypes")
 	@Override
 	public void prepare(Map conf) {
-		this.nimbusHost = (String) conf.get("nimbus.host");
-		this.nimbusPort = (Integer) conf.get("nimbus.thrift.port");
+		this.conf = conf;
 		try {
 			this.parser = new XmlConfigParser("conf/autoscale_parameters.xml");
 			this.parser.initParameters();
+			this.nimbusHost = parser.getNimbusHost();
+			this.nimbusPort = parser.getNimbusPort();
 		} catch (ParserConfigurationException | SAXException | IOException e) {
 			logger.severe("Unable to load the configuration file for AUTOSCALE because " + e);
 		}
@@ -124,11 +129,11 @@ public class AutoscaleSchedulerImpact implements IScheduler {
 						IAction action = new ScaleInAction(this.compMonitor, this.explorer, this.assignMonitor, this.nimbusHost, this.nimbusPort);
 					}
 				}
-			}
-			/*Then we let the default scheduler balance the load*/
-			ResourceAwareScheduler scheduler = new ResourceAwareScheduler();
-			scheduler.schedule(topologies, cluster);
+			}			
 		}
+		/*Then we let the resource aware scheduler distribute the load*/
+		ResourceAwareScheduler scheduler = new ResourceAwareScheduler();
+		scheduler.prepare(this.conf);
+		scheduler.schedule(topologies, cluster);
 	}
-
 }

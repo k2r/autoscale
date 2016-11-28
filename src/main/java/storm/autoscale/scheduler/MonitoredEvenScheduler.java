@@ -49,11 +49,11 @@ public class MonitoredEvenScheduler implements IScheduler{
 	@SuppressWarnings("rawtypes")
 	@Override
 	public void prepare(Map conf) {
-		this.nimbusHost = (String) conf.get("nimbus.host");
-		this.nimbusPort = (Integer) conf.get("nimbus.thrift.port");
 		try {
 			this.parser = new XmlConfigParser("conf/autoscale_parameters.xml");
 			this.parser.initParameters();
+			this.nimbusHost = parser.getNimbusHost();
+			this.nimbusPort = parser.getNimbusPort();
 		} catch (ParserConfigurationException | SAXException | IOException e) {
 			logger.severe("Unable to load the configuration file for AUTOSCALE because " + e);
 		}

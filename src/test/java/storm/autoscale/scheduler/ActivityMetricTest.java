@@ -372,16 +372,16 @@ public class ActivityMetricTest extends TestCase {
 		Mockito.when(stats9.getExecutedRecords()).thenReturn(executedRecordsIncr);
 		Mockito.when(stats9.getAvgLatencyRecords()).thenReturn(latencyRecordsIncr);
 		
-		HashMap<String, Long> remainingTuples = new HashMap<>();
-		remainingTuples.put("component1", 0L);
-		remainingTuples.put("component2", 0L);
-		remainingTuples.put("component3", 0L);
-		remainingTuples.put("component4", 0L);
-		remainingTuples.put("component5", 0L);
-		remainingTuples.put("component6", 0L);
-		remainingTuples.put("component7", 0L);
-		remainingTuples.put("component8", 0L);
-		remainingTuples.put("component9", 0L);
+		HashMap<String, Long> pendingTuples = new HashMap<>();
+		pendingTuples.put("component1", 0L);
+		pendingTuples.put("component2", 0L);
+		pendingTuples.put("component3", 0L);
+		pendingTuples.put("component4", 0L);
+		pendingTuples.put("component5", 0L);
+		pendingTuples.put("component6", 0L);
+		pendingTuples.put("component7", 0L);
+		pendingTuples.put("component8", 0L);
+		pendingTuples.put("component9", 0L);
 		
 		XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
 		Mockito.when(parser.getWindowSize()).thenReturn(6);
@@ -408,7 +408,7 @@ public class ActivityMetricTest extends TestCase {
 		Mockito.when(compMonitor.getCurrentDegree("component8")).thenReturn(1);
 		Mockito.when(compMonitor.getCurrentDegree("component9")).thenReturn(1);
 		Mockito.when(compMonitor.getMonitoringFrequency()).thenReturn(1);
-		Mockito.when(compMonitor.getPendingTuples(explorer)).thenReturn(remainingTuples);
+		Mockito.when(compMonitor.getPendingTuples(explorer)).thenReturn(pendingTuples);
 		Mockito.when(compMonitor.getParser()).thenReturn(parser);
 		
 		ActivityMetric activityMetric = new ActivityMetric(compMonitor, explorer);

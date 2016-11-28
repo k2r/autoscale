@@ -26,6 +26,10 @@ public class XmlConfigParser {
 	private final DocumentBuilder builder;
 	private final Document document;
 	
+	/*Storm parameters*/
+	private String nimbusHost;
+	private Integer nimbusPort;
+	
 	/*Monitoring parameters*/
 	private Integer monitoringFrequency;
 	private Integer windowSize;
@@ -66,6 +70,34 @@ public class XmlConfigParser {
 	 */
 	public Document getDocument() {
 		return document;
+	}
+
+	/**
+	 * @return the nimbusHost
+	 */
+	public String getNimbusHost() {
+		return nimbusHost;
+	}
+
+	/**
+	 * @param nimbusHost the nimbusHost to set
+	 */
+	public void setNimbusHost(String nimbusHost) {
+		this.nimbusHost = nimbusHost;
+	}
+
+	/**
+	 * @return the nimbusPort
+	 */
+	public Integer getNimbusPort() {
+		return nimbusPort;
+	}
+
+	/**
+	 * @param nimbusPort the nimbusPort to set
+	 */
+	public void setNimbusPort(Integer nimbusPort) {
+		this.nimbusPort = nimbusPort;
 	}
 
 	/**
@@ -211,6 +243,10 @@ public class XmlConfigParser {
 	public void initParameters() {
 		Document doc = this.getDocument();
 		final Element parameters = (Element) doc.getElementsByTagName(ParameterNames.PARAM.toString()).item(0);
+		final NodeList nimbHost = parameters.getElementsByTagName(ParameterNames.NIMBHOST.toString());
+		this.setNimbusHost(nimbHost.item(0).getTextContent());
+		final NodeList nimbPort = parameters.getElementsByTagName(ParameterNames.NIMBPORT.toString());
+		this.setNimbusPort(Integer.parseInt(nimbPort.item(0).getTextContent()));
 		final NodeList monitFreq = parameters.getElementsByTagName(ParameterNames.MONITFREQ.toString());
 		this.setMonitoringFrequency(Integer.parseInt(monitFreq.item(0).getTextContent()));
 		final NodeList winSize = parameters.getElementsByTagName(ParameterNames.WINSIZE.toString());
