@@ -20,6 +20,7 @@ import org.xml.sax.SAXException;
 import storm.autoscale.scheduler.config.XmlConfigParser;
 import storm.autoscale.scheduler.metrics.ActivityMetric;
 import storm.autoscale.scheduler.metrics.IMetric;
+import storm.autoscale.scheduler.metrics.ImpactMetric;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.ComponentMonitor;
 import storm.autoscale.scheduler.modules.StatStorageManager;
@@ -31,6 +32,8 @@ import storm.autoscale.scheduler.modules.TopologyExplorer;
  */
 public class MonitoredResourceAwareScheduler implements IScheduler {
 
+	@SuppressWarnings("rawtypes")
+	Map conf;
 	private ComponentMonitor compMonitor;
 	private AssignmentMonitor assignMonitor;
 	private TopologyExplorer explorer;
@@ -49,8 +52,9 @@ public class MonitoredResourceAwareScheduler implements IScheduler {
 	@SuppressWarnings("rawtypes")
 	@Override
 	public void prepare(Map conf) {
+		this.conf = conf;
 		try {
-			this.parser = new XmlConfigParser("conf/autoscale_parameters.xml");
+			this.parser = new XmlConfigParser("./conf/autoscale_parameters.xml");
 			this.parser.initParameters();
 			this.nimbusHost = parser.getNimbusHost();
 			this.nimbusPort = parser.getNimbusPort();
@@ -87,13 +91,16 @@ public class MonitoredResourceAwareScheduler implements IScheduler {
 				this.assignMonitor.update();
 				this.compMonitor.getStatistics(explorer);
 				if(!this.compMonitor.getRegisteredComponents().isEmpty()){
+					this.compMonitor.buildDegreeMap(assignMonitor);
 					IMetric activityMetric = new ActivityMetric(this.compMonitor, this.explorer);
 					this.compMonitor.buildActionGraph(activityMetric, assignMonitor);
-					this.compMonitor.autoscaleAlgorithm(explorer.getAncestors(), explorer);			
+					IMetric impactMetric = new ImpactMetric(this.compMonitor, this.explorer);
+					this.compMonitor.autoscaleAlgorithmWithImpact(impactMetric, this.explorer.getAncestors(), this.explorer, this.assignMonitor);		
 				}
 			}
 		}
 		ResourceAwareScheduler scheduler = new ResourceAwareScheduler();
+		scheduler.prepare(this.conf);
 		scheduler.schedule(topologies, cluster);
 	}
 

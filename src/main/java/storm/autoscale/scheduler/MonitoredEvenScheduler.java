@@ -50,7 +50,7 @@ public class MonitoredEvenScheduler implements IScheduler{
 	@Override
 	public void prepare(Map conf) {
 		try {
-			this.parser = new XmlConfigParser("conf/autoscale_parameters.xml");
+			this.parser = new XmlConfigParser("./conf/autoscale_parameters.xml");
 			this.parser.initParameters();
 			this.nimbusHost = parser.getNimbusHost();
 			this.nimbusPort = parser.getNimbusPort();
@@ -84,6 +84,7 @@ public class MonitoredEvenScheduler implements IScheduler{
 				this.assignMonitor.update();
 				this.compMonitor.getStatistics(explorer);
 				if(!this.compMonitor.getRegisteredComponents().isEmpty()){
+					this.compMonitor.buildDegreeMap(assignMonitor);
 					IMetric activityMetric = new ActivityMetric(this.compMonitor, this.explorer);
 					this.compMonitor.buildActionGraph(activityMetric, assignMonitor);
 					this.compMonitor.autoscaleAlgorithm(explorer.getAncestors(), explorer);			

@@ -25,9 +25,9 @@ public class XmlConfigParserTest extends TestCase {
 	 * @throws ParserConfigurationException 
 	 */
 	public void testGetFilename() throws ParserConfigurationException, SAXException, IOException {
-		XmlConfigParser parser = new XmlConfigParser("conf/autoscale_parameters.xml");
+		XmlConfigParser parser = new XmlConfigParser("./conf/autoscale_parameters.xml");
 		parser.initParameters();
-		String expected = "conf/autoscale_parameters.xml";
+		String expected = "./conf/autoscale_parameters.xml";
 		assertEquals(expected, parser.getFilename());
 	}
 	
@@ -38,7 +38,7 @@ public class XmlConfigParserTest extends TestCase {
 	 * @throws ParserConfigurationException 
 	 */
 	public void testGetNimbusHost() throws ParserConfigurationException, SAXException, IOException {
-		XmlConfigParser parser = new XmlConfigParser("conf/autoscale_parameters.xml");
+		XmlConfigParser parser = new XmlConfigParser("./conf/autoscale_parameters.xml");
 		parser.initParameters();
 		String expected = "roland-spg";
 		assertEquals(expected, parser.getNimbusHost());
@@ -51,7 +51,7 @@ public class XmlConfigParserTest extends TestCase {
 	 * @throws ParserConfigurationException 
 	 */
 	public void testGetNimbusPort() throws ParserConfigurationException, SAXException, IOException {
-		XmlConfigParser parser = new XmlConfigParser("conf/autoscale_parameters.xml");
+		XmlConfigParser parser = new XmlConfigParser("./conf/autoscale_parameters.xml");
 		parser.initParameters();
 		Integer expected = 6627;
 		assertEquals(expected, parser.getNimbusPort(), 0);
@@ -64,7 +64,7 @@ public class XmlConfigParserTest extends TestCase {
 	 * @throws ParserConfigurationException 
 	 */
 	public void testGetMonitoringFrequency() throws ParserConfigurationException, SAXException, IOException {
-		XmlConfigParser parser = new XmlConfigParser("conf/autoscale_parameters.xml");
+		XmlConfigParser parser = new XmlConfigParser("./conf/autoscale_parameters.xml");
 		parser.initParameters();
 		Integer expected = 10;
 		assertEquals(expected, parser.getMonitoringFrequency(), 0);
@@ -77,7 +77,7 @@ public class XmlConfigParserTest extends TestCase {
 	 * @throws ParserConfigurationException 
 	 */
 	public void testGetWindowSize() throws ParserConfigurationException, SAXException, IOException {
-		XmlConfigParser parser = new XmlConfigParser("conf/autoscale_parameters.xml");
+		XmlConfigParser parser = new XmlConfigParser("./conf/autoscale_parameters.xml");
 		parser.initParameters();
 		Integer expected = 60;
 		assertEquals(expected, parser.getWindowSize(), 0);
@@ -90,7 +90,7 @@ public class XmlConfigParserTest extends TestCase {
 	 * @throws ParserConfigurationException 
 	 */
 	public void testGetLowActivityThreshold() throws ParserConfigurationException, SAXException, IOException {
-		XmlConfigParser parser = new XmlConfigParser("conf/autoscale_parameters.xml");
+		XmlConfigParser parser = new XmlConfigParser("./conf/autoscale_parameters.xml");
 		parser.initParameters();
 		Double expected = 0.4;
 		assertEquals(expected, parser.getLowActivityThreshold(), 0);
@@ -103,7 +103,7 @@ public class XmlConfigParserTest extends TestCase {
 	 * @throws ParserConfigurationException 
 	 */
 	public void testGetHighActivityThreshold() throws ParserConfigurationException, SAXException, IOException {
-		XmlConfigParser parser = new XmlConfigParser("conf/autoscale_parameters.xml");
+		XmlConfigParser parser = new XmlConfigParser("./conf/autoscale_parameters.xml");
 		parser.initParameters();
 		Double expected = 0.8;
 		assertEquals(expected, parser.getHighActivityThreshold(), 0);
@@ -116,7 +116,7 @@ public class XmlConfigParserTest extends TestCase {
 	 * @throws ParserConfigurationException 
 	 */
 	public void testGetStabilizationCoeff() throws ParserConfigurationException, SAXException, IOException {
-		XmlConfigParser parser = new XmlConfigParser("conf/autoscale_parameters.xml");
+		XmlConfigParser parser = new XmlConfigParser("./conf/autoscale_parameters.xml");
 		parser.initParameters();
 		Double expected = 1.0;
 		assertEquals(expected, parser.getStabilizationCoeff(), 0);
@@ -129,7 +129,7 @@ public class XmlConfigParserTest extends TestCase {
 	 * @throws ParserConfigurationException 
 	 */
 	public void testGetSlopeThreshold() throws ParserConfigurationException, SAXException, IOException {
-		XmlConfigParser parser = new XmlConfigParser("conf/autoscale_parameters.xml");
+		XmlConfigParser parser = new XmlConfigParser("./conf/autoscale_parameters.xml");
 		parser.initParameters();
 		Double expected = 0.1;
 		assertEquals(expected, parser.getSlopeThreshold(), 0);
@@ -142,7 +142,7 @@ public class XmlConfigParserTest extends TestCase {
 	 * @throws ParserConfigurationException 
 	 */
 	public void testGetDbHost() throws ParserConfigurationException, SAXException, IOException {
-		XmlConfigParser parser = new XmlConfigParser("conf/autoscale_parameters.xml");
+		XmlConfigParser parser = new XmlConfigParser("./conf/autoscale_parameters.xml");
 		parser.initParameters();
 		String expected = "localhost";
 		assertEquals(expected, parser.getDbHost());
@@ -155,7 +155,7 @@ public class XmlConfigParserTest extends TestCase {
 	 * @throws ParserConfigurationException 
 	 */
 	public void testGetDbName() throws ParserConfigurationException, SAXException, IOException {
-		XmlConfigParser parser = new XmlConfigParser("conf/autoscale_parameters.xml");
+		XmlConfigParser parser = new XmlConfigParser("./conf/autoscale_parameters.xml");
 		parser.initParameters();
 		String expected = "autoscale";
 		assertEquals(expected, parser.getDbName());
@@ -168,7 +168,7 @@ public class XmlConfigParserTest extends TestCase {
 	 * @throws ParserConfigurationException 
 	 */
 	public void testGetDbUser() throws ParserConfigurationException, SAXException, IOException {
-		XmlConfigParser parser = new XmlConfigParser("conf/autoscale_parameters.xml");
+		XmlConfigParser parser = new XmlConfigParser("./conf/autoscale_parameters.xml");
 		parser.initParameters();
 		String expected = "root";
 		assertEquals(expected, parser.getDbUser());
@@ -181,7 +181,7 @@ public class XmlConfigParserTest extends TestCase {
 	 * @throws ParserConfigurationException 
 	 */
 	public void testGetDbPassword() throws ParserConfigurationException, SAXException, IOException {
-		XmlConfigParser parser = new XmlConfigParser("conf/autoscale_parameters.xml");
+		XmlConfigParser parser = new XmlConfigParser("./conf/autoscale_parameters.xml");
 		parser.initParameters();
 		String expected = "";
 		assertEquals(expected, parser.getDbPassword());

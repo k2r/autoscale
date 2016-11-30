@@ -168,6 +168,20 @@ public class ComponentMonitor {
 		return this.estimatedLoads.get(component);
 	}
 	
+	/**
+	 * @return the capacities
+	 */
+	public HashMap<String, Double> getCapacities() {
+		return capacities;
+	}
+
+	/**
+	 * @param capacities the capacities to set
+	 */
+	public void setCapacities(HashMap<String, Double> capacities) {
+		this.capacities = capacities;
+	}
+
 	public Double getCapacity(String component){
 		return this.capacities.get(component);
 	}
@@ -326,7 +340,7 @@ public class ComponentMonitor {
 						activityInfo.get(ActivityMetric.REMAINING).intValue(),
 						activityInfo.get(ActivityMetric.CAPPERSEC).doubleValue(),
 						activityInfo.get(ActivityMetric.ESTIMLOAD).doubleValue());
-		
+
 				this.estimatedLoads.put(component, activityInfo.get(ActivityMetric.ESTIMLOAD).doubleValue());
 				this.capacities.put(component, activityInfo.get(ActivityMetric.CAPPERSEC).doubleValue());
 				//Compute the adequate parallelism degree thanks to local (activity level) estimations
@@ -334,23 +348,25 @@ public class ComponentMonitor {
 				Integer currentParallelism = this.getCurrentDegree(component);
 				Integer estimatedParallelism = Math.max(1, (int) Math.round(currentParallelism * activityValue));
 				Integer degree = (Integer) Math.min(maxParallelism, estimatedParallelism);
-				
+
 				logger.fine("Component " + component + ": ");
 				logger.fine("Current degree: " + currentParallelism);
 				logger.fine("Estimated degree: " + estimatedParallelism);
 				logger.fine("Max degree: " + maxParallelism);
 				logger.fine("Adequate degree " + degree);
 				//Apply rules to take local decisions
-				if(activityValue <= lowActivityThreshold && activityValue != -1.0 && !isInputIncreasing(component)){
+				if(activityValue <= lowActivityThreshold && activityValue != -1.0 && !isInputIncreasing(component) && degree < currentParallelism){
 					this.scaleInActions.put(component, degree);
 					logger.fine("Component " + component + " required a scale-in to degree " + degree);
 				}else{
 					if(activityValue > highActivityThreshold && activityValue <= 1 && isInputIncreasing(component)){
 						degree++;
-						this.scaleOutActions.put(component, degree);
-						logger.fine("Component " + component + " required a scale-out to degree " + degree);
+						if(degree > currentParallelism){
+							this.scaleOutActions.put(component, degree);
+							logger.fine("Component " + component + " required a scale-out to degree " + degree);
+						}
 					}else{
-						if(activityValue > 1){
+						if(activityValue > 1 && degree > currentParallelism){
 							this.scaleOutActions.put(component, degree);
 							logger.fine("Component " + component + " required a scale-out to degree " + degree);
 						}else{
@@ -430,6 +446,7 @@ public class ComponentMonitor {
 					Integer currentDegree = this.getCurrentDegree(child);
 					Integer impactDegree = impactMetric.getImpactDegrees().get(child);
 					Integer maxParallelism = assignMonitor.getAllSortedTasks(child).size();
+					Integer capacityPerWindow = (int) Math.round(this.capacities.get(child) * this.getParser().getWindowSize());
 
 					if(isChildRegularUsed){
 						Integer adequateDegree = Math.max(currentDegree, impactDegree);//It could also be Math.min depending on user strategy
@@ -439,7 +456,7 @@ public class ComponentMonitor {
 							this.scaleOutActions.put(child, adequateDegree);
 							logger.fine("Component " + child + " moved from nothing to scale-out with degree "  + adequateDegree);
 							checkedComponents.add(child);
-							this.estimatedLoads.put(child, impactValue);// to propagate the effect on next components						
+							this.estimatedLoads.put(child, Math.min(impactValue, capacityPerWindow));// to propagate the effect on next components						
 						}
 					}else{
 						if(isChildUnderUsed){

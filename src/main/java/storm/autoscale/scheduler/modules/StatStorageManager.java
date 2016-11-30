@@ -148,7 +148,7 @@ public class StatStorageManager{
 					for(ExecutorSummary executor : executors){
 						String componentId = executor.get_component_id();
 
-						if(!componentId.contains("acker") || !componentId.contains("eventlogger")){ //avoiding to catch acker and eventlogger which are unsplittable
+						if(!componentId.contains("acker") && !componentId.contains("eventlog")){ //avoiding to catch acker and eventlogger which are unsplittable
 							String host = executor.get_host();
 							Integer port = executor.get_port();
 							logger.finest("Retrieving data of component " + componentId + " on worker " + host + "@" + port + "...");
@@ -160,124 +160,148 @@ public class StatStorageManager{
 
 							if(stats != null){
 								/*Get outputs independently of the output stream and from the start of the topology*/
+								Map<String, Long> emitted = stats.get_emitted().get(ALLTIME);
+								Long totalOutputs = 0L;
 								try{
-									Map<String, Long> emitted = stats.get_emitted().get(ALLTIME);
-									Long totalOutputs = 0L;
 									for(String stream : emitted.keySet()){
-										if(!stream.contains("ack") || !stream.contains("eventlog")){
+										if(!stream.contains("ack") && !stream.contains("eventlog")){
 											totalOutputs += emitted.get(stream);
 										}
 									}
-									ExecutorSpecificStats specStats = stats.get_specific();
+								}catch(NullPointerException e){
+									logger.warning("Emission logs does not exist yet for component " + componentId);
+								}
+								ExecutorSpecificStats specStats = stats.get_specific();
 
-									/*Try to look if it is a spout*/
+								/*Try to look if it is a spout*/
 
-									if(specStats.is_set_spout()){
+								if(specStats.is_set_spout()){
 
-										Long formerOutputs = this.getFormerValue(componentId, startTask, endTask, this.timestamp, "spout", COL_TOTAL_OUTPUT);
-										Long updateOutputs = totalOutputs;
-										if(formerOutputs <= updateOutputs){
-											updateOutputs = updateOutputs - formerOutputs;
-										}
+									Long formerOutputs = this.getFormerValue(componentId, startTask, endTask, this.timestamp, "spout", COL_TOTAL_OUTPUT);
+									Long updateOutputs = totalOutputs;
+									if(formerOutputs <= updateOutputs){
+										updateOutputs = updateOutputs - formerOutputs;
+									}
 
-										SpoutStats spoutStats = specStats.get_spout();
-										Map<String, Long> acked = spoutStats.get_acked().get(ALLTIME);
-										Long totalThroughput = 0L;
+									SpoutStats spoutStats = specStats.get_spout();
+									Map<String, Long> acked = spoutStats.get_acked().get(ALLTIME);
+									Long totalThroughput = 0L;
+									try{
 										for(String stream : acked.keySet()){
 											totalThroughput += acked.get(stream);
 										}
+									}catch(NullPointerException e){
+										logger.warning("Ack logs does not exist yet for component " + componentId);
+									}
 
-										Long formerThroughput = this.getFormerValue(componentId, startTask, endTask, this.timestamp, "spout", COL_TOTAL_THROUGHPUT);
-										Long updateThroughput = totalThroughput;
-										if(formerThroughput <= updateThroughput){
-											updateThroughput = updateThroughput - formerThroughput;
-										}
+									Long formerThroughput = this.getFormerValue(componentId, startTask, endTask, this.timestamp, "spout", COL_TOTAL_THROUGHPUT);
+									Long updateThroughput = totalThroughput;
+									if(formerThroughput <= updateThroughput){
+										updateThroughput = updateThroughput - formerThroughput;
+									}
 
-										Map<String, Long> failed = spoutStats.get_failed().get(ALLTIME);
-										Long totalLosses = 0L;
+									Map<String, Long> failed = spoutStats.get_failed().get(ALLTIME);
+									Long totalLosses = 0L;
+									try{
 										for(String stream : failed.keySet()){
 											totalLosses += failed.get(stream);
 										}
+									}catch(NullPointerException e){
+										logger.warning("Failure logs does not exist yet for component " + componentId);
+									}
 
-										Long formerLosses = this.getFormerValue(componentId, startTask, endTask, this.timestamp, "spout", COL_TOTAL_LOSS);
-										Long updateLosses = totalLosses;
-										if(formerLosses <= updateLosses){
-											updateLosses = updateLosses - formerLosses;
-										}
+									Long formerLosses = this.getFormerValue(componentId, startTask, endTask, this.timestamp, "spout", COL_TOTAL_LOSS);
+									Long updateLosses = totalLosses;
+									if(formerLosses <= updateLosses){
+										updateLosses = updateLosses - formerLosses;
+									}
 
-										Map<String, Double> completeAvgTime = spoutStats.get_complete_ms_avg().get(ALLTIME);
-										Double sum = 0.0;
-										Double count = 0.0;
+									Map<String, Double> completeAvgTime = spoutStats.get_complete_ms_avg().get(ALLTIME);
+									Double sum = 0.0;
+									Double count = 0.0;
+									try{
 										for(String stream : completeAvgTime.keySet()){
 											sum += completeAvgTime.get(stream);
 											count++;
 										}
-										Double avgLatency  = sum / count;
-										if(avgLatency.isInfinite() || avgLatency.isNaN()){
-											avgLatency = 0.0;
-										}else{
-											avgLatency = new BigDecimal(sum / count).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
-										}
+									}catch(NullPointerException e){
+										logger.warning("Latency logs does not exist yet for component " + componentId);
+									}
 
-										storeSpoutExecutorStats(this.getCurrentTimestamp(), host, port, topology.get_id(), componentId, startTask, endTask, totalOutputs, updateOutputs, totalThroughput, updateThroughput, totalLosses, updateLosses, avgLatency);
-										logger.finest("Spout stats successfully persisted!");
-
+									Double avgLatency  = sum / count;
+									if(avgLatency.isInfinite() || avgLatency.isNaN()){
+										avgLatency = 0.0;
+									}else{
+										avgLatency = new BigDecimal(sum / count).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
 									}
 
 
-									if(specStats.is_set_bolt()){
+									storeSpoutExecutorStats(this.getCurrentTimestamp(), host, port, topology.get_id(), componentId, startTask, endTask, totalOutputs, updateOutputs, totalThroughput, updateThroughput, totalLosses, updateLosses, avgLatency);
+									logger.finest("Spout stats successfully persisted!");
 
-										Long formerOutputs = this.getFormerValue(componentId, startTask, endTask, this.timestamp, "bolt", COL_TOTAL_OUTPUT);
-										Long updateOutputs = totalOutputs;
-										if(formerOutputs <= updateOutputs){
-											updateOutputs = updateOutputs - formerOutputs;
-										}
+								}
 
-										BoltStats boltStats = specStats.get_bolt();
-										Map<GlobalStreamId, Long> executed = boltStats.get_executed().get(ALLTIME);
-										Long totalExecuted = 0L;
+
+								if(specStats.is_set_bolt()){
+
+									Long formerOutputs = this.getFormerValue(componentId, startTask, endTask, this.timestamp, "bolt", COL_TOTAL_OUTPUT);
+									Long updateOutputs = totalOutputs;
+									if(formerOutputs <= updateOutputs){
+										updateOutputs = updateOutputs - formerOutputs;
+									}
+
+									BoltStats boltStats = specStats.get_bolt();
+									Map<GlobalStreamId, Long> executed = boltStats.get_executed().get(ALLTIME);
+									Long totalExecuted = 0L;
+									try{
 										for(GlobalStreamId gs : executed.keySet()){
 											if(!gs.get_streamId().contains("ack")){
 												totalExecuted += executed.get(gs);
 											}
 										}
+									}catch(NullPointerException e){
+										logger.warning("Execution logs does not exist yet for component " + componentId);
+									}
 
-										Long formerExecuted = this.getFormerValue(componentId, startTask, endTask, this.timestamp, "bolt", COL_TOTAL_EXEC);
-										Long updateExecuted = totalExecuted;
-										if(formerExecuted <= updateExecuted){
-											updateExecuted = updateExecuted - formerExecuted;
-										}
+									Long formerExecuted = this.getFormerValue(componentId, startTask, endTask, this.timestamp, "bolt", COL_TOTAL_EXEC);
+									Long updateExecuted = totalExecuted;
+									if(formerExecuted <= updateExecuted){
+										updateExecuted = updateExecuted - formerExecuted;
+									}
 
-										Map<GlobalStreamId, Double> executionAvgTime = boltStats.get_execute_ms_avg().get(ALLTIME);
-										Double sum = 0.0;
-										Double count = 0.0;
+									Map<GlobalStreamId, Double> executionAvgTime = boltStats.get_execute_ms_avg().get(ALLTIME);
+									Double sum = 0.0;
+									Double count = 0.0;
+
+									try{
 										for(GlobalStreamId gs : executionAvgTime.keySet()){
 											if(!gs.get_streamId().contains("ack")){
 												sum += executionAvgTime.get(gs);
 												count++;
 											}
 										}
-
-										Double avgLatency = sum / count;
-										if(avgLatency.isInfinite() || avgLatency.isNaN()){
-											avgLatency = 0.0;
-										}else{
-											avgLatency = new BigDecimal(sum / count).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
-										}
-
-										Double selectivity = updateOutputs / (updateExecuted * 1.0);
-										if(selectivity.isInfinite() || selectivity.isNaN()){
-											selectivity = 0.0;
-										}else{
-											selectivity = new BigDecimal(updateOutputs / (updateExecuted * 1.0)).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
-										}
-
-										storeBoltExecutorStats(this.getCurrentTimestamp(), host, port, topology.get_id(), componentId, startTask, endTask, totalExecuted, updateExecuted, totalOutputs, updateOutputs, avgLatency, selectivity);
-										logger.finest("Bolt stats successfully persisted!");
+									}catch(NullPointerException e){
+										logger.warning("Latency logs does not exist yet for component " + componentId);
 									}
-								}catch(NullPointerException e){
-									logger.severe("Some data were missing for storage because of " + e);
+
+									Double avgLatency = sum / count;
+									if(avgLatency.isInfinite() || avgLatency.isNaN()){
+										avgLatency = 0.0;
+									}else{
+										avgLatency = new BigDecimal(sum / count).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+									}
+
+									Double selectivity = totalOutputs / (totalExecuted * 1.0);
+									if(selectivity.isInfinite() || selectivity.isNaN()){
+										selectivity = 0.0;
+									}else{
+										selectivity = new BigDecimal(selectivity).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+									}
+
+									storeBoltExecutorStats(this.getCurrentTimestamp(), host, port, topology.get_id(), componentId, startTask, endTask, totalExecuted, updateExecuted, totalOutputs, updateOutputs, avgLatency, selectivity);
+									logger.finest("Bolt stats successfully persisted!");
 								}
+
 							}
 
 						}else{

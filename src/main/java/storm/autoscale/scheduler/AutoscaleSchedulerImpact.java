@@ -58,7 +58,7 @@ public class AutoscaleSchedulerImpact implements IScheduler {
 	public void prepare(Map conf) {
 		this.conf = conf;
 		try {
-			this.parser = new XmlConfigParser("conf/autoscale_parameters.xml");
+			this.parser = new XmlConfigParser("./conf/autoscale_parameters.xml");
 			this.parser.initParameters();
 			this.nimbusHost = parser.getNimbusHost();
 			this.nimbusPort = parser.getNimbusPort();

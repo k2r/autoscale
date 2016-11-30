@@ -76,6 +76,9 @@ public class ActivityMetric implements IMetric {
 			Double estimation = Math.max(0, coeff * i + offset);
 			estimIncomingTuples += estimation;
 		}
+		if(estimIncomingTuples.isInfinite() || estimIncomingTuples.isNaN()){
+			estimIncomingTuples = 0.0;
+		}
 		info.put(ESTIMLOAD, new BigDecimal(estimIncomingTuples));
 		//sum the remaining tuples at the end of the current window to the estimated value of incoming tuples into result variable
 		result = remainingTuples + estimIncomingTuples;
@@ -114,8 +117,9 @@ public class ActivityMetric implements IMetric {
 	public Double compute(String component) {
 		Integer nbRecords = ComponentWindowedStats.getRecordedTimestamps(this.cm.getStats(component).getInputRecords()).size();
 		Double activity = this.computeEstimatedLoad(component) / this.computeAvgCapacity(component);
+		Integer expectedNbRecords = (this.cm.getParser().getWindowSize() / this.cm.getMonitoringFrequency()) - 1;// we accept an offset of one measurement compared to ideal model 
 		//In the case, we estimate that no tuples will be processed, we affect a special value to let a grace period 
-		if(activity.isInfinite() || activity.isNaN() || nbRecords < 4){
+		if(activity.isInfinite() || activity.isNaN() || nbRecords < expectedNbRecords){
 			activity = -1.0;
 		}
 		if(!this.activityInfo.containsKey(component)){

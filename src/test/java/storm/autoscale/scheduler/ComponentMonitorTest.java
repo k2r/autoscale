@@ -427,6 +427,15 @@ public class ComponentMonitorTest extends TestCase {
 		degrees.put("F", 4);
 		degrees.put("G", 4);
 		
+		HashMap<String, Double> capacities = new HashMap<>();
+		capacities.put("A", 200.0);
+		capacities.put("B", 40.0);
+		capacities.put("C", 100.0);
+		capacities.put("D", 150.0);
+		capacities.put("E", 60.0);
+		capacities.put("F", 50.0);
+		capacities.put("G", 50.0);
+		
 		HashMap<String, Integer> nothingActions = new HashMap<>();
 		HashMap<String, Integer> scaleInActions = new HashMap<>();
 		HashMap<String, Integer> scaleOutActions = new HashMap<>();
@@ -474,6 +483,7 @@ public class ComponentMonitorTest extends TestCase {
 		cm.setNothingActions(nothingActions);
 		cm.setScaleInActions(scaleInActions);
 		cm.setScaleOutActions(scaleOutActions);
+		cm.setCapacities(capacities);
 		
 		cm.autoscaleAlgorithmWithImpact(impact, ancestors, explorer, assignMonitor);
 		HashMap<String, Integer> expectedNothing = new HashMap<>();

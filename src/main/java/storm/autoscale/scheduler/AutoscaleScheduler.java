@@ -11,10 +11,10 @@ import java.util.logging.Logger;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.storm.scheduler.Cluster;
+import org.apache.storm.scheduler.EvenScheduler;
 import org.apache.storm.scheduler.IScheduler;
 import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
-import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.xml.sax.SAXException;
 
 import storm.autoscale.scheduler.actions.IAction;
@@ -57,7 +57,7 @@ public class AutoscaleScheduler implements IScheduler {
 	@Override
 	public void prepare(Map conf) {
 		try {
-			this.parser = new XmlConfigParser("conf/autoscale_parameters.xml");
+			this.parser = new XmlConfigParser("./conf/autoscale_parameters.xml");
 			this.parser.initParameters();
 			this.nimbusHost = parser.getNimbusHost();
 			this.nimbusPort = parser.getNimbusPort();
@@ -129,8 +129,8 @@ public class AutoscaleScheduler implements IScheduler {
 				}
 			}
 		}
-		/*Then we let the resource aware scheduler distribute the load*/
-		ResourceAwareScheduler scheduler = new ResourceAwareScheduler();
+		/*Then we let even scheduler balance the load*/
+		EvenScheduler scheduler = new EvenScheduler();
 		scheduler.schedule(topologies, cluster);
 	}
 }
