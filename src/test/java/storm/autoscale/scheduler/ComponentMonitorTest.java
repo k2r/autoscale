@@ -323,7 +323,7 @@ public class ComponentMonitorTest extends TestCase {
 	/**
 	 * Test method for {@link storm.autoscale.scheduler.modules.ComponentMonitor#autoscaleAlgorithm()}.
 	 */
-	public void testAutoscaleAglorithm(){
+	public void testAutoscaleAlgorithm(){
 		XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
 		
 		TopologyExplorer explorer = Mockito.mock(TopologyExplorer.class);
