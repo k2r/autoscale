@@ -133,7 +133,8 @@ public class StatStorageManagerTest extends TestCase {
 			Long updateOutputs = 8L;
 			Double avgLatency = 500.0;
 			Double selectivity = 0.8;
-			manager.storeBoltExecutorStats(timestamp, host, port, topology, component, startTask, endTask, totalExecuted, updateExecuted, totalOutputs, updateOutputs, avgLatency, selectivity);
+			Double cpuUsage = 40.0;
+			manager.storeBoltExecutorStats(timestamp, host, port, topology, component, startTask, endTask, totalExecuted, updateExecuted, totalOutputs, updateOutputs, avgLatency, selectivity, cpuUsage);
 
 			String testBolttStorageQuery = "SELECT * FROM all_time_bolts_stats";
 			ResultSet result = connector.executeQuery(testBolttStorageQuery);
@@ -270,6 +271,7 @@ public class StatStorageManagerTest extends TestCase {
 			Long updateOutputs1 = 8L;
 			Double avgLatency1 = 50.0;
 			Double selectivity1 = 0.8;
+			Double cpuUsage1 = 50.0;
 			
 			String host2 = "testHost2";
 			Integer port2 = 0;
@@ -281,11 +283,12 @@ public class StatStorageManagerTest extends TestCase {
 			Long updateOutputs2 = 7L;
 			Double avgLatency2 = 60.0;
 			Double selectivity2 = 0.7;
+			Double cpuUsage2 = 30.0;
 			
-			manager.storeBoltExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted1, totalOutputs1, updateOutputs1, avgLatency1, selectivity1);
-			manager.storeBoltExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs2, avgLatency2, selectivity2);
+			manager.storeBoltExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted1, totalOutputs1, updateOutputs1, avgLatency1, selectivity1, cpuUsage1);
+			manager.storeBoltExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs2, avgLatency2, selectivity2, cpuUsage2);
 			
-			manager.storeBoltExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs2, avgLatency2, selectivity2);
+			manager.storeBoltExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs2, avgLatency2, selectivity2, cpuUsage2);
 			
 			HashMap<Integer, ArrayList<String>> actualWorkers = manager.getBoltWorkers(component, 11, 10);
 			
@@ -336,6 +339,7 @@ public class StatStorageManagerTest extends TestCase {
 			Long updateOutputs1 = 8L;
 			Double avgLatency1 = 50.0;
 			Double selectivity1 = 0.8;
+			Double cpuUsage1 = 50.0;
 			
 			String host2 = "testHost2";
 			Integer port2 = 0;
@@ -347,15 +351,16 @@ public class StatStorageManagerTest extends TestCase {
 			Long updateOutputs2 = 7L;
 			Double avgLatency2 = 60.0;
 			Double selectivity2 = 0.7;
+			Double cpuUsage2 = 30.0;
 			
 			Long updateExecuted3 = 12L;
 			Long updateExecuted4 = 7L;
 			
-			manager.storeBoltExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted1, totalOutputs1, updateOutputs1, avgLatency1, selectivity1);
-			manager.storeBoltExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs2, avgLatency2, selectivity2);
+			manager.storeBoltExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted1, totalOutputs1, updateOutputs1, avgLatency1, selectivity1, cpuUsage1);
+			manager.storeBoltExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs2, avgLatency2, selectivity2, cpuUsage2);
 			
-			manager.storeBoltExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted3, totalOutputs1, updateOutputs1, avgLatency1, selectivity1);
-			manager.storeBoltExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted4, totalOutputs2, updateOutputs2, avgLatency2, selectivity2);
+			manager.storeBoltExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted3, totalOutputs1, updateOutputs1, avgLatency1, selectivity1, cpuUsage1);
+			manager.storeBoltExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted4, totalOutputs2, updateOutputs2, avgLatency2, selectivity2, cpuUsage2);
 			
 			HashMap<Integer, Long> actualExecuted = manager.getExecuted(component, 11, 10);
 			
@@ -402,6 +407,7 @@ public class StatStorageManagerTest extends TestCase {
 			Long updateOutputs1 = 8L;
 			Double avgLatency1 = 50.0;
 			Double selectivity1 = 0.8;
+			Double cpuUsage1 = 50.0;
 			
 			String host2 = "testHost2";
 			Integer port2 = 0;
@@ -413,15 +419,16 @@ public class StatStorageManagerTest extends TestCase {
 			Long updateOutputs2 = 7L;
 			Double avgLatency2 = 60.0;
 			Double selectivity2 = 0.7;
+			Double cpuUsage2 = 30.0;
 			
 			Long updateOutputs3 = 100L;
 			Long updateOutputs4 = 75L;
 			
-			manager.storeBoltExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted1, totalOutputs1, updateOutputs1, avgLatency1, selectivity1);
-			manager.storeBoltExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs2, avgLatency2, selectivity2);
+			manager.storeBoltExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted1, totalOutputs1, updateOutputs1, avgLatency1, selectivity1, cpuUsage1);
+			manager.storeBoltExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs2, avgLatency2, selectivity2, cpuUsage1);
 			
-			manager.storeBoltExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted1, totalOutputs1, updateOutputs3, avgLatency1, selectivity1);
-			manager.storeBoltExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs4, avgLatency2, selectivity2);
+			manager.storeBoltExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted1, totalOutputs1, updateOutputs3, avgLatency1, selectivity1, cpuUsage2);
+			manager.storeBoltExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs4, avgLatency2, selectivity2, cpuUsage2);
 			
 			HashMap<Integer, Long> actualOutputs = manager.getBoltOutputs(component, 11, 10);
 			
@@ -468,6 +475,7 @@ public class StatStorageManagerTest extends TestCase {
 			Long updateOutputs1 = 8L;
 			Double avgLatency1 = 50.0;
 			Double selectivity1 = 0.8;
+			Double cpuUsage1 = 50.0;
 			
 			String host2 = "testHost2";
 			Integer port2 = 0;
@@ -479,15 +487,16 @@ public class StatStorageManagerTest extends TestCase {
 			Long updateOutputs2 = 7L;
 			Double avgLatency2 = 60.0;
 			Double selectivity2 = 0.7;
+			Double cpuUsage2 = 30.0;
 			
 			Double avgLatency3 = 65.0;
 			Double avgLatency4 = 72.0;
 			
-			manager.storeBoltExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted1, totalOutputs1, updateOutputs1, avgLatency1, selectivity1);
-			manager.storeBoltExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs2, avgLatency2, selectivity2);
+			manager.storeBoltExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted1, totalOutputs1, updateOutputs1, avgLatency1, selectivity1, cpuUsage1);
+			manager.storeBoltExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs2, avgLatency2, selectivity2, cpuUsage1);
 			
-			manager.storeBoltExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted1, totalOutputs1, updateOutputs1, avgLatency3, selectivity1);
-			manager.storeBoltExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs2, avgLatency4, selectivity2);
+			manager.storeBoltExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted1, totalOutputs1, updateOutputs1, avgLatency3, selectivity1, cpuUsage2);
+			manager.storeBoltExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs2, avgLatency4, selectivity2, cpuUsage2);
 			
 			HashMap<Integer, Double> actualAvgLatency = manager.getAvgLatency(component, 11, 10);
 			
@@ -534,6 +543,7 @@ public class StatStorageManagerTest extends TestCase {
 			Long updateOutputs1 = 8L;
 			Double avgLatency1 = 50.0;
 			Double selectivity1 = 0.8;
+			Double cpuUsage1 = 50.0;
 			
 			String host2 = "testHost2";
 			Integer port2 = 0;
@@ -545,15 +555,16 @@ public class StatStorageManagerTest extends TestCase {
 			Long updateOutputs2 = 7L;
 			Double avgLatency2 = 60.0;
 			Double selectivity2 = 0.7;
+			Double cpuUsage2 = 30.0;
 			
 			Double selectivity3 = 0.76;
 			Double selectivity4 = 0.83;
 			
-			manager.storeBoltExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted1, totalOutputs1, updateOutputs1, avgLatency1, selectivity1);
-			manager.storeBoltExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs2, avgLatency2, selectivity2);
+			manager.storeBoltExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted1, totalOutputs1, updateOutputs1, avgLatency1, selectivity1, cpuUsage1);
+			manager.storeBoltExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs2, avgLatency2, selectivity2, cpuUsage1);
 			
-			manager.storeBoltExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted1, totalOutputs1, updateOutputs1, avgLatency1, selectivity3);
-			manager.storeBoltExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs2, avgLatency2, selectivity4);
+			manager.storeBoltExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted1, totalOutputs1, updateOutputs1, avgLatency1, selectivity3, cpuUsage2);
+			manager.storeBoltExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs2, avgLatency2, selectivity4, cpuUsage2);
 			
 			HashMap<Integer, Double> actualSelectivity = manager.getSelectivity(component, 11, 10);
 			

@@ -24,19 +24,21 @@ public class ComponentWindowedStats {
 	private final HashMap<Integer, Long> outputRecords;
 	private final HashMap<Integer, Double> avgLatencyRecords;
 	private final HashMap<Integer, Double> selectivityRecords;
+	private final HashMap<Integer, Double> cpuUsageRecords;
 	@SuppressWarnings("unused")
 	private static Logger logger = Logger.getLogger("ComponentWindowedStats");
 	
 	/**
 	 * 
 	 */
-	public ComponentWindowedStats(String id, HashMap<Integer, Long> inputs, HashMap<Integer, Long> executed, HashMap<Integer, Long> outputs, HashMap<Integer, Double> avgLatency, HashMap<Integer, Double> selectivity) {
+	public ComponentWindowedStats(String id, HashMap<Integer, Long> inputs, HashMap<Integer, Long> executed, HashMap<Integer, Long> outputs, HashMap<Integer, Double> avgLatency, HashMap<Integer, Double> selectivity, HashMap<Integer, Double> cpuUsage) {
 		this.id = id;
 		this.inputRecords = inputs;
 		this.executedRecords = executed;
 		this.outputRecords = outputs;
 		this.avgLatencyRecords = avgLatency;
 		this.selectivityRecords = selectivity;
+		this.cpuUsageRecords = cpuUsage;
 	}
 
 	/**
@@ -136,6 +138,14 @@ public class ComponentWindowedStats {
 		return selectivityRecords;
 	}
 	
+	
+	/**
+	 * @return the cpuUsageRecords
+	 */
+	public HashMap<Integer, Double> getCpuUsageRecords() {
+		return cpuUsageRecords;
+	}
+
 	public Long getTotalInput(){
 		Long result = 0L;
 		for(Integer timestamp : this.getInputRecords().keySet()){

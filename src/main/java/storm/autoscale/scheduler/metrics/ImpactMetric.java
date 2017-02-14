@@ -62,7 +62,11 @@ public class ImpactMetric implements IMetric {
 		}
 		
 		Double capacityPerWindow = this.cm.getCapacity(component) * this.cm.getParser().getWindowSize();
-		int impactDegree = new BigDecimal(this.cm.getCurrentDegree(component) * (result / capacityPerWindow)).setScale(0, BigDecimal.ROUND_UP).intValue();
+		Double gal = result / capacityPerWindow;
+		if(gal.isInfinite() ||gal.isNaN()){
+			gal = 0.0;
+		}
+		int impactDegree = new BigDecimal(this.cm.getCurrentDegree(component) * gal).setScale(0, BigDecimal.ROUND_UP).intValue();
 		impactDegree = Math.max(1, impactDegree);//at least one excutor must remain
 		this.impactDegrees.put(component, impactDegree);
 		return result;

@@ -85,8 +85,7 @@ public class AutoscaleScheduler implements IScheduler {
 		} catch (ClassNotFoundException | SQLException e1) {
 			logger.severe("Unable to start the StatStorageManage because of " + e1);
 		}
-
-		/*In a first time, we take all scaling decisions*/
+		
 		for(TopologyDetails topology : topologies.getTopologies()){
 			if(!manager.isActive(topology.getId())){
 				logger.fine("Topology " + topology.getName() + " is inactive, killed or being rebalanced...");

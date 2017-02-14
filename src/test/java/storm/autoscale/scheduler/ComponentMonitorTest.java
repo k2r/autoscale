@@ -54,8 +54,8 @@ public class ComponentMonitorTest extends TestCase {
 		inputRecords2.put(2, 355L / this.scaleFactor);
 		inputRecords2.put(1, 380L / this.scaleFactor);
 		
-		ComponentWindowedStats cws1 = new ComponentWindowedStats("component1", inputRecords1, null, null, null, null);
-		ComponentWindowedStats cws2 = new ComponentWindowedStats("component2", inputRecords2, null, null, null, null);
+		ComponentWindowedStats cws1 = new ComponentWindowedStats("component1", inputRecords1, null, null, null, null, null);
+		ComponentWindowedStats cws2 = new ComponentWindowedStats("component2", inputRecords2, null, null, null, null, null);
 		
 		XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
 		Mockito.when(parser.getSlopeThreshold()).thenReturn(0.1);
@@ -96,8 +96,8 @@ public class ComponentMonitorTest extends TestCase {
 		inputRecords2.put(2, 260L / this.scaleFactor);
 		inputRecords2.put(1, 250L / this.scaleFactor);
 		
-		ComponentWindowedStats cws1 = new ComponentWindowedStats("component1", inputRecords1, null, null, null, null);
-		ComponentWindowedStats cws2 = new ComponentWindowedStats("component2", inputRecords2, null, null, null, null);
+		ComponentWindowedStats cws1 = new ComponentWindowedStats("component1", inputRecords1, null, null, null, null, null);
+		ComponentWindowedStats cws2 = new ComponentWindowedStats("component2", inputRecords2, null, null, null, null, null);
 		
 		XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
 		Mockito.when(parser.getSlopeThreshold()).thenReturn(0.1);
@@ -138,8 +138,8 @@ public class ComponentMonitorTest extends TestCase {
 		inputRecords2.put(9, 355L / this.scaleFactor);
 		inputRecords2.put(10, 380L / this.scaleFactor);
 		
-		ComponentWindowedStats cws1 = new ComponentWindowedStats("component1", inputRecords1, null, null, null, null);
-		ComponentWindowedStats cws2 = new ComponentWindowedStats("component2", inputRecords2, null, null, null, null);
+		ComponentWindowedStats cws1 = new ComponentWindowedStats("component1", inputRecords1, null, null, null, null, null);
+		ComponentWindowedStats cws2 = new ComponentWindowedStats("component2", inputRecords2, null, null, null, null, null);
 		
 		XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
 		Mockito.when(parser.getSlopeThreshold()).thenReturn(0.1);

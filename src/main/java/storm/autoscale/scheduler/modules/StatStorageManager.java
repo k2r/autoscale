@@ -29,7 +29,6 @@ import org.apache.storm.generated.Nimbus;
 import org.apache.storm.generated.SpoutStats;
 import org.apache.storm.generated.TopologyInfo;
 import org.apache.storm.generated.TopologySummary;
-
 /**
  * @author Roland
  *
@@ -59,6 +58,7 @@ public class StatStorageManager{
 	private final static String COL_UPDT_LOSS = "update_losses";
 	private final static String COL_AVG_LATENCY = "execute_ms_avg";
 	private final static String COL_SELECTIVITY = "selectivity";
+	private final static String COL_CPU_USAGE = "cpu_usage";
 	
 	private final static Integer LARGE_WINDOW_SIZE = 120;
 	
@@ -129,6 +129,7 @@ public class StatStorageManager{
 			}
 			logger.finest("Listening to the Nimbus...");
 			List<TopologySummary> topologies = client.getClusterInfo().get_topologies();
+			
 			for(TopologySummary topSummary : topologies){
 				String topId = topSummary.get_id();
 				this.timestamp = topSummary.get_uptime_secs();
@@ -157,7 +158,7 @@ public class StatStorageManager{
 							Integer startTask = info.get_task_start();
 							Integer endTask = info.get_task_end();
 							ExecutorStats stats = executor.get_stats();
-
+							
 							if(stats != null){
 								/*Get outputs independently of the output stream and from the start of the topology*/
 								Map<String, Long> emitted = stats.get_emitted().get(ALLTIME);
@@ -297,8 +298,10 @@ public class StatStorageManager{
 									}else{
 										selectivity = new BigDecimal(selectivity).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
 									}
-
-									storeBoltExecutorStats(this.getCurrentTimestamp(), host, port, topology.get_id(), componentId, startTask, endTask, totalExecuted, updateExecuted, totalOutputs, updateOutputs, avgLatency, selectivity);
+									
+									Double cpuUsage = ((updateExecuted * avgLatency) / (rate * 1000)) * 100;//convert rate into ms
+									
+									storeBoltExecutorStats(this.getCurrentTimestamp(), host, port, topology.get_id(), componentId, startTask, endTask, totalExecuted, updateExecuted, totalOutputs, updateOutputs, avgLatency, selectivity, cpuUsage);
 									logger.finest("Bolt stats successfully persisted!");
 								}
 
@@ -329,12 +332,12 @@ public class StatStorageManager{
 		}
 	}
 	
-	public void storeBoltExecutorStats(Integer timestamp, String host, Integer port, String topology, String component, Integer startTask, Integer endTask, Long totalExecuted, Long updateExecuted, Long totalOutputs, Long updateOutputs,  Double avgLatency, Double selectivity){
+	public void storeBoltExecutorStats(Integer timestamp, String host, Integer port, String topology, String component, Integer startTask, Integer endTask, Long totalExecuted, Long updateExecuted, Long totalOutputs, Long updateOutputs,  Double avgLatency, Double selectivity, Double cpuUsage){
 		String query = "INSERT INTO " + TABLE_BOLT + " VALUES('"  + timestamp + "', ";
 		query += "'" + host + "', " + "'" + port + "', " + "'" + topology + "', " + "'" + component + "', "
 				+ "'" + startTask + "', " + "'" + endTask + "', "
 					+ "'" + totalExecuted + "', " + "'" + updateExecuted + "', " + "'" + totalOutputs + "', " + "'" + updateOutputs + "', "
-						+ "'" + avgLatency + "', " + "'" + selectivity + "')";
+						+ "'" + avgLatency + "', " + "'" + selectivity + "', " + "'" + cpuUsage + "')";
 		try {
 			this.connector.executeUpdate(query);
 		} catch (SQLException e) {
@@ -530,6 +533,27 @@ public class StatStorageManager{
 			results.close();
 		} catch (SQLException e) {
 			logger.severe("Unable to compute the average selectivity of the component " + component + " because of " + e);
+		}
+		return records;
+	}
+	
+	public HashMap<Integer, Double> getCpuUsage(String component, Integer timestamp, Integer windowSize){
+		int oldestTimestamp =  timestamp - windowSize;
+		HashMap<Integer, Double> records = new HashMap<>();
+		try {
+			String query  = "SELECT timestamp, AVG(" + COL_CPU_USAGE + ") AS avgCpuUsage FROM " + TABLE_BOLT 
+					+ " WHERE component = '" + component 
+					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp 
+					+ " GROUP BY timestamp, component;";
+			ResultSet results = this.connector.executeQuery(query);
+			while(results.next()){
+				Integer readTimestamp = results.getInt("timestamp");
+				Double avgCpuUsage = new BigDecimal(results.getDouble("avgCpuUsage")).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+				records.put(readTimestamp, avgCpuUsage);
+			}
+			results.close();
+		} catch (SQLException e) {
+			logger.severe("Unable to compute the average cpu usage of the component " + component + " because of " + e);
 		}
 		return records;
 	}

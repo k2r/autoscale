@@ -40,7 +40,6 @@ public class AssignmentMonitor {
 		List<WorkerSlot> slots = cluster.getAssignableSlots();
 		for(WorkerSlot ws : slots){
 			this.assignments.put(ws, new ArrayList<String>());
-			
 			SupervisorDetails supervisor = this.cluster.getSupervisorById(ws.getNodeId());
 			if(!this.support.containsKey(supervisor)){
 				ArrayList<WorkerSlot> managedSlots = new ArrayList<>();
