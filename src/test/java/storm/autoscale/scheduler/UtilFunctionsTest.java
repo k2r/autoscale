@@ -5,6 +5,7 @@ package storm.autoscale.scheduler;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 
 import junit.framework.TestCase;
 import storm.autoscale.scheduler.util.UtilFunctions;
@@ -105,6 +106,18 @@ public class UtilFunctionsTest extends TestCase {
 		assertEquals(expectedBorder7, borders7);
 	}
 
+	
+	public void testGetMaxCategory() {
+		HashMap<String, Long> records = new HashMap<>();
+		records.put("A", 10L);
+		records.put("B", 5L);
+		records.put("C", 12L);
+		records.put("D", 20L);
+		records.put("E", 18L);
+		
+		assertEquals("D", UtilFunctions.getMaxCategory(records));
+	}
+	
 	public void testDecreasingIntOrderCompare() {
 		ArrayList<Integer> actual = new ArrayList<>();
 		actual.add(5);

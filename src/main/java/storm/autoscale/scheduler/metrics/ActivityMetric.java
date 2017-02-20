@@ -10,6 +10,7 @@ import storm.autoscale.scheduler.modules.ComponentMonitor;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 import storm.autoscale.scheduler.regression.LinearRegressionTools;
+import storm.autoscale.scheduler.regression.RegressionSelector;
 
 /**
  * @author Roland
@@ -21,6 +22,7 @@ public class ActivityMetric implements IMetric {
 	TopologyExplorer explorer;
 	HashMap<String, Long> remainingTuples;
 	HashMap<String, HashMap<String, BigDecimal>> activityInfo;
+	
 	public static final String REMAINING = "remaining_tuples";
 	public static final String ACTIVITY = "activity_level";
 	public static final String CAPPERSEC = "capacity_per_second";
@@ -65,15 +67,15 @@ public class ActivityMetric implements IMetric {
 		//Determine the min and the max of input records
 		HashMap<Integer, Long> inputRecords = this.cm.getStats(component).getInputRecords();
 		//From those points, compute the equation of the line
-		Double coeff = LinearRegressionTools.linearRegressionCoeff(inputRecords);
-		Double offset = LinearRegressionTools.linearRegressionOffset(inputRecords);
+		RegressionSelector<Integer, Long> regression = new RegressionSelector<>(inputRecords);
+		
 		//determine each estimated value and sum them
 		Integer lastTimestamp = ComponentWindowedStats.getRecordedTimestamps(inputRecords).get(0);
 		Integer nextWindowEnd = lastTimestamp + this.cm.getParser().getWindowSize();
 		Integer monitoringFrequency = this.cm.getMonitoringFrequency();
 		Double estimIncomingTuples = 0.0;
 		for(int i = lastTimestamp + monitoringFrequency; i <= nextWindowEnd; i += monitoringFrequency){
-			Double estimation = Math.max(0, coeff * i + offset);
+			Double estimation = Math.max(0, regression.estimateYCoordinate(i));
 			estimIncomingTuples += estimation;
 		}
 		if(estimIncomingTuples.isInfinite() || estimIncomingTuples.isNaN()){

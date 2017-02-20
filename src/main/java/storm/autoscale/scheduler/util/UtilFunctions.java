@@ -5,6 +5,7 @@ package storm.autoscale.scheduler.util;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 
 /**
  * @author Roland
@@ -43,6 +44,19 @@ public class UtilFunctions {
 			result.add(delimiters);
 		}
 		return result;
+	}
+	
+	public static <T, U extends Number> T getMaxCategory(HashMap<T, U> values){
+		T maxCategory = null;
+		Double maxValue = 0.0;
+		for(T category : values.keySet()){
+			U value = values.get(category);
+			if(value.doubleValue() > maxValue.doubleValue()){
+				maxCategory = category;
+				maxValue = value.doubleValue();
+			}
+		}
+		return maxCategory;
 	}
 	
 	public static class DecreasingIntOrder implements Comparator<Integer>{

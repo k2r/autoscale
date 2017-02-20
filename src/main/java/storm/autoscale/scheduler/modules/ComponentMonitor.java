@@ -276,14 +276,14 @@ public class ComponentMonitor {
 
 	public boolean isInputDecreasing(String component){
 		HashMap<Integer, Long> inputRecords = this.getStats(component).getInputRecords();
-		Double coeff = LinearRegressionTools.linearRegressionCoeff(inputRecords);
+		Double coeff = LinearRegressionTools.regressionCoeff(inputRecords);
 		Double decreaseThreshold = this.parser.getSlopeThreshold() * -1.0;
 		return (coeff < decreaseThreshold);
 	}
 	
 	public boolean isInputStable(String component){
 		HashMap<Integer, Long> inputRecords = this.getStats(component).getInputRecords();
-		Double coeff = LinearRegressionTools.linearRegressionCoeff(inputRecords);
+		Double coeff = LinearRegressionTools.regressionCoeff(inputRecords);
 		Double decreaseThreshold = this.parser.getSlopeThreshold() * -1.0;
 		Double increaseThreshold = this.parser.getSlopeThreshold();
 		return (coeff >= decreaseThreshold && coeff <= increaseThreshold);
@@ -291,7 +291,7 @@ public class ComponentMonitor {
 	
 	public boolean isInputIncreasing(String component){
 		HashMap<Integer, Long> inputRecords = this.getStats(component).getInputRecords();
-		Double coeff = LinearRegressionTools.linearRegressionCoeff(inputRecords);
+		Double coeff = LinearRegressionTools.regressionCoeff(inputRecords);
 		Double increaseThreshold = this.parser.getSlopeThreshold();
 		return (coeff > increaseThreshold);
 	}
