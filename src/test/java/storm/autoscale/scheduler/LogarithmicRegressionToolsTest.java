@@ -37,7 +37,7 @@ public class LogarithmicRegressionToolsTest extends TestCase {
 		coordinatesRandom.put(8, 10L);
 		
 		coordinatesLogarithmic = new HashMap<>();
-		coordinatesLogarithmic.put(1, 0L);
+		coordinatesLogarithmic.put(1, 2L);
 		coordinatesLogarithmic.put(2, 40L);
 		coordinatesLogarithmic.put(3, 80L);
 		coordinatesLogarithmic.put(4, 110L);
@@ -53,7 +53,6 @@ public class LogarithmicRegressionToolsTest extends TestCase {
 	 */
 	public void testLinearizedCoordinates() {
 		HashMap<Double, Double> expectedRandom = new HashMap<>();
-		expectedRandom.put(1.0/1.0, 1.0);
 		expectedRandom.put(1.0/2.0, 0.01);
 		expectedRandom.put(1.0/3.0, 0.008);
 		expectedRandom.put(1.0/4.0, 0.025);
@@ -69,7 +68,6 @@ public class LogarithmicRegressionToolsTest extends TestCase {
 		}
 		
 		HashMap<Double, Double> expectedLogarithmic = new HashMap<>();
-		expectedLogarithmic.put(1.0/1.0, 1.0);
 		expectedLogarithmic.put(1.0/2.0, 0.025);
 		expectedLogarithmic.put(1.0/3.0, 0.0125);
 		expectedLogarithmic.put(1.0/4.0, 0.009);
@@ -90,8 +88,8 @@ public class LogarithmicRegressionToolsTest extends TestCase {
 	 */
 	@Test
 	public void testRegressionCoeff() {
-		assertEquals(1.04, LogarithmicRegressionTools.regressionCoeff(coordinatesRandom), 0.001);
-		assertEquals(1.087, LogarithmicRegressionTools.regressionCoeff(coordinatesLogarithmic), 0.001);
+		assertEquals(Double.NaN, LogarithmicRegressionTools.regressionCoeff(coordinatesRandom), 0.001);
+		assertEquals(0.541, LogarithmicRegressionTools.regressionCoeff(coordinatesLogarithmic), 0.001);
 	}
 
 	/**
@@ -99,17 +97,17 @@ public class LogarithmicRegressionToolsTest extends TestCase {
 	 */
 	@Test
 	public void testRegressionOffset() {
-		assertEquals(-0.203, LogarithmicRegressionTools.regressionOffset(coordinatesRandom), 0.001);
-		assertEquals(-0.234, LogarithmicRegressionTools.regressionOffset(coordinatesLogarithmic), 0.001);
+		assertEquals(Double.NaN, LogarithmicRegressionTools.regressionOffset(coordinatesRandom), 0.001);
+		assertEquals(-0.111, LogarithmicRegressionTools.regressionOffset(coordinatesLogarithmic), 0.001);
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.regression.LogarithmicRegressionTools#correlationCoeff(java.util.HashMap)}.
+	 * Test method for {@link storm.autoscale.scheduler.regression.LogarithmicRegressionTools#determinationCoeff(java.util.HashMap)}.
 	 */
 	@Test
-	public void testCorrelationCoeff() {
-		assertEquals(0.886, LogarithmicRegressionTools.correlationCoeff(coordinatesRandom), 0.001);
-		assertEquals(0.914, LogarithmicRegressionTools.correlationCoeff(coordinatesLogarithmic), 0.001);
+	public void testDeterminationCoeff() {
+		assertEquals(Double.NaN, LogarithmicRegressionTools.determinationCoeff(coordinatesRandom), 0.001);
+		assertEquals(0.847, LogarithmicRegressionTools.determinationCoeff(coordinatesLogarithmic), 0.001);
 	}
 
 	/**
@@ -117,8 +115,8 @@ public class LogarithmicRegressionToolsTest extends TestCase {
 	 */
 	@Test
 	public void testEstimateYCoordinate() {
-		assertEquals(1.058, LogarithmicRegressionTools.estimateYCoordinate(12, coordinatesRandom), 1.0);
-		assertEquals(1.109, LogarithmicRegressionTools.estimateYCoordinate(12, coordinatesLogarithmic), 1.0);
+		assertEquals(Double.NaN, LogarithmicRegressionTools.estimateYCoordinate(12, coordinatesRandom), 1.0);
+		assertEquals(0.04, LogarithmicRegressionTools.estimateYCoordinate(12, coordinatesLogarithmic), 1.0);
 	}
 
 }

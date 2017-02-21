@@ -16,6 +16,7 @@ public class LinearRegressionToolsTest extends TestCase {
 
 	private static HashMap<Integer, Long> coordinatesRandom;
 	private static HashMap<Integer, Long> coordinatesLinear;
+	private static HashMap<Integer, Long> coordinatesConst;
 	
 	/* (non-Javadoc)
 	 * @see junit.framework.TestCase#setUp()
@@ -41,8 +42,19 @@ public class LinearRegressionToolsTest extends TestCase {
 		coordinatesLinear.put(6, 68L);
 		coordinatesLinear.put(7, 90L);
 		coordinatesLinear.put(8, 110L);
-
 		
+		coordinatesConst = new HashMap<>();
+		coordinatesConst.put(0, 50L);
+		coordinatesConst.put(1, 50L);
+		coordinatesConst.put(2, 50L);
+		coordinatesConst.put(3, 50L);
+		coordinatesConst.put(4, 50L);
+		coordinatesConst.put(5, 50L);
+		coordinatesConst.put(6, 50L);
+		coordinatesConst.put(7, 50L);
+		coordinatesConst.put(8, 50L);
+		coordinatesConst.put(9, 50L);
+
 	}
 
 	/**
@@ -118,11 +130,11 @@ public class LinearRegressionToolsTest extends TestCase {
 	}
 	
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.regression.LinearRegressionTools#correlationCoeff(java.util.HashMap)}.
+	 * Test method for {@link storm.autoscale.scheduler.regression.LinearRegressionTools#determinationCoeff(java.util.HashMap)}.
 	 */
-	public void testLinearCorrelationCoeff() {
-		assertEquals(-0.142, LinearRegressionTools.correlationCoeff(coordinatesRandom), 0.001);
-		assertEquals(0.993, LinearRegressionTools.correlationCoeff(coordinatesLinear), 0.001);
+	public void testLinearDeterminationCoeff() {
+		assertEquals(0.02, LinearRegressionTools.determinationCoeff(coordinatesRandom), 0.001);
+		assertEquals(0.986, LinearRegressionTools.determinationCoeff(coordinatesLinear), 0.001);
 	}
 
 	/**
@@ -130,6 +142,6 @@ public class LinearRegressionToolsTest extends TestCase {
 	 */
 	public void testEstimateYCoordinate() {
 		assertEquals(38.928, LinearRegressionTools.estimateYCoordinate(12, coordinatesRandom), 0.001);
-		assertEquals(166.393, LinearRegressionTools.estimateYCoordinate(12, coordinatesLinear), 0.001);
+		assertEquals(166.393, LinearRegressionTools.estimateYCoordinate(12, coordinatesLinear), 0.001);	
 	}
 }

@@ -53,7 +53,6 @@ public class ExponentialRegressionToolsTest extends TestCase{
 	 */
 	public void testLinearizedCoordinates() {
 		HashMap<Double, Double> expectedRandom = new HashMap<>();
-		expectedRandom.put(1.0, 0.0);
 		expectedRandom.put(2.0, 4.605);
 		expectedRandom.put(3.0, 4.787);
 		expectedRandom.put(4.0, 3.689);
@@ -90,7 +89,7 @@ public class ExponentialRegressionToolsTest extends TestCase{
 	 */
 	@Test
 	public void testRegressionCoeff() {
-		assertEquals(0.143, ExponentialRegressionTools.regressionCoeff(coordinatesRandom), 0.001);
+		assertEquals(62.18, ExponentialRegressionTools.regressionCoeff(coordinatesRandom), 0.001);
 		assertEquals(0.368, ExponentialRegressionTools.regressionCoeff(coordinatesExponential), 0.001);
 	}
 
@@ -99,17 +98,17 @@ public class ExponentialRegressionToolsTest extends TestCase{
 	 */
 	@Test
 	public void testRegressionOffset() {
-		assertEquals(2.804, ExponentialRegressionTools.regressionOffset(coordinatesRandom), 0.001);
+		assertEquals(-369.416, ExponentialRegressionTools.regressionOffset(coordinatesRandom), 0.001);
 		assertEquals(1.454, ExponentialRegressionTools.regressionOffset(coordinatesExponential), 0.001);
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.regression.ExponentialRegressionTools#correlationCoeff(java.util.HashMap)}.
+	 * Test method for {@link storm.autoscale.scheduler.regression.ExponentialRegressionTools#determinationCoeff(java.util.HashMap)}.
 	 */
 	@Test
-	public void testCorrelationCoeff() {
-		assertEquals(0.217, ExponentialRegressionTools.correlationCoeff(coordinatesRandom), 0.001);
-		assertEquals(0.931, ExponentialRegressionTools.correlationCoeff(coordinatesExponential), 0.001);
+	public void testDeterminationCoeff() {
+		assertEquals(0.331, ExponentialRegressionTools.determinationCoeff(coordinatesRandom), 0.001);
+		assertEquals(0.867, ExponentialRegressionTools.determinationCoeff(coordinatesExponential), 0.001);
 	}
 
 	/**
@@ -117,7 +116,7 @@ public class ExponentialRegressionToolsTest extends TestCase{
 	 */
 	@Test
 	public void testEstimateYCoordinate() {
-		assertEquals(59060433227548.0, ExponentialRegressionTools.estimateYCoordinate(12, coordinatesRandom), 1.0);
+		assertEquals(0.0, ExponentialRegressionTools.estimateYCoordinate(12, coordinatesRandom), 1.0);
 		assertEquals(13854892.0, ExponentialRegressionTools.estimateYCoordinate(12, coordinatesExponential), 1.0);
 	}
 

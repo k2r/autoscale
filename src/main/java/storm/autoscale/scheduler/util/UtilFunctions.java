@@ -51,7 +51,7 @@ public class UtilFunctions {
 		Double maxValue = 0.0;
 		for(T category : values.keySet()){
 			U value = values.get(category);
-			if(value.doubleValue() > maxValue.doubleValue()){
+			if(Math.abs(value.doubleValue()) > Math.abs(maxValue.doubleValue())){
 				maxCategory = category;
 				maxValue = value.doubleValue();
 			}

@@ -16,13 +16,13 @@ public class LogarithmicRegressionTools {
 		for(T x : coordinates.keySet()){
 			Double xCoordinate = x.doubleValue();
 			Double yCoordinate = coordinates.get(x).doubleValue();
-			if(xCoordinate < 1.0){
-				xCoordinate = 1.0;//we degrade slightly the estimation but it allows to compute a model
+			if(xCoordinate == 0.0){
+				xCoordinate = Double.MIN_VALUE;
 			}
-			if(yCoordinate < 1.0){
-				yCoordinate = 1.0;//we degrade slightly the estimation but it allows to compute a model
+			if(yCoordinate == 0.0){
+				yCoordinate = Double.MIN_VALUE;
 			}
-			result.put(1.0 / x.doubleValue(), 1.0 / yCoordinate);
+			result.put(1.0 / xCoordinate, 1.0 / yCoordinate);	
 		}
 		return result;
 	}
@@ -37,9 +37,9 @@ public class LogarithmicRegressionTools {
 		return LinearRegressionTools.regressionOffset(linearized);
 	}
 	
-	public static <T extends Number, U extends Number> Double correlationCoeff(HashMap<T, U> coordinates){
+	public static <T extends Number, U extends Number> Double determinationCoeff(HashMap<T, U> coordinates){
 		HashMap<Double, Double> linearized = LogarithmicRegressionTools.linearizeCoordinates(coordinates);
-		return LinearRegressionTools.correlationCoeff(linearized);
+		return LinearRegressionTools.determinationCoeff(linearized);
 	}
 	
 	public static <T extends Number, U extends Number> Double estimateYCoordinate(T xCoordinate, HashMap<T, U> coordinates){

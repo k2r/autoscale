@@ -135,7 +135,7 @@ public class ActivityMetricTest extends TestCase {
 		ActivityMetric activityMetric = new ActivityMetric(compMonitor, explorer);
 		assertEquals(750.0, activityMetric.computeEstimatedLoad("component1"), 0);
 		assertEquals(390.0, activityMetric.computeEstimatedLoad("component2"), 0);
-		assertEquals(300.0, activityMetric.computeEstimatedLoad("component3"), 0);
+		assertEquals(300.0, activityMetric.computeEstimatedLoad("component3"), 0.01);
 	}
 
 	/**

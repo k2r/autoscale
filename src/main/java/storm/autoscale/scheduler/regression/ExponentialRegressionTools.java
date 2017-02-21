@@ -15,8 +15,8 @@ public class ExponentialRegressionTools {
 		HashMap<Double, Double> result = new HashMap<>();
 		for(T xCoordinate : coordinates.keySet()){
 			Double yCoordinate = coordinates.get(xCoordinate).doubleValue();
-			if(yCoordinate < 1){
-				yCoordinate = 1.0;//we degrade slightly the estimation but it allows to compute a model
+			if(yCoordinate == 0.0){
+				yCoordinate = Double.MIN_VALUE;
 			}
 			result.put(xCoordinate.doubleValue(), Math.log(yCoordinate));
 		}
@@ -33,9 +33,9 @@ public class ExponentialRegressionTools {
 		return LinearRegressionTools.regressionOffset(linearized);
 	}
 	
-	public static <T extends Number, U extends Number> Double correlationCoeff(HashMap<T, U> coordinates){
+	public static <T extends Number, U extends Number> Double determinationCoeff(HashMap<T, U> coordinates){
 		HashMap<Double, Double> linearized = ExponentialRegressionTools.linearizeCoordinates(coordinates);
-		return LinearRegressionTools.correlationCoeff(linearized);
+		return LinearRegressionTools.determinationCoeff(linearized);
 	}
 	
 	public static <T extends Number, U extends Number> Double estimateYCoordinate(T xCoordinate, HashMap<T, U> coordinates){

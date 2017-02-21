@@ -70,22 +70,26 @@ public class LinearRegressionTools{
 		return LinearRegressionTools.avgYCoordinate(coordinates) - (LinearRegressionTools.regressionCoeff(coordinates) * LinearRegressionTools.avgXCoordinate(coordinates));
 	}
 	
-	public static <T extends Number, U extends Number> Double correlationCoeff(HashMap<T, U> coordinates){
-		Double avgXCoordinate = LinearRegressionTools.avgXCoordinate(coordinates);
+	public static <T extends Number, U extends Number> Double determinationCoeff(HashMap<T, U> coordinates){
+		Double rSqr = 0.0;
 		Double avgYCoordinate = LinearRegressionTools.avgYCoordinate(coordinates);
 		
-		Double derivXYCoordinate = 0.0;
-		Double derivSqrXCoordinate = 0.0;
 		Double derivSqrYCoordinate = 0.0;
+		
+		Double derivSqrPredYCoordinate = 0.0;
 		
 		for(T xCoordinate : coordinates.keySet()){
 			U yCoordinate = coordinates.get(xCoordinate);
-			derivXYCoordinate += (xCoordinate.doubleValue() - avgXCoordinate) * (yCoordinate.doubleValue() - avgYCoordinate);
-			derivSqrXCoordinate += Math.pow(xCoordinate.doubleValue() - avgXCoordinate, 2);
+			Double predYCoordinate = LinearRegressionTools.estimateYCoordinate(xCoordinate, coordinates);
+			
 			derivSqrYCoordinate += Math.pow(yCoordinate.doubleValue() - avgYCoordinate, 2);
+			derivSqrPredYCoordinate += Math.pow(predYCoordinate.doubleValue() - avgYCoordinate, 2);
 		}
-		
-		return derivXYCoordinate / (Math.sqrt(derivSqrXCoordinate * derivSqrYCoordinate));
+		rSqr = derivSqrPredYCoordinate / derivSqrYCoordinate;
+		if(rSqr.isNaN() && LinearRegressionTools.regressionCoeff(coordinates) == 0){
+			rSqr = 1.0; 
+		}
+		return rSqr;
 	}
 	
 	public static <T extends Number, U extends Number> Double estimateYCoordinate(T xCoordinate, HashMap<T, U> coordinates){

@@ -53,7 +53,6 @@ public class PowerRegressionToolsTest extends TestCase {
 	 */
 	public void testLinearizedCoordinates() {
 		HashMap<Double, Double> expectedRandom = new HashMap<>();
-		expectedRandom.put(Math.log(1.0), 0.0);
 		expectedRandom.put(Math.log(2.0), 4.605);
 		expectedRandom.put(Math.log(3.0), 4.787);
 		expectedRandom.put(Math.log(4.0), 3.689);
@@ -90,7 +89,7 @@ public class PowerRegressionToolsTest extends TestCase {
 	 */
 	@Test
 	public void testRegressionCoeff() {
-		assertEquals(1.029, PowerRegressionTools.regressionCoeff(coordinatesRandom), 0.001);
+		assertEquals(285.959, PowerRegressionTools.regressionCoeff(coordinatesRandom), 0.001);
 		assertEquals(1.222, PowerRegressionTools.regressionCoeff(coordinatesPower), 0.001);
 	}
 
@@ -99,17 +98,17 @@ public class PowerRegressionToolsTest extends TestCase {
 	 */
 	@Test
 	public void testRegressionOffset() {
-		assertEquals(2.086, PowerRegressionTools.regressionOffset(coordinatesRandom), 0.001);
-		assertEquals(1.193, PowerRegressionTools.regressionOffset(coordinatesPower), 0.001);
+		assertEquals(-468.664, PowerRegressionTools.regressionOffset(coordinatesRandom), 0.001);
+		assertEquals(1.194, PowerRegressionTools.regressionOffset(coordinatesPower), 0.001);
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.regression.PowerRegressionTools#correlationCoeff(java.util.HashMap)}.
+	 * Test method for {@link storm.autoscale.scheduler.regression.PowerRegressionTools#determinationCoeff(java.util.HashMap)}.
 	 */
 	@Test
-	public void testCorrelationCoeff() {
-		assertEquals(0.448, PowerRegressionTools.correlationCoeff(coordinatesRandom), 0.001);
-		assertEquals(0.922, PowerRegressionTools.correlationCoeff(coordinatesPower), 0.001);
+	public void testDeterminationCoeff() {
+		assertEquals(0.578, PowerRegressionTools.determinationCoeff(coordinatesRandom), 0.001);
+		assertEquals(0.85, PowerRegressionTools.determinationCoeff(coordinatesPower), 0.001);
 	}
 
 	/**
@@ -117,8 +116,8 @@ public class PowerRegressionToolsTest extends TestCase {
 	 */
 	@Test
 	public void testEstimateYCoordinate() {
-		assertEquals(183.6, PowerRegressionTools.estimateYCoordinate(12, coordinatesRandom), 1.0);
-		assertEquals(23.727, PowerRegressionTools.estimateYCoordinate(12, coordinatesPower), 1.0);
+		assertEquals(0.0, PowerRegressionTools.estimateYCoordinate(12, coordinatesRandom), 1.0);
+		assertEquals(65.9, PowerRegressionTools.estimateYCoordinate(12, coordinatesPower), 1.0);
 	}
 
 }

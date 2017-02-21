@@ -3,6 +3,7 @@
  */
 package storm.autoscale.scheduler.regression;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import storm.autoscale.scheduler.util.UtilFunctions;
@@ -30,17 +31,21 @@ public class RegressionSelector<T extends Number, U extends Number> {
 		this.coordinates = coordinates;
 		
 		HashMap<String, Double> correlations = new HashMap<>();
-		Double linearCorr = LinearRegressionTools.correlationCoeff(coordinates);
-		Double expCorr = ExponentialRegressionTools.correlationCoeff(coordinates);
-		Double powCorr = PowerRegressionTools.correlationCoeff(coordinates);
-		Double logCorr = LogarithmicRegressionTools.correlationCoeff(coordinates);
+		Double linearCorr = LinearRegressionTools.determinationCoeff(coordinates);
+		Double expCorr = ExponentialRegressionTools.determinationCoeff(coordinates);
+		Double powCorr = PowerRegressionTools.determinationCoeff(coordinates);
+		Double logCorr = LogarithmicRegressionTools.determinationCoeff(coordinates);
 		
 		correlations.put(LINEAR, linearCorr);
 		correlations.put(EXP, expCorr);
 		correlations.put(POW, powCorr);
 		correlations.put(LOG, logCorr);
 		
-		this.modelType = UtilFunctions.getMaxCategory(correlations);
+		if(this.isConstantFunction()){
+			this.modelType = LINEAR;
+		}else{
+			this.modelType = UtilFunctions.getMaxCategory(correlations);
+		}
 		
 		if(this.modelType.equalsIgnoreCase(LINEAR)){
 			this.regressionCoeff = LinearRegressionTools.regressionCoeff(coordinates);
@@ -79,6 +84,24 @@ public class RegressionSelector<T extends Number, U extends Number> {
 		return this.regressionOffset;
 	}
 	
+	public boolean isConstantFunction(){
+		boolean isConstant = true;
+		ArrayList<U> yCoordinates = new ArrayList<>();
+		for(T x : this.coordinates.keySet()){
+			yCoordinates.add(this.coordinates.get(x));
+		}
+		Double value = yCoordinates.get(0).doubleValue();
+		int n = yCoordinates.size();
+		for(int i = 1; i < n; i++){
+			Double yCoordinate = yCoordinates.get(i).doubleValue();
+			if(Math.abs(value - yCoordinate) > 0.001){
+				isConstant = false;
+				break;
+			}
+		}
+		return isConstant;
+	}
+	
 	public Double estimateYCoordinate(T xCoordinate){
 		Double result = 0.0;
 		
@@ -115,5 +138,13 @@ public class RegressionSelector<T extends Number, U extends Number> {
 		}
 		return result;
 	}
+	
+	public String coordinatesToString(){
+		String result = "Coordinates: \n";
+		for(T x : this.coordinates.keySet()){
+			U y = this.coordinates.get(x);
+			result += "[x:" + x + ";y:" + y + "]\n";
+		}
+		return result;
+	}
 }
-

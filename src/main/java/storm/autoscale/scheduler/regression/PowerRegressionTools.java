@@ -16,13 +16,13 @@ public class PowerRegressionTools {
 		for(T x : coordinates.keySet()){
 			Double xCoordinate = x.doubleValue();
 			Double yCoordinate = coordinates.get(x).doubleValue();
-			if(xCoordinate < 1.0){
-				xCoordinate = 1.0;//we degrade slightly the estimation but it allows to compute a model
+			if(xCoordinate == 0.0){
+				xCoordinate = Double.MIN_VALUE;//we degrade slightly the estimation but it allows to compute a model
 			}
-			if(yCoordinate < 1.0){
-				yCoordinate = 1.0;//we degrade slightly the estimation but it allows to compute a model
+			if(yCoordinate == 0.0){
+				yCoordinate = Double.MIN_VALUE;//we degrade slightly the estimation but it allows to compute a model
 			}
-			result.put(Math.log(xCoordinate.doubleValue()), Math.log(yCoordinate));
+			result.put(Math.log(xCoordinate), Math.log(yCoordinate));
 		}
 		return result;
 	}
@@ -37,14 +37,14 @@ public class PowerRegressionTools {
 		return LinearRegressionTools.regressionOffset(linearized);
 	}
 	
-	public static <T extends Number, U extends Number> Double correlationCoeff(HashMap<T, U> coordinates){
+	public static <T extends Number, U extends Number> Double determinationCoeff(HashMap<T, U> coordinates){
 		HashMap<Double, Double> linearized = PowerRegressionTools.linearizeCoordinates(coordinates);
-		return LinearRegressionTools.correlationCoeff(linearized);
+		return LinearRegressionTools.determinationCoeff(linearized);
 	}
 	
 	public static <T extends Number, U extends Number> Double estimateYCoordinate(T xCoordinate, HashMap<T, U> coordinates){
 		Double regressionCoeff = PowerRegressionTools.regressionCoeff(coordinates);
 		Double regressionOffset = PowerRegressionTools.regressionOffset(coordinates);
-		return regressionCoeff * Math.pow(xCoordinate.doubleValue() ,regressionOffset);
+		return Math.exp(regressionCoeff) * Math.pow(xCoordinate.doubleValue(), regressionOffset);
 	}
 }
