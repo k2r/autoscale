@@ -30,7 +30,7 @@ public class StatStorageManagerTest extends TestCase {
 		try {
 			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
 			Mockito.when(parser.getDbHost()).thenReturn("localhost");
-			Mockito.when(parser.getDbName()).thenReturn("autoscale");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale_test");
 			Mockito.when(parser.getDbUser()).thenReturn("root");
 			Mockito.when(parser.getDbPassword()).thenReturn("");
 			
@@ -114,7 +114,7 @@ public class StatStorageManagerTest extends TestCase {
 		try {
 			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
 			Mockito.when(parser.getDbHost()).thenReturn("localhost");
-			Mockito.when(parser.getDbName()).thenReturn("autoscale");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale_test");
 			Mockito.when(parser.getDbUser()).thenReturn("root");
 			Mockito.when(parser.getDbPassword()).thenReturn("");
 			
@@ -195,7 +195,7 @@ public class StatStorageManagerTest extends TestCase {
 		try {
 			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
 			Mockito.when(parser.getDbHost()).thenReturn("localhost");
-			Mockito.when(parser.getDbName()).thenReturn("autoscale");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale_test");
 			Mockito.when(parser.getDbUser()).thenReturn("root");
 			Mockito.when(parser.getDbPassword()).thenReturn("");
 			
@@ -250,7 +250,7 @@ public class StatStorageManagerTest extends TestCase {
 		try {
 			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
 			Mockito.when(parser.getDbHost()).thenReturn("localhost");
-			Mockito.when(parser.getDbName()).thenReturn("autoscale");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale_test");
 			Mockito.when(parser.getDbUser()).thenReturn("root");
 			Mockito.when(parser.getDbPassword()).thenReturn("");
 			
@@ -318,7 +318,7 @@ public class StatStorageManagerTest extends TestCase {
 		try {
 			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
 			Mockito.when(parser.getDbHost()).thenReturn("localhost");
-			Mockito.when(parser.getDbName()).thenReturn("autoscale");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale_test");
 			Mockito.when(parser.getDbUser()).thenReturn("root");
 			Mockito.when(parser.getDbPassword()).thenReturn("");
 			
@@ -386,7 +386,7 @@ public class StatStorageManagerTest extends TestCase {
 		try {
 			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
 			Mockito.when(parser.getDbHost()).thenReturn("localhost");
-			Mockito.when(parser.getDbName()).thenReturn("autoscale");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale_test");
 			Mockito.when(parser.getDbUser()).thenReturn("root");
 			Mockito.when(parser.getDbPassword()).thenReturn("");
 			
@@ -454,7 +454,7 @@ public class StatStorageManagerTest extends TestCase {
 		try {
 			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
 			Mockito.when(parser.getDbHost()).thenReturn("localhost");
-			Mockito.when(parser.getDbName()).thenReturn("autoscale");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale_test");
 			Mockito.when(parser.getDbUser()).thenReturn("root");
 			Mockito.when(parser.getDbPassword()).thenReturn("");
 			
@@ -522,7 +522,7 @@ public class StatStorageManagerTest extends TestCase {
 		try {
 			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
 			Mockito.when(parser.getDbHost()).thenReturn("localhost");
-			Mockito.when(parser.getDbName()).thenReturn("autoscale");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale_test");
 			Mockito.when(parser.getDbUser()).thenReturn("root");
 			Mockito.when(parser.getDbPassword()).thenReturn("");
 			
@@ -590,7 +590,7 @@ public class StatStorageManagerTest extends TestCase {
 		try {
 			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
 			Mockito.when(parser.getDbHost()).thenReturn("localhost");
-			Mockito.when(parser.getDbName()).thenReturn("autoscale");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale_test");
 			Mockito.when(parser.getDbUser()).thenReturn("root");
 			Mockito.when(parser.getDbPassword()).thenReturn("");
 			
@@ -659,7 +659,7 @@ public class StatStorageManagerTest extends TestCase {
 		try {
 			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
 			Mockito.when(parser.getDbHost()).thenReturn("localhost");
-			Mockito.when(parser.getDbName()).thenReturn("autoscale");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale_test");
 			Mockito.when(parser.getDbUser()).thenReturn("root");
 			Mockito.when(parser.getDbPassword()).thenReturn("");
 			
@@ -728,7 +728,7 @@ public class StatStorageManagerTest extends TestCase {
 		try {
 			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
 			Mockito.when(parser.getDbHost()).thenReturn("localhost");
-			Mockito.when(parser.getDbName()).thenReturn("autoscale");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale_test");
 			Mockito.when(parser.getDbUser()).thenReturn("root");
 			Mockito.when(parser.getDbPassword()).thenReturn("");
 			
@@ -794,7 +794,7 @@ public class StatStorageManagerTest extends TestCase {
 		try {
 			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
 			Mockito.when(parser.getDbHost()).thenReturn("localhost");
-			Mockito.when(parser.getDbName()).thenReturn("autoscale");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale_test");
 			Mockito.when(parser.getDbUser()).thenReturn("root");
 			Mockito.when(parser.getDbPassword()).thenReturn("");
 			
