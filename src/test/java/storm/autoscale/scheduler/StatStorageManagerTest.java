@@ -9,6 +9,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.apache.storm.scheduler.ExecutorDetails;
+import org.apache.storm.scheduler.TopologyDetails;
+import org.apache.storm.scheduler.resource.Component;
 import org.mockito.Mockito;
 
 import junit.framework.TestCase;
@@ -786,7 +789,7 @@ public class StatStorageManagerTest extends TestCase {
 			String testCleanQuery = "DELETE FROM all_time_spouts_stats";
 			connector.executeUpdate(testCleanQuery);
 		} catch (ClassNotFoundException | SQLException e) {
-			fail("StatStorageManager module has failed to retrieve topology latency logs has failed because of " + e);
+			fail("StatStorageManager module has failed to retrieve topology latency logs because of " + e);
 		}
 	}
 
@@ -856,7 +859,180 @@ public class StatStorageManagerTest extends TestCase {
 			String testCleanQuery = "DELETE FROM all_time_spouts_stats";
 			connector.executeUpdate(testCleanQuery);
 		} catch (ClassNotFoundException | SQLException e) {
-			fail("StatStorageManager module has failed to retrieve historical logs has failed because of " + e);
+			fail("StatStorageManager module has failed to retrieve historical logs because of " + e);
+		}
+	}
+	
+	public void testStoreTopologyConstraints(){
+		try{
+			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
+			Mockito.when(parser.getDbHost()).thenReturn("localhost");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale_test");
+			Mockito.when(parser.getDbUser()).thenReturn("root");
+			Mockito.when(parser.getDbPassword()).thenReturn("");
+			
+			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			
+			TopologyDetails topology = Mockito.mock(TopologyDetails.class);
+			Mockito.when(topology.getName()).thenReturn("topologyTest");
+			
+			Component compA = new Component("A");
+			Component compB = new Component("B");
+			Component compC = new Component("C");
+			Component compD = new Component("D");
+			
+			ExecutorDetails execA1 = Mockito.mock(ExecutorDetails.class);
+			ExecutorDetails execA2 = Mockito.mock(ExecutorDetails.class);
+			ExecutorDetails execB1 = Mockito.mock(ExecutorDetails.class);
+			ExecutorDetails execC1 = Mockito.mock(ExecutorDetails.class);
+			ExecutorDetails execC2 = Mockito.mock(ExecutorDetails.class);
+			ExecutorDetails execD1 = Mockito.mock(ExecutorDetails.class);
+			
+			ArrayList<ExecutorDetails> execsA = new ArrayList<>();
+			execsA.add(execA1);
+			execsA.add(execA2);
+			ArrayList<ExecutorDetails> execsB = new ArrayList<>();
+			execsB.add(execB1);
+			ArrayList<ExecutorDetails> execsC = new ArrayList<>();
+			execsC.add(execC1);
+			execsC.add(execC2);
+			ArrayList<ExecutorDetails> execsD = new ArrayList<>();
+			execsD.add(execD1);
+			
+			compA.execs = execsA;
+			compB.execs = execsB;
+			compC.execs = execsC;
+			compD.execs = execsD;
+			
+			HashMap<String, Component> components = new HashMap<>();
+			components.put("A", compA);
+			components.put("B", compB);
+			components.put("C", compC);
+			components.put("D", compD);
+			
+			Mockito.when(topology.getComponents()).thenReturn(components);
+			Mockito.when(topology.getTotalCpuReqTask(execA1)).thenReturn(10.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA2)).thenReturn(10.0);
+			Mockito.when(topology.getTotalCpuReqTask(execB1)).thenReturn(20.0);
+			Mockito.when(topology.getTotalCpuReqTask(execC1)).thenReturn(30.0);
+			Mockito.when(topology.getTotalCpuReqTask(execC2)).thenReturn(30.0);
+			Mockito.when(topology.getTotalCpuReqTask(execD1)).thenReturn(40.0);
+			
+
+			Mockito.when(topology.getTotalMemReqTask(execA1)).thenReturn(32.0);
+			Mockito.when(topology.getTotalMemReqTask(execA2)).thenReturn(32.0);
+			Mockito.when(topology.getTotalMemReqTask(execB1)).thenReturn(64.0);
+			Mockito.when(topology.getTotalMemReqTask(execC1)).thenReturn(128.0);
+			Mockito.when(topology.getTotalMemReqTask(execC2)).thenReturn(128.0);
+			Mockito.when(topology.getTotalMemReqTask(execD1)).thenReturn(256.0);
+			
+			manager.storeTopologyConstraints(0, topology);
+			
+			String testTopologyConstraintsQueryA = "SELECT * FROM operators_constraints WHERE component = 'A'";
+			ResultSet resultA = connector.executeQuery(testTopologyConstraintsQueryA);
+			Integer timestampA = null;
+			String topologyA = null;
+			String componentA = null;
+			String typeA = null;
+			Double cpuA = null;
+			Double memA = null;
+			
+			while(resultA.next()){
+				timestampA = resultA.getInt("timestamp");
+				topologyA = resultA.getString("topology");
+				componentA = resultA.getString("component");
+				typeA = resultA.getString("type");
+				cpuA = resultA.getDouble("cpu");
+				memA = resultA.getDouble("memory");
+			}
+			
+			assertEquals(0, timestampA, 0);
+			assertEquals("topologyTest", topologyA);
+			assertEquals("A", componentA);
+			assertEquals("initial", typeA);
+			assertEquals(10.0, cpuA, 0.0);
+			assertEquals(32.0, memA, 0.0);
+			
+			String testTopologyConstraintsQueryB = "SELECT * FROM operators_constraints WHERE component = 'B'";
+			ResultSet resultB = connector.executeQuery(testTopologyConstraintsQueryB);
+			Integer timestampB = null;
+			String topologyB = null;
+			String componentB = null;
+			String typeB = null;
+			Double cpuB = null;
+			Double memB = null;
+			
+			while(resultB.next()){
+				timestampB = resultB.getInt("timestamp");
+				topologyB = resultB.getString("topology");
+				componentB = resultB.getString("component");
+				typeB = resultB.getString("type");
+				cpuB = resultB.getDouble("cpu");
+				memB = resultB.getDouble("memory");
+			}
+			
+			assertEquals(0, timestampB, 0);
+			assertEquals("topologyTest", topologyB);
+			assertEquals("B", componentB);
+			assertEquals("initial", typeB);
+			assertEquals(20.0, cpuB, 0.0);
+			assertEquals(64.0, memB, 0.0);
+			
+			String testTopologyConstraintsQueryC = "SELECT * FROM operators_constraints WHERE component = 'C'";
+			ResultSet resultC = connector.executeQuery(testTopologyConstraintsQueryC);
+			Integer timestampC = null;
+			String topologyC = null;
+			String componentC = null;
+			String typeC = null;
+			Double cpuC = null;
+			Double memC = null;
+			
+			while(resultC.next()){
+				timestampC = resultC.getInt("timestamp");
+				topologyC = resultC.getString("topology");
+				componentC = resultC.getString("component");
+				typeC = resultC.getString("type");
+				cpuC = resultC.getDouble("cpu");
+				memC = resultC.getDouble("memory");
+			}
+			
+			assertEquals(0, timestampC, 0);
+			assertEquals("topologyTest", topologyC);
+			assertEquals("C", componentC);
+			assertEquals("initial", typeC);
+			assertEquals(30.0, cpuC, 0.0);
+			assertEquals(128.0, memC, 0.0);
+			
+			String testTopologyConstraintsQueryD = "SELECT * FROM operators_constraints WHERE component = 'D'";
+			ResultSet resultD = connector.executeQuery(testTopologyConstraintsQueryD);
+			Integer timestampD = null;
+			String topologyD = null;
+			String componentD = null;
+			String typeD = null;
+			Double cpuD = null;
+			Double memD = null;
+			
+			while(resultD.next()){
+				timestampD = resultD.getInt("timestamp");
+				topologyD = resultD.getString("topology");
+				componentD = resultD.getString("component");
+				typeD = resultD.getString("type");
+				cpuD = resultD.getDouble("cpu");
+				memD = resultD.getDouble("memory");
+			}
+			
+			assertEquals(0, timestampD, 0);
+			assertEquals("topologyTest", topologyD);
+			assertEquals("D", componentD);
+			assertEquals("initial", typeD);
+			assertEquals(40.0, cpuD, 0.0);
+			assertEquals(256.0, memD, 0.0);
+			
+			String testCleanQuery = "DELETE FROM operators_constraints";
+			connector.executeUpdate(testCleanQuery);
+		} catch (ClassNotFoundException | SQLException e) {
+			fail("StatStorageManager module has failed to store topology constraints because of " + e);
 		}
 	}
 }
