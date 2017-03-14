@@ -29,6 +29,9 @@ import org.apache.storm.generated.Nimbus;
 import org.apache.storm.generated.SpoutStats;
 import org.apache.storm.generated.TopologyInfo;
 import org.apache.storm.generated.TopologySummary;
+import org.apache.storm.scheduler.ExecutorDetails;
+import org.apache.storm.scheduler.TopologyDetails;
+import org.apache.storm.scheduler.resource.Component;
 /**
  * @author Roland
  *
@@ -47,6 +50,7 @@ public class StatStorageManager{
 	public final static String TABLE_BOLT = "all_time_bolts_stats";
 	public final static String TABLE_TOPOLOGY = "topologies_status";
 	public final static String TABLE_ACTIVITY = "operators_activity";
+	public final static String TABLE_CONSTRAINT = "operators_constraints";
 	
 	private final static String COL_TOTAL_EXEC = "total_executed";
 	private final static String COL_TOTAL_OUTPUT = "total_outputs";
@@ -59,6 +63,8 @@ public class StatStorageManager{
 	private final static String COL_AVG_LATENCY = "execute_ms_avg";
 	private final static String COL_SELECTIVITY = "selectivity";
 	private final static String COL_CPU_USAGE = "cpu_usage";
+	private final static String COL_CPU_CONS = "cpu";
+	private final static String COL_MEM_CONS = "memory";
 	
 	private final static Integer LARGE_WINDOW_SIZE = 120;
 	
@@ -354,6 +360,35 @@ public class StatStorageManager{
 		}
 	}
 	
+	public void storeTopologyConstraints(Integer timestamp, TopologyDetails topology){
+		Map<String, Component> components = topology.getComponents();
+		for(String compName : components.keySet()){
+			Component component = components.get(compName);
+			List<ExecutorDetails> executors = component.execs;
+			Double cpuReq = 0.0;
+			Double memReq = 0.0;
+			for(ExecutorDetails exec : executors){
+				cpuReq = topology.getTotalCpuReqTask(exec);
+				memReq = topology.getTotalMemReqTask(exec);
+				break;
+			}
+			String type = "";
+			if(this.isInitialConstraint(timestamp, topology.getName(), component.id)){
+				type = "initial";
+			}else{
+				type = "update";
+			}
+			
+			String query = "INSERT INTO " + TABLE_CONSTRAINT + " VALUES ('" + timestamp + "', '"
+					+ topology.getName() + "', '" + component.id + "', '" + type + "', '" + cpuReq + "', '" + memReq + "')";
+			try{
+				this.connector.executeUpdate(query);
+			} catch (SQLException e){
+				logger.fine("Unable to store topology constraints because of " + e);
+			}
+		}
+	}
+	
 	public void storeActivityInfo(Integer timestamp, String topology, String component, Double cr, Integer remaining, Double capacity, Double estimatedLoad){
 		String query = "INSERT INTO " + TABLE_ACTIVITY + " VALUES ('" + timestamp + "', '"
 				+ topology + "', '" + component + "', '" + cr + "', '" + remaining + "', '" + capacity + "', '" + estimatedLoad + "')";
@@ -536,7 +571,7 @@ public class StatStorageManager{
 		}
 		return records;
 	}
-	
+
 	public HashMap<Integer, Double> getCpuUsage(String component, Integer timestamp, Integer windowSize){
 		int oldestTimestamp =  timestamp - windowSize;
 		HashMap<Integer, Double> records = new HashMap<>();
@@ -686,6 +721,89 @@ public class StatStorageManager{
 			}
 		} catch (SQLException e) {
 			logger.severe("Unable to retrieve former value of total executed tuples because of " + e);
+		}
+		return result;
+	}
+	
+	public boolean isInitialConstraint(Integer timestamp, String topology, String component){
+		boolean result = true;
+		String query = "SELECT * FROM " + TABLE_CONSTRAINT + " WHERE timestamp < " + timestamp + 
+				" AND topology = '" + topology + "' AND component = '" + component + "';";
+		try{
+			ResultSet results = this.connector.executeQuery(query);
+			if(results.next()){
+				result = false;
+			}
+		} catch (SQLException e){
+			logger.fine("Unable to store activity info because of " + e);
+		}
+		return result;
+	}
+	
+	public Double getInitialCpuConstraint(String topology, String component){
+		Double result = 0.0;
+		String query = "SELECT " + COL_CPU_CONS + " FROM " + TABLE_CONSTRAINT +
+				" WHERE topology = '" + topology + "'" +
+				" AND component = '" + component + "'" + 
+				" AND type = 'initial';";
+		try {
+			ResultSet results = this.connector.executeQuery(query);
+			if(results.first()){
+				result = results.getDouble(COL_CPU_CONS);
+			}
+		} catch (SQLException e) {
+			logger.severe("Unable to retrieve the initial cpu constraint because of " + e);
+		}
+		return result;
+	}
+	
+	public Double getInitialMemConstraint(String topology, String component){
+		Double result = 0.0;
+		String query = "SELECT " + COL_MEM_CONS + " FROM " + TABLE_CONSTRAINT +
+				" WHERE topology = '" + topology + "'" +
+				" AND component = '" + component + "'" + 
+				" AND type = 'initial';";
+		try {
+			ResultSet results = this.connector.executeQuery(query);
+			if(results.first()){
+				result = results.getDouble(COL_MEM_CONS);
+			}
+		} catch (SQLException e) {
+			logger.severe("Unable to retrieve the initial memory constraint because of " + e);
+		}
+		return result;
+	}
+	
+	public Double getCurrentCpuConstraint(String topology, String component){
+		Double result = 0.0;
+		String query = "SELECT oc1." + COL_CPU_CONS + " FROM " + TABLE_CONSTRAINT + " oc1 " +
+				" WHERE oc1.topology = '" + topology + "'" +
+				" AND oc1.component = '" + component + "'" + 
+				" AND oc1.timestamp >= ALL (SELECT oc2.timestamp FROM " + TABLE_CONSTRAINT + " oc2);";
+		try {
+			ResultSet results = this.connector.executeQuery(query);
+			if(results.first()){
+				result = results.getDouble(COL_CPU_CONS);
+			}
+		} catch (SQLException e) {
+			logger.severe("Unable to retrieve the current cpu constraint because of " + e);
+		}
+		return result;
+	}
+	
+	public Double getCurrentMemConstraint(String topology, String component){
+		Double result = 0.0;
+		String query = "SELECT oc1." + COL_MEM_CONS + " FROM " + TABLE_CONSTRAINT + " oc1 " +
+				" WHERE oc1.topology = '" + topology + "'" +
+				" AND oc1.component = '" + component + "'" + 
+				" AND oc1.timestamp >= ALL (SELECT oc2.timestamp FROM " + TABLE_CONSTRAINT + " oc2);";
+		try {
+			ResultSet results = this.connector.executeQuery(query);
+			if(results.first()){
+				result = results.getDouble(COL_MEM_CONS);
+			}
+		} catch (SQLException e) {
+			logger.severe("Unable to retrieve the current memory constraint because of " + e);
 		}
 		return result;
 	}

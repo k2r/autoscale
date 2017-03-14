@@ -22,6 +22,7 @@ import storm.autoscale.scheduler.metrics.ActivityMetric;
 import storm.autoscale.scheduler.metrics.IMetric;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.ComponentMonitor;
+import storm.autoscale.scheduler.modules.ScalingManager;
 import storm.autoscale.scheduler.modules.StatStorageManager;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
 
@@ -31,6 +32,7 @@ import storm.autoscale.scheduler.modules.TopologyExplorer;
  */
 public class MonitoredEvenScheduler implements IScheduler{
 
+	private ScalingManager scaleManager;
 	private ComponentMonitor compMonitor;
 	private AssignmentMonitor assignMonitor;
 	private TopologyExplorer explorer;
@@ -84,10 +86,11 @@ public class MonitoredEvenScheduler implements IScheduler{
 				this.assignMonitor.update();
 				this.compMonitor.getStatistics(explorer);
 				if(!this.compMonitor.getRegisteredComponents().isEmpty()){
-					this.compMonitor.buildDegreeMap(assignMonitor);
-					IMetric activityMetric = new ActivityMetric(this.compMonitor, this.explorer);
-					this.compMonitor.buildActionGraph(activityMetric, assignMonitor);
-					this.compMonitor.autoscaleAlgorithm(explorer.getAncestors(), explorer);			
+					this.scaleManager = new ScalingManager(compMonitor, parser);
+					this.scaleManager.buildDegreeMap(assignMonitor);
+					IMetric activityMetric = new ActivityMetric(this.scaleManager, this.explorer);
+					this.scaleManager.buildActionGraph(activityMetric, assignMonitor);
+					this.scaleManager.autoscaleAlgorithm(explorer.getAncestors(), explorer);			
 				}
 			}
 		}

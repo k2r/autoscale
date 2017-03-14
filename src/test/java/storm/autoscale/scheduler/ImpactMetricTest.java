@@ -12,6 +12,7 @@ import junit.framework.TestCase;
 import storm.autoscale.scheduler.config.XmlConfigParser;
 import storm.autoscale.scheduler.metrics.ImpactMetric;
 import storm.autoscale.scheduler.modules.ComponentMonitor;
+import storm.autoscale.scheduler.modules.ScalingManager;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 
@@ -50,30 +51,30 @@ public class ImpactMetricTest extends TestCase {
 		Mockito.when(explorer.getParents("E")).thenReturn(parentsE);
 		Mockito.when(explorer.getParents("F")).thenReturn(parentsF);
 		
-		ComponentMonitor cm = Mockito.mock(ComponentMonitor.class);
+		ScalingManager sm = Mockito.mock(ScalingManager.class);
 		
-		Mockito.when(cm.getParser()).thenReturn(parser);
+		Mockito.when(sm.getParser()).thenReturn(parser);
 		
-		Mockito.when(cm.getCurrentDegree("A")).thenReturn(4);
-		Mockito.when(cm.getCurrentDegree("B")).thenReturn(4);
-		Mockito.when(cm.getCurrentDegree("C")).thenReturn(4);
-		Mockito.when(cm.getCurrentDegree("D")).thenReturn(4);
-		Mockito.when(cm.getCurrentDegree("E")).thenReturn(4);
-		Mockito.when(cm.getCurrentDegree("F")).thenReturn(4);
+		Mockito.when(sm.getDegree("A")).thenReturn(4);
+		Mockito.when(sm.getDegree("B")).thenReturn(4);
+		Mockito.when(sm.getDegree("C")).thenReturn(4);
+		Mockito.when(sm.getDegree("D")).thenReturn(4);
+		Mockito.when(sm.getDegree("E")).thenReturn(4);
+		Mockito.when(sm.getDegree("F")).thenReturn(4);
 		
-		Mockito.when(cm.getEstimatedLoad("A")).thenReturn(70.0);
-		Mockito.when(cm.getEstimatedLoad("B")).thenReturn(300.0);
-		Mockito.when(cm.getEstimatedLoad("C")).thenReturn(70.0);
-		Mockito.when(cm.getEstimatedLoad("D")).thenReturn(10.0);
-		Mockito.when(cm.getEstimatedLoad("E")).thenReturn(120.0);
-		Mockito.when(cm.getEstimatedLoad("F")).thenReturn(60.0);
+		Mockito.when(sm.getEstimatedLoad("A")).thenReturn(70.0);
+		Mockito.when(sm.getEstimatedLoad("B")).thenReturn(300.0);
+		Mockito.when(sm.getEstimatedLoad("C")).thenReturn(70.0);
+		Mockito.when(sm.getEstimatedLoad("D")).thenReturn(10.0);
+		Mockito.when(sm.getEstimatedLoad("E")).thenReturn(120.0);
+		Mockito.when(sm.getEstimatedLoad("F")).thenReturn(60.0);
 		
-		Mockito.when(cm.getCapacity("A")).thenReturn(10.0);
-		Mockito.when(cm.getCapacity("B")).thenReturn(10.0);
-		Mockito.when(cm.getCapacity("C")).thenReturn(10.0);
-		Mockito.when(cm.getCapacity("D")).thenReturn(10.0);
-		Mockito.when(cm.getCapacity("E")).thenReturn(10.0);
-		Mockito.when(cm.getCapacity("F")).thenReturn(10.0);
+		Mockito.when(sm.getCapacity("A")).thenReturn(10.0);
+		Mockito.when(sm.getCapacity("B")).thenReturn(10.0);
+		Mockito.when(sm.getCapacity("C")).thenReturn(10.0);
+		Mockito.when(sm.getCapacity("D")).thenReturn(10.0);
+		Mockito.when(sm.getCapacity("E")).thenReturn(10.0);
+		Mockito.when(sm.getCapacity("F")).thenReturn(10.0);
 		
 		ComponentWindowedStats cwsLowSelect = Mockito.mock(ComponentWindowedStats.class);
 		HashMap<Integer, Double> lowSelect = new HashMap<>();
@@ -90,6 +91,8 @@ public class ImpactMetricTest extends TestCase {
 		highSelect.put(0, 1.0);
 		Mockito.when(cwsHighSelect.getSelectivityRecords()).thenReturn(highSelect);
 		
+		ComponentMonitor cm = Mockito.mock(ComponentMonitor.class);
+		
 		Mockito.when(cm.getStats("A")).thenReturn(cwsHighSelect);
 		Mockito.when(cm.getStats("B")).thenReturn(cwsLowSelect);
 		Mockito.when(cm.getStats("C")).thenReturn(cwsHighSelect);
@@ -97,7 +100,9 @@ public class ImpactMetricTest extends TestCase {
 		Mockito.when(cm.getStats("E")).thenReturn(cwsMediumSelect);
 		Mockito.when(cm.getStats("F")).thenReturn(cwsHighSelect);
 		
-		ImpactMetric impactMetric = new ImpactMetric(cm, explorer);
+		Mockito.when(sm.getMonitor()).thenReturn(cm);
+		
+		ImpactMetric impactMetric = new ImpactMetric(sm, explorer);
 		impactMetric.compute("A");
 		impactMetric.compute("B");
 		impactMetric.compute("C");
@@ -146,22 +151,6 @@ public class ImpactMetricTest extends TestCase {
 		
 		ComponentMonitor cm = Mockito.mock(ComponentMonitor.class);
 		
-		Mockito.when(cm.getParser()).thenReturn(parser);
-		
-		Mockito.when(cm.getEstimatedLoad("A")).thenReturn(70.0);
-		Mockito.when(cm.getEstimatedLoad("B")).thenReturn(300.0);
-		Mockito.when(cm.getEstimatedLoad("C")).thenReturn(70.0);
-		Mockito.when(cm.getEstimatedLoad("D")).thenReturn(10.0);
-		Mockito.when(cm.getEstimatedLoad("E")).thenReturn(120.0);
-		Mockito.when(cm.getEstimatedLoad("F")).thenReturn(60.0);
-		
-		Mockito.when(cm.getCapacity("A")).thenReturn(10.0);
-		Mockito.when(cm.getCapacity("B")).thenReturn(10.0);
-		Mockito.when(cm.getCapacity("C")).thenReturn(10.0);
-		Mockito.when(cm.getCapacity("D")).thenReturn(10.0);
-		Mockito.when(cm.getCapacity("E")).thenReturn(10.0);
-		Mockito.when(cm.getCapacity("F")).thenReturn(10.0);
-		
 		ComponentWindowedStats cwsLowSelect = Mockito.mock(ComponentWindowedStats.class);
 		HashMap<Integer, Double> lowSelect = new HashMap<>();
 		lowSelect.put(0, 0.3);
@@ -184,7 +173,26 @@ public class ImpactMetricTest extends TestCase {
 		Mockito.when(cm.getStats("E")).thenReturn(cwsMediumSelect);
 		Mockito.when(cm.getStats("F")).thenReturn(cwsHighSelect);
 		
-		ImpactMetric impactMetric = new ImpactMetric(cm, explorer);
+		ScalingManager sm = Mockito.mock(ScalingManager.class);
+		Mockito.when(sm.getMonitor()).thenReturn(cm);
+		Mockito.when(sm.getParser()).thenReturn(parser);
+		Mockito.when(cm.getParser()).thenReturn(parser);
+		
+		Mockito.when(sm.getEstimatedLoad("A")).thenReturn(70.0);
+		Mockito.when(sm.getEstimatedLoad("B")).thenReturn(300.0);
+		Mockito.when(sm.getEstimatedLoad("C")).thenReturn(70.0);
+		Mockito.when(sm.getEstimatedLoad("D")).thenReturn(10.0);
+		Mockito.when(sm.getEstimatedLoad("E")).thenReturn(120.0);
+		Mockito.when(sm.getEstimatedLoad("F")).thenReturn(60.0);
+		
+		Mockito.when(sm.getCapacity("A")).thenReturn(10.0);
+		Mockito.when(sm.getCapacity("B")).thenReturn(10.0);
+		Mockito.when(sm.getCapacity("C")).thenReturn(10.0);
+		Mockito.when(sm.getCapacity("D")).thenReturn(10.0);
+		Mockito.when(sm.getCapacity("E")).thenReturn(10.0);
+		Mockito.when(sm.getCapacity("F")).thenReturn(10.0);
+		
+		ImpactMetric impactMetric = new ImpactMetric(sm, explorer);
 		
 		assertEquals(0.0, impactMetric.compute("A"), 0.0);
 		assertEquals(70.0, impactMetric.compute("B"), 0.0);

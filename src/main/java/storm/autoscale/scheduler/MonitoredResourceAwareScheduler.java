@@ -23,6 +23,7 @@ import storm.autoscale.scheduler.metrics.IMetric;
 import storm.autoscale.scheduler.metrics.ImpactMetric;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.ComponentMonitor;
+import storm.autoscale.scheduler.modules.ScalingManager;
 import storm.autoscale.scheduler.modules.StatStorageManager;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
 
@@ -34,6 +35,7 @@ public class MonitoredResourceAwareScheduler implements IScheduler {
 
 	@SuppressWarnings("rawtypes")
 	Map conf;
+	private ScalingManager scaleManager;
 	private ComponentMonitor compMonitor;
 	private AssignmentMonitor assignMonitor;
 	private TopologyExplorer explorer;
@@ -91,11 +93,12 @@ public class MonitoredResourceAwareScheduler implements IScheduler {
 				this.assignMonitor.update();
 				this.compMonitor.getStatistics(explorer);
 				if(!this.compMonitor.getRegisteredComponents().isEmpty()){
-					this.compMonitor.buildDegreeMap(assignMonitor);
-					IMetric activityMetric = new ActivityMetric(this.compMonitor, this.explorer);
-					this.compMonitor.buildActionGraph(activityMetric, assignMonitor);
-					IMetric impactMetric = new ImpactMetric(this.compMonitor, this.explorer);
-					this.compMonitor.autoscaleAlgorithmWithImpact(impactMetric, this.explorer.getAncestors(), this.explorer, this.assignMonitor);		
+					this.scaleManager = new ScalingManager(compMonitor, parser);
+					this.scaleManager.buildDegreeMap(assignMonitor);
+					IMetric activityMetric = new ActivityMetric(this.scaleManager, this.explorer);
+					this.scaleManager.buildActionGraph(activityMetric, assignMonitor);
+					IMetric impactMetric = new ImpactMetric(this.scaleManager, this.explorer);
+					this.scaleManager.autoscaleAlgorithmWithImpact(impactMetric, this.explorer.getAncestors(), this.explorer, this.assignMonitor);		
 				}
 			}
 		}

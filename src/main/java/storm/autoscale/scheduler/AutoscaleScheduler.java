@@ -25,6 +25,7 @@ import storm.autoscale.scheduler.metrics.ActivityMetric;
 import storm.autoscale.scheduler.metrics.IMetric;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.ComponentMonitor;
+import storm.autoscale.scheduler.modules.ScalingManager;
 import storm.autoscale.scheduler.modules.StatStorageManager;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
 
@@ -35,6 +36,7 @@ import storm.autoscale.scheduler.modules.TopologyExplorer;
 
 public class AutoscaleScheduler implements IScheduler {
 	
+	private ScalingManager scaleManager;
 	private ComponentMonitor compMonitor;
 	private AssignmentMonitor assignMonitor;
 	private TopologyExplorer explorer;
@@ -97,33 +99,34 @@ public class AutoscaleScheduler implements IScheduler {
 				this.compMonitor.getStatistics(explorer);
 				Integer timestamp = manager.getCurrentTimestamp();
 				if(!this.compMonitor.getRegisteredComponents().isEmpty()){
-					this.compMonitor.buildDegreeMap(assignMonitor);
-					IMetric activityMetric = new ActivityMetric(this.compMonitor, this.explorer);
-					this.compMonitor.buildActionGraph(activityMetric, assignMonitor);
-					this.compMonitor.autoscaleAlgorithm(explorer.getAncestors(), explorer);
+					this.scaleManager = new ScalingManager(compMonitor, parser);
+					this.scaleManager.buildDegreeMap(assignMonitor);
+					IMetric activityMetric = new ActivityMetric(this.scaleManager, this.explorer);
+					this.scaleManager.buildActionGraph(activityMetric, assignMonitor);
+					this.scaleManager.autoscaleAlgorithm(explorer.getAncestors(), explorer);
 
-					if(this.compMonitor.getScaleOutActions().isEmpty()){
+					if(this.scaleManager.getScaleOutActions().isEmpty()){
 						logger.fine("No component to scale out!");
 					}else{
 						String scaleOutInfo = "Components requiring scale out: ";
-						for(String component : this.compMonitor.getScaleOutActions().keySet()){
+						for(String component : this.scaleManager.getScaleOutActions().keySet()){
 							scaleOutInfo += component + " ";
 						}
 						scaleOutInfo += "have required a scale out!";
 						logger.fine(scaleOutInfo);
-						IAction action = new ScaleOutAction(this.compMonitor, this.explorer, this.assignMonitor, this.nimbusHost, this.nimbusPort);
+						IAction action = new ScaleOutAction(this.scaleManager, this.explorer, this.assignMonitor, this.nimbusHost, this.nimbusPort);
 					}
 
-					if(this.compMonitor.getScaleInActions().isEmpty()){
+					if(this.scaleManager.getScaleInActions().isEmpty()){
 						logger.fine("No component to scale in!");
 					}else{
 						String scaleInInfo = "Components requiring scale in: ";
-						for(String component : this.compMonitor.getScaleInActions().keySet()){
+						for(String component : this.scaleManager.getScaleInActions().keySet()){
 							scaleInInfo += component + " ";
 						}
 						scaleInInfo += "have required a scale in!";
 						logger.fine(scaleInInfo);
-						IAction action = new ScaleInAction(this.compMonitor, this.explorer, this.assignMonitor, this.nimbusHost, this.nimbusPort);
+						IAction action = new ScaleInAction(this.scaleManager, this.explorer, this.assignMonitor, this.nimbusHost, this.nimbusPort);
 					}
 				}
 			}

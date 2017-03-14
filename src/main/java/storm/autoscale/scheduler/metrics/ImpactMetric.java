@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import storm.autoscale.scheduler.modules.ComponentMonitor;
+import storm.autoscale.scheduler.modules.ScalingManager;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 
@@ -17,12 +18,12 @@ import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
  */
 public class ImpactMetric implements IMetric {
 
-	ComponentMonitor cm;
+	ScalingManager sm;
 	TopologyExplorer explorer;
 	HashMap<String, Integer> impactDegrees;
 	
-	public ImpactMetric(ComponentMonitor compMonitor, TopologyExplorer explorer) {
-		this.cm = compMonitor;
+	public ImpactMetric(ScalingManager sm, TopologyExplorer explorer) {
+		this.sm = sm;
 		this.explorer = explorer;
 		this.impactDegrees = new HashMap<>();
 	}
@@ -32,7 +33,7 @@ public class ImpactMetric implements IMetric {
 	 */
 	@Override
 	public ComponentMonitor getComponentMonitor() {
-		return this.cm;
+		return this.sm.getMonitor();
 	}
 	
 	@Override
@@ -52,21 +53,22 @@ public class ImpactMetric implements IMetric {
 	 */
 	@Override
 	public Double compute(String component) {
+		ComponentMonitor cm = this.getComponentMonitor();
 		Double result = 0.0;// we return the value Impact(*,component)
 		ArrayList<String> parents = this.explorer.getParents(component);
 		for(String parent : parents){
-			Double estimatedLoad = this.cm.getEstimatedLoad(parent);
-			Double selectivity = ComponentWindowedStats.getLastRecord(this.cm.getStats(parent).getSelectivityRecords());
+			Double estimatedLoad = this.sm.getEstimatedLoad(parent);
+			Double selectivity = ComponentWindowedStats.getLastRecord(cm.getStats(parent).getSelectivityRecords());
 			Double impact = estimatedLoad * selectivity;
 			result += impact;
 		}
 		
-		Double capacityPerWindow = this.cm.getCapacity(component) * this.cm.getParser().getWindowSize();
+		Double capacityPerWindow = this.sm.getCapacity(component) * this.sm.getParser().getWindowSize();
 		Double gal = result / capacityPerWindow;
 		if(gal.isInfinite() ||gal.isNaN()){
 			gal = 0.0;
 		}
-		int impactDegree = new BigDecimal(this.cm.getCurrentDegree(component) * gal).setScale(0, BigDecimal.ROUND_UP).intValue();
+		int impactDegree = new BigDecimal(this.sm.getDegree(component) * gal).setScale(0, BigDecimal.ROUND_UP).intValue();
 		impactDegree = Math.max(1, impactDegree);//at least one excutor must remain
 		this.impactDegrees.put(component, impactDegree);
 		return result;

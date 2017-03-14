@@ -14,6 +14,7 @@ import storm.autoscale.scheduler.metrics.ActivityMetric;
 import storm.autoscale.scheduler.metrics.ImpactMetric;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.ComponentMonitor;
+import storm.autoscale.scheduler.modules.ScalingManager;
 import storm.autoscale.scheduler.modules.StatStorageManager;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
@@ -22,12 +23,12 @@ import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
  * @author Roland
  *
  */
-public class ComponentMonitorTest extends TestCase {
+public class ScalingManagerTest extends TestCase {
 
 	Long scaleFactor = 5L;
 	
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.ComponentMonitor#isInputDecreasing(java.lang.String)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.ScalingManager#isInputDecreasing(java.lang.String)}.
 	 */
 	public void testIsInputDecreasing() {
 		HashMap<Integer, Long> inputRecords1 = new HashMap<>();
@@ -64,12 +65,14 @@ public class ComponentMonitorTest extends TestCase {
 		cm.updateStats(cws1.getId(), cws1);
 		cm.updateStats(cws2.getId(), cws2);
 		
-		assertEquals(true, cm.isInputDecreasing("component1"));
-		assertEquals(true, cm.isInputDecreasing("component2"));
+		ScalingManager sm = new ScalingManager(cm, parser);
+		
+		assertEquals(true, sm.isInputDecreasing("component1"));
+		assertEquals(true, sm.isInputDecreasing("component2"));
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.ComponentMonitor#isInputStable(java.lang.String)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.ScalingManager#isInputStable(java.lang.String)}.
 	 */
 	public void testIsInputStable() {
 		HashMap<Integer, Long> inputRecords1 = new HashMap<>();
@@ -106,12 +109,14 @@ public class ComponentMonitorTest extends TestCase {
 		cm.updateStats(cws1.getId(), cws1);
 		cm.updateStats(cws2.getId(), cws2);
 		
-		assertEquals(true, cm.isInputStable("component1"));
-		assertEquals(false, cm.isInputStable("component2"));
+		ScalingManager sm = new ScalingManager(cm, parser);
+		
+		assertEquals(true, sm.isInputStable("component1"));
+		assertEquals(false, sm.isInputStable("component2"));
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.ComponentMonitor#isInputIncreasing(java.lang.String)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.ScalingManager#isInputIncreasing(java.lang.String)}.
 	 */
 	public void testIsInputIncreasing() {
 		HashMap<Integer, Long> inputRecords1 = new HashMap<>();
@@ -148,12 +153,14 @@ public class ComponentMonitorTest extends TestCase {
 		cm.updateStats(cws1.getId(), cws1);
 		cm.updateStats(cws2.getId(), cws2);
 		
-		assertEquals(true, cm.isInputIncreasing("component1"));
-		assertEquals(true, cm.isInputIncreasing("component2"));
+		ScalingManager sm = new ScalingManager(cm, parser);
+		
+		assertEquals(true, sm.isInputIncreasing("component1"));
+		assertEquals(true, sm.isInputIncreasing("component2"));
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.ComponentMonitor#buildActionGraph()}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.ScalingManager#buildActionGraph()}.
 	 */
 	public void testBuildActionGraph() {
 		
@@ -298,7 +305,6 @@ public class ComponentMonitorTest extends TestCase {
 		
 		ComponentMonitor cm = new ComponentMonitor(parser, null, null);
 		cm.setManager(manager);
-		cm.setDegrees(degrees);
 		cm.updateStats("component1", cwsDecr);
 		cm.updateStats("component2", cwsIncr);
 		cm.updateStats("component3", cwsDecr);
@@ -307,7 +313,11 @@ public class ComponentMonitorTest extends TestCase {
 		cm.updateStats("component6", cwsIncr);
 		cm.updateStats("component7", cwsConst);
 		
-		cm.buildActionGraph(metric, assignMonitor);
+		ScalingManager sm = new ScalingManager(cm, parser);
+		
+		sm.setDegrees(degrees);
+		
+		sm.buildActionGraph(metric, assignMonitor);
 		
 		HashMap<String, Integer> expectedScaleIn = new HashMap<>();
 		expectedScaleIn.put("component1", 1);
@@ -316,12 +326,12 @@ public class ComponentMonitorTest extends TestCase {
 		expectedScaleOut.put("component6", 5);
 		expectedScaleOut.put("component7", 8);
 		
-		assertEquals(expectedScaleIn, cm.getScaleInActions());
-		assertEquals(expectedScaleOut, cm.getScaleOutActions());
+		assertEquals(expectedScaleIn, sm.getScaleInActions());
+		assertEquals(expectedScaleOut, sm.getScaleOutActions());
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.ComponentMonitor#autoscaleAlgorithm()}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.ScalingManager#autoscaleAlgorithm()}.
 	 */
 	public void testAutoscaleAlgorithm(){
 		XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
@@ -369,11 +379,14 @@ public class ComponentMonitorTest extends TestCase {
 		scaleOutActions.put("E", 6);
 		
 		ComponentMonitor cm = new ComponentMonitor(parser, null, null);
-		cm.setDegrees(degrees);
-		cm.setScaleInActions(scaleInActions);
-		cm.setNothingActions(nothingActions);
-		cm.setScaleOutActions(scaleOutActions);
-		cm.autoscaleAlgorithm(ancestors, explorer);
+		
+		ScalingManager sm = new ScalingManager(cm, parser);
+		
+		sm.setDegrees(degrees);
+		sm.setScaleInActions(scaleInActions);
+		sm.setNothingActions(nothingActions);
+		sm.setScaleOutActions(scaleOutActions);
+		sm.autoscaleAlgorithm(ancestors, explorer);
 		
 		HashMap<String, Integer> expectedNothing = new HashMap<>();
 		HashMap<String, Integer> expectedScaleIn = new HashMap<>();
@@ -385,13 +398,13 @@ public class ComponentMonitorTest extends TestCase {
 		expectedScaleOut.put("E", 7);
 		expectedScaleOut.put("F", 5);
 		
-		assertEquals(expectedNothing, cm.getNothingActions());
-		assertEquals(expectedScaleIn, cm.getScaleInActions());
-		assertEquals(expectedScaleOut, cm.getScaleOutActions());
+		assertEquals(expectedNothing, sm.getNothingActions());
+		assertEquals(expectedScaleIn, sm.getScaleInActions());
+		assertEquals(expectedScaleOut, sm.getScaleOutActions());
 	}
 	
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.ComponentMonitor#autoscaleAlgorithmWithImpact()}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.ScalingManager#autoscaleAlgorithmWithImpact()}.
 	 */
 	public void testAutoscaleAlgorithmWithImpact(){
 		XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
@@ -479,13 +492,15 @@ public class ComponentMonitorTest extends TestCase {
 		
 		ComponentMonitor cm = new ComponentMonitor(parser, null, null);
 		cm.setParser(parser);
-		cm.setDegrees(degrees);
-		cm.setNothingActions(nothingActions);
-		cm.setScaleInActions(scaleInActions);
-		cm.setScaleOutActions(scaleOutActions);
-		cm.setCapacities(capacities);
 		
-		cm.autoscaleAlgorithmWithImpact(impact, ancestors, explorer, assignMonitor);
+		ScalingManager sm = new ScalingManager(cm, parser);
+		sm.setDegrees(degrees);
+		sm.setNothingActions(nothingActions);
+		sm.setScaleInActions(scaleInActions);
+		sm.setScaleOutActions(scaleOutActions);
+		sm.setCapacities(capacities);
+		
+		sm.autoscaleAlgorithmWithImpact(impact, ancestors, explorer, assignMonitor);
 		HashMap<String, Integer> expectedNothing = new HashMap<>();
 		HashMap<String, Integer> expectedScaleIn = new HashMap<>();
 		HashMap<String, Integer> expectedScaleOut = new HashMap<>();
@@ -497,9 +512,8 @@ public class ComponentMonitorTest extends TestCase {
 		expectedScaleOut.put("E", 7);
 		
 		
-		assertEquals(expectedNothing, cm.getNothingActions());
-		assertEquals(expectedScaleIn, cm.getScaleInActions());
-		assertEquals(expectedScaleOut, cm.getScaleOutActions());
-		
+		assertEquals(expectedNothing, sm.getNothingActions());
+		assertEquals(expectedScaleIn, sm.getScaleInActions());
+		assertEquals(expectedScaleOut, sm.getScaleOutActions());		
 	}
 }

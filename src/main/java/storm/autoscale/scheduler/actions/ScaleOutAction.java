@@ -18,7 +18,7 @@ import org.apache.storm.generated.RebalanceOptions;
 import storm.autoscale.scheduler.connector.database.IJDBCConnector;
 import storm.autoscale.scheduler.connector.database.MySQLConnector;
 import storm.autoscale.scheduler.modules.AssignmentMonitor;
-import storm.autoscale.scheduler.modules.ComponentMonitor;
+import storm.autoscale.scheduler.modules.ScalingManager;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
 
 /**
@@ -27,7 +27,7 @@ import storm.autoscale.scheduler.modules.TopologyExplorer;
  */
 public class ScaleOutAction implements IAction {
 
-	private ComponentMonitor cm;
+	private ScalingManager sm;
 	private TopologyExplorer explorer;
 	private AssignmentMonitor am;
 	private String nimbusHost;
@@ -37,20 +37,20 @@ public class ScaleOutAction implements IAction {
 	private HashMap<String, Integer> actions;
 	private Logger logger = Logger.getLogger("ScaleOutAction");
 	
-	public ScaleOutAction(ComponentMonitor compMonitor, TopologyExplorer explorer,
+	public ScaleOutAction(ScalingManager sm, TopologyExplorer explorer,
 			AssignmentMonitor assignMonitor, String nimbusHost, Integer nimbusPort) {
-		this.cm = compMonitor;
+		this.sm = sm;
 		this.explorer = explorer;
 		this.am = assignMonitor;
 		this.nimbusHost = nimbusHost;
 		this.nimbusPort = nimbusPort;
-		this.actions = this.cm.getScaleOutActions();
+		this.actions = this.sm.getScaleOutActions();
 		
 		try {
-			String host = this.cm.getParser().getDbHost();
-			String name = this.cm.getParser().getDbName();
-			String user = this.cm.getParser().getDbUser();
-			String pwd = this.cm.getParser().getDbPassword();
+			String host = this.sm.getParser().getDbHost();
+			String name = this.sm.getParser().getDbName();
+			String user = this.sm.getParser().getDbUser();
+			String pwd = this.sm.getParser().getDbPassword();
 			this.connector = new MySQLConnector(host, name, user, pwd);
 		} catch (ClassNotFoundException | SQLException e) {
 			logger.severe("Unable to perform the scale-out action because " + e);
@@ -71,7 +71,7 @@ public class ScaleOutAction implements IAction {
 			}
 			for(String component : this.actions.keySet()){
 				
-				Integer currentDegree = this.cm.getCurrentDegree(component);
+				Integer currentDegree = this.sm.getDegree(component);
 				Integer adequateDegree = this.actions.get(component);
 				
 				if(!isGracePeriod(component)){
@@ -99,7 +99,7 @@ public class ScaleOutAction implements IAction {
 	@Override
 	public void storeAction(String component, Integer currentDegree, Integer newDegree) {
 		try {
-			String query = "INSERT INTO scales VALUES('" + this.cm.getTimestamp() + "', '" + component + "', 'scale out', '" + currentDegree + "', '" + newDegree + "')";
+			String query = "INSERT INTO scales VALUES('" + this.sm.getMonitor().getTimestamp() + "', '" + component + "', 'scale out', '" + currentDegree + "', '" + newDegree + "')";
 			this.connector.executeUpdate(query);
 		} catch(SQLException e) {
 			logger.severe("Unable to store the scale out action for component " + component +  " because " + e);
@@ -109,8 +109,8 @@ public class ScaleOutAction implements IAction {
 	@Override
 	public boolean isGracePeriod(String component) {
 		boolean isGrace = false;
-		Integer previousTimestamp = this.cm.getTimestamp() - 1;
-		Integer oldTimestamp = (int) (previousTimestamp - Math.round((this.cm.getParser().getWindowSize() * this.cm.getParser().getStabilizationCoeff())));
+		Integer previousTimestamp = this.sm.getMonitor().getTimestamp() - 1;
+		Integer oldTimestamp = (int) (previousTimestamp - Math.round((this.sm.getParser().getWindowSize() * this.sm.getParser().getStabilizationCoeff())));
 		String query = "SELECT * FROM scales WHERE component = '" + component + "' AND timestamp BETWEEN " + oldTimestamp + " AND " + previousTimestamp;
 		try {
 			ResultSet result = this.connector.executeQuery(query);

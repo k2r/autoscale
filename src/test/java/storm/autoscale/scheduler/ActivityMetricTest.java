@@ -11,6 +11,7 @@ import junit.framework.TestCase;
 import storm.autoscale.scheduler.config.XmlConfigParser;
 import storm.autoscale.scheduler.metrics.ActivityMetric;
 import storm.autoscale.scheduler.modules.ComponentMonitor;
+import storm.autoscale.scheduler.modules.ScalingManager;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 
@@ -132,7 +133,9 @@ public class ActivityMetricTest extends TestCase {
 		Mockito.when(compMonitor.getPendingTuples(explorer)).thenReturn(remainingTuples);
 		Mockito.when(compMonitor.getParser()).thenReturn(parser);
 		
-		ActivityMetric activityMetric = new ActivityMetric(compMonitor, explorer);
+		ScalingManager sm = new ScalingManager(compMonitor, parser);
+		
+		ActivityMetric activityMetric = new ActivityMetric(sm, explorer);
 		assertEquals(750.0, activityMetric.computeEstimatedLoad("component1"), 0);
 		assertEquals(390.0, activityMetric.computeEstimatedLoad("component2"), 0);
 		assertEquals(300.0, activityMetric.computeEstimatedLoad("component3"), 0.01);
@@ -198,17 +201,23 @@ public class ActivityMetricTest extends TestCase {
 		TopologyExplorer explorer = Mockito.mock(TopologyExplorer.class);
 		
 		ComponentMonitor compMonitor = Mockito.mock(ComponentMonitor.class);
-		Mockito.when(compMonitor.getStats("component1")).thenReturn(stats1);
-		Mockito.when(compMonitor.getStats("component2")).thenReturn(stats2);
-		Mockito.when(compMonitor.getStats("component3")).thenReturn(stats3);
-		Mockito.when(compMonitor.getCurrentDegree("component1")).thenReturn(1);
-		Mockito.when(compMonitor.getCurrentDegree("component2")).thenReturn(1);
-		Mockito.when(compMonitor.getCurrentDegree("component3")).thenReturn(1);
+		
 		Mockito.when(compMonitor.getMonitoringFrequency()).thenReturn(1);
 		Mockito.when(compMonitor.getPendingTuples(explorer)).thenReturn(remainingTuples);
 		Mockito.when(compMonitor.getParser()).thenReturn(parser);
 		
-		ActivityMetric eprMetric = new ActivityMetric(compMonitor, explorer);
+		Mockito.when(compMonitor.getStats("component1")).thenReturn(stats1);
+		Mockito.when(compMonitor.getStats("component2")).thenReturn(stats2);
+		Mockito.when(compMonitor.getStats("component3")).thenReturn(stats3);
+		
+		ScalingManager sm = Mockito.mock(ScalingManager.class);
+		Mockito.when(sm.getMonitor()).thenReturn(compMonitor);
+		Mockito.when(sm.getDegree("component1")).thenReturn(1);
+		Mockito.when(sm.getDegree("component2")).thenReturn(1);
+		Mockito.when(sm.getDegree("component3")).thenReturn(1);
+		
+		
+		ActivityMetric eprMetric = new ActivityMetric(sm, explorer);
 		assertEquals(300, eprMetric.computeAvgCapacity("component1"), 0);
 		assertEquals(130.9, eprMetric.computeAvgCapacity("component2"), 0.1);
 		assertEquals(130.9, eprMetric.computeAvgCapacity("component3"), 0.1);
@@ -389,6 +398,9 @@ public class ActivityMetricTest extends TestCase {
 		TopologyExplorer explorer = Mockito.mock(TopologyExplorer.class);
 		
 		ComponentMonitor compMonitor = Mockito.mock(ComponentMonitor.class);
+		Mockito.when(compMonitor.getMonitoringFrequency()).thenReturn(1);
+		Mockito.when(compMonitor.getPendingTuples(explorer)).thenReturn(pendingTuples);
+		Mockito.when(compMonitor.getParser()).thenReturn(parser);
 		Mockito.when(compMonitor.getStats("component1")).thenReturn(stats1);
 		Mockito.when(compMonitor.getStats("component2")).thenReturn(stats2);
 		Mockito.when(compMonitor.getStats("component3")).thenReturn(stats3);
@@ -398,20 +410,22 @@ public class ActivityMetricTest extends TestCase {
 		Mockito.when(compMonitor.getStats("component7")).thenReturn(stats7);
 		Mockito.when(compMonitor.getStats("component8")).thenReturn(stats8);
 		Mockito.when(compMonitor.getStats("component9")).thenReturn(stats9);
-		Mockito.when(compMonitor.getCurrentDegree("component1")).thenReturn(1);
-		Mockito.when(compMonitor.getCurrentDegree("component2")).thenReturn(1);
-		Mockito.when(compMonitor.getCurrentDegree("component3")).thenReturn(1);
-		Mockito.when(compMonitor.getCurrentDegree("component4")).thenReturn(1);
-		Mockito.when(compMonitor.getCurrentDegree("component5")).thenReturn(1);
-		Mockito.when(compMonitor.getCurrentDegree("component6")).thenReturn(1);
-		Mockito.when(compMonitor.getCurrentDegree("component7")).thenReturn(1);
-		Mockito.when(compMonitor.getCurrentDegree("component8")).thenReturn(1);
-		Mockito.when(compMonitor.getCurrentDegree("component9")).thenReturn(1);
-		Mockito.when(compMonitor.getMonitoringFrequency()).thenReturn(1);
-		Mockito.when(compMonitor.getPendingTuples(explorer)).thenReturn(pendingTuples);
-		Mockito.when(compMonitor.getParser()).thenReturn(parser);
 		
-		ActivityMetric activityMetric = new ActivityMetric(compMonitor, explorer);
+		ScalingManager sm = Mockito.mock(ScalingManager.class);
+		Mockito.when(sm.getMonitor()).thenReturn(compMonitor);
+		Mockito.when(sm.getParser()).thenReturn(parser);
+		Mockito.when(sm.getDegree("component1")).thenReturn(1);
+		Mockito.when(sm.getDegree("component2")).thenReturn(1);
+		Mockito.when(sm.getDegree("component3")).thenReturn(1);
+		Mockito.when(sm.getDegree("component4")).thenReturn(1);
+		Mockito.when(sm.getDegree("component5")).thenReturn(1);
+		Mockito.when(sm.getDegree("component6")).thenReturn(1);
+		Mockito.when(sm.getDegree("component7")).thenReturn(1);
+		Mockito.when(sm.getDegree("component8")).thenReturn(1);
+		Mockito.when(sm.getDegree("component9")).thenReturn(1);
+		
+		
+		ActivityMetric activityMetric = new ActivityMetric(sm, explorer);
 		assertEquals(1, activityMetric.compute("component1"), 0);
 		assertEquals(2.29, activityMetric.compute("component2"), 0.01);
 		assertEquals(2.29, activityMetric.compute("component3"), 0.01);

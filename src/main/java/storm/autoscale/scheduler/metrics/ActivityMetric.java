@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 
 import storm.autoscale.scheduler.modules.ComponentMonitor;
+import storm.autoscale.scheduler.modules.ScalingManager;
 import storm.autoscale.scheduler.modules.TopologyExplorer;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 import storm.autoscale.scheduler.regression.LinearRegressionTools;
@@ -18,7 +19,7 @@ import storm.autoscale.scheduler.regression.RegressionSelector;
  */
 public class ActivityMetric implements IMetric {
 
-	ComponentMonitor cm;
+	ScalingManager sm;
 	TopologyExplorer explorer;
 	HashMap<String, Long> remainingTuples;
 	HashMap<String, HashMap<String, BigDecimal>> activityInfo;
@@ -31,10 +32,10 @@ public class ActivityMetric implements IMetric {
 	/**
 	 * 
 	 */
-	public ActivityMetric(ComponentMonitor cm, TopologyExplorer explorer) {
-		this.cm = cm;
+	public ActivityMetric(ScalingManager sm, TopologyExplorer explorer) {
+		this.sm = sm;
 		this.explorer = explorer;
-		this.remainingTuples = this.cm.getPendingTuples(this.explorer);
+		this.remainingTuples = this.sm.getMonitor().getPendingTuples(this.explorer);
 		this.activityInfo = new HashMap<>();
 	}
 
@@ -43,7 +44,7 @@ public class ActivityMetric implements IMetric {
 	 */
 	@Override
 	public ComponentMonitor getComponentMonitor() {
-		return this.cm;
+		return this.sm.getMonitor();
 	}
 	
 	@Override
@@ -57,22 +58,23 @@ public class ActivityMetric implements IMetric {
 	
 	public Double computeEstimatedLoad(String component){
 		Double result = 0.0;
+		ComponentMonitor cm = this.getComponentMonitor();
 		//Get the remaining tuples for the component
-		Long remainingTuples = this.cm.getStats(component).getTotalInput() - this.cm.getStats(component).getTotalExecuted();
+		Long remainingTuples = cm.getStats(component).getTotalInput() - cm.getStats(component).getTotalExecuted();
 		if(!this.activityInfo.containsKey(component)){
 			this.activityInfo.put(component, new HashMap<String, BigDecimal>());
 		}
 		HashMap<String, BigDecimal> info = this.activityInfo.get(component);
 		info.put(REMAINING, new BigDecimal(remainingTuples));
 		//Determine the min and the max of input records
-		HashMap<Integer, Long> inputRecords = this.cm.getStats(component).getInputRecords();
+		HashMap<Integer, Long> inputRecords = cm.getStats(component).getInputRecords();
 		//From those points, compute the equation of the line
 		RegressionSelector<Integer, Long> regression = new RegressionSelector<>(inputRecords);
 		
 		//determine each estimated value and sum them
 		Integer lastTimestamp = ComponentWindowedStats.getRecordedTimestamps(inputRecords).get(0);
-		Integer nextWindowEnd = lastTimestamp + this.cm.getParser().getWindowSize();
-		Integer monitoringFrequency = this.cm.getMonitoringFrequency();
+		Integer nextWindowEnd = lastTimestamp + cm.getParser().getWindowSize();
+		Integer monitoringFrequency = cm.getMonitoringFrequency();
 		Double estimIncomingTuples = 0.0;
 		for(int i = lastTimestamp + monitoringFrequency; i <= nextWindowEnd; i += monitoringFrequency){
 			Double estimation = Math.max(0, regression.estimateYCoordinate(i));
@@ -89,15 +91,16 @@ public class ActivityMetric implements IMetric {
 	
 	public Double computeAvgCapacity(String component){
 		Double result = 0.0;
+		ComponentMonitor cm = this.getComponentMonitor();
 		//Get the window size
-		Integer windowSize = this.cm.getParser().getWindowSize();
-		HashMap<Integer, Double> latencyRecords = this.cm.getStats(component).getAvgLatencyRecords();
+		Integer windowSize = cm.getParser().getWindowSize();
+		HashMap<Integer, Double> latencyRecords = cm.getStats(component).getAvgLatencyRecords();
 		HashMap<Integer, Double> processingRates = new HashMap<>();
 		for(Integer timestamp : latencyRecords.keySet()){
 			processingRates.put(timestamp, 1000 / latencyRecords.get(timestamp));
 		}
 		Double averageSeqCapacity = LinearRegressionTools.avgYCoordinate(processingRates);
-		Integer parallelism = this.cm.getCurrentDegree(component); 
+		Integer parallelism = this.sm.getDegree(component); 
 		Double avgCapacity = averageSeqCapacity * parallelism;
 		if(avgCapacity.isInfinite() || avgCapacity.isNaN()){
 			avgCapacity = 0.0;
@@ -117,9 +120,10 @@ public class ActivityMetric implements IMetric {
 	 */
 	@Override
 	public Double compute(String component) {
-		Integer nbRecords = ComponentWindowedStats.getRecordedTimestamps(this.cm.getStats(component).getInputRecords()).size();
+		ComponentMonitor cm = this.sm.getMonitor();
+		Integer nbRecords = ComponentWindowedStats.getRecordedTimestamps(cm.getStats(component).getInputRecords()).size();
 		Double activity = this.computeEstimatedLoad(component) / this.computeAvgCapacity(component);
-		Integer expectedNbRecords = (this.cm.getParser().getWindowSize() / this.cm.getMonitoringFrequency()) - 1;// we accept an offset of one measurement compared to ideal model 
+		Integer expectedNbRecords = (this.sm.getParser().getWindowSize() / cm.getMonitoringFrequency()) - 1;// we accept an offset of one measurement compared to ideal model 
 		//In the case, we estimate that no tuples will be processed, we affect a special value to let a grace period 
 		if(activity.isInfinite() || activity.isNaN() || nbRecords < expectedNbRecords){
 			activity = -1.0;
