@@ -21,6 +21,7 @@ import storm.autoscale.scheduler.metrics.ActivityMetric;
 import storm.autoscale.scheduler.metrics.IMetric;
 import storm.autoscale.scheduler.metrics.ImpactMetric;
 import storm.autoscale.scheduler.regression.LinearRegressionTools;
+import storm.autoscale.scheduler.regression.RegressionSelector;
 
 /**
  * @author Roland
@@ -191,6 +192,16 @@ public class ScalingManager {
 		return (coeff > increaseThreshold);
 	}
 	
+	public Double getEstimatedCpuUsagePerExec(String component){
+		HashMap<Integer, Double> avgCpuRecords = monitor.getStats(component).getAvgCpuUsageRecords(); // we consider the average cpu usage of all executors associated to the component
+
+		Integer timestamp = this.monitor.getTimestamp();
+		Integer step = this.monitor.getMonitoringFrequency();
+		
+		RegressionSelector<Integer, Double> selector = new RegressionSelector<>(avgCpuRecords); // we perform a best-effort regression of average cpu usage to estimate the average one on the next observation
+		return selector.estimateYCoordinate(timestamp + step);
+	}
+	
 	public void buildDegreeMap(AssignmentMonitor assignmentMonitor){
 		Set<String> components = this.monitor.getRegisteredComponents();
 		for(String component : components){
@@ -259,8 +270,6 @@ public class ScalingManager {
 		}
 	}
 	
-	
-
 	public void autoscaleAlgorithm(HashSet<String> ancestors, TopologyExplorer explorer){
 		HashSet<String> descendants = new HashSet<>();
 		HashSet<String> checkedComponents = new HashSet<>();
@@ -382,5 +391,18 @@ public class ScalingManager {
 		if(!descendants.isEmpty()){
 			autoscaleAlgorithmWithImpact(metric, descendants, explorer, assignMonitor);
 		}
-	}	
+	}
+	
+	public void adjustDegreesToCpuConstraint(TopologyExplorer explorer){
+		HashMap<String, Double> cpuConstraints = this.monitor.getCurrentCpuConstraints(explorer);
+		for(String component : this.scaleOutActions.keySet()){
+			Integer degree = this.scaleOutActions.get(component);
+			Double cpuConstraint = cpuConstraints.get(component);
+			Double cpuEstimatedUsage = this.getEstimatedCpuUsagePerExec(component);
+			if(cpuConstraint < cpuEstimatedUsage){
+				Integer cpuAwareDegree = (int) Math.round(degree * (cpuEstimatedUsage / cpuConstraint));
+				this.scaleOutActions.put(component, cpuAwareDegree);
+			}
+		}
+	}
 }

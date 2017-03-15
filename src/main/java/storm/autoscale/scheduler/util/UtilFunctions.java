@@ -82,4 +82,41 @@ public class UtilFunctions {
 		}
 		
 	}
+	
+	public static <T extends Number> Double getAvgValue(ArrayList<T> values){
+		Double avgValue = 0.0;
+		int nbValues = values.size();
+		for(int i = 0; i < nbValues; i++){
+			avgValue += values.get(i).doubleValue();
+		}
+		return avgValue / nbValues;
+	}
+	
+	public static <T extends Number> T getMaxValue(ArrayList<T> values){
+		T max = null;
+		if(!values.isEmpty()){
+			max = values.get(0);
+			int nbValues = values.size();
+			for(int i = 1; i < nbValues; i++){
+				if(values.get(i).doubleValue() > max.doubleValue()){
+					max = values.get(i);
+				}
+			}
+		}
+		return max;
+	}
+	
+	public static <T extends Number> T getMinValue(ArrayList<T> values){
+		T min = null;
+		if(!values.isEmpty()){
+			min = values.get(0);
+			int nbValues = values.size();
+			for(int i = 1; i < nbValues; i++){
+				if(values.get(i).doubleValue() < min.doubleValue()){
+					min = values.get(i);
+				}
+			}
+		}
+		return min;
+	}
 }

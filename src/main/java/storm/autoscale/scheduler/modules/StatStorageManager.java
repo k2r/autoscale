@@ -572,23 +572,27 @@ public class StatStorageManager{
 		return records;
 	}
 
-	public HashMap<Integer, Double> getCpuUsage(String component, Integer timestamp, Integer windowSize){
+	public HashMap<Integer, ArrayList<Double>> getCpuUsage(String component, Integer timestamp, Integer windowSize){
 		int oldestTimestamp =  timestamp - windowSize;
-		HashMap<Integer, Double> records = new HashMap<>();
+		HashMap<Integer, ArrayList<Double>> records = new HashMap<>();
 		try {
-			String query  = "SELECT timestamp, AVG(" + COL_CPU_USAGE + ") AS avgCpuUsage FROM " + TABLE_BOLT 
+			String query  = "SELECT timestamp, " + COL_CPU_USAGE + " FROM " + TABLE_BOLT 
 					+ " WHERE component = '" + component 
-					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp 
-					+ " GROUP BY timestamp, component;";
+					+ "' AND timestamp BETWEEN " + oldestTimestamp + " AND " + timestamp;
 			ResultSet results = this.connector.executeQuery(query);
 			while(results.next()){
 				Integer readTimestamp = results.getInt("timestamp");
-				Double avgCpuUsage = new BigDecimal(results.getDouble("avgCpuUsage")).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
-				records.put(readTimestamp, avgCpuUsage);
+				ArrayList<Double> usages = new ArrayList<>();
+				if(records.containsKey(readTimestamp)){
+					usages = records.get(readTimestamp);
+				}
+				Double cpuUsage = new BigDecimal(results.getDouble(COL_CPU_USAGE)).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+				usages.add(cpuUsage);
+				records.put(readTimestamp, usages);
 			}
 			results.close();
 		} catch (SQLException e) {
-			logger.severe("Unable to compute the average cpu usage of the component " + component + " because of " + e);
+			logger.severe("Unable to retrieve the average cpu usage of the component " + component + " because of " + e);
 		}
 		return records;
 	}
@@ -725,6 +729,20 @@ public class StatStorageManager{
 		return result;
 	}
 	
+	public boolean existConstraint(String topology){
+		boolean result = false;
+		String query = "SELECT * FROM " + TABLE_CONSTRAINT + " WHERE topology = '" + topology + "';";
+		try{
+			ResultSet results = this.connector.executeQuery(query);
+			if(results.next()){
+				result = true;
+			}
+		}catch (SQLException e){
+			logger.fine("Unable to check existence of constraints because of " + e);
+		}
+		return result;
+	}
+	
 	public boolean isInitialConstraint(Integer timestamp, String topology, String component){
 		boolean result = true;
 		String query = "SELECT * FROM " + TABLE_CONSTRAINT + " WHERE timestamp < " + timestamp + 
@@ -735,7 +753,7 @@ public class StatStorageManager{
 				result = false;
 			}
 		} catch (SQLException e){
-			logger.fine("Unable to store activity info because of " + e);
+			logger.fine("Unable to check initial constraints because of " + e);
 		}
 		return result;
 	}

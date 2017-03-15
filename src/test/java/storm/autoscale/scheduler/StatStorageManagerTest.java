@@ -1035,4 +1035,497 @@ public class StatStorageManagerTest extends TestCase {
 			fail("StatStorageManager module has failed to store topology constraints because of " + e);
 		}
 	}
+	
+	public void testIsInitialConstraint(){
+		try{
+			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
+			Mockito.when(parser.getDbHost()).thenReturn("localhost");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale_test");
+			Mockito.when(parser.getDbUser()).thenReturn("root");
+			Mockito.when(parser.getDbPassword()).thenReturn("");
+			
+			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			
+			TopologyDetails topology = Mockito.mock(TopologyDetails.class);
+			Mockito.when(topology.getName()).thenReturn("topologyTest");
+			
+			Component compA = new Component("A");
+			
+			ExecutorDetails execA1 = Mockito.mock(ExecutorDetails.class);
+			ExecutorDetails execA2 = Mockito.mock(ExecutorDetails.class);
+			ExecutorDetails execA3 = Mockito.mock(ExecutorDetails.class);
+			ExecutorDetails execA4 = Mockito.mock(ExecutorDetails.class);
+			
+			ArrayList<ExecutorDetails> execsA = new ArrayList<>();
+			execsA.add(execA1);
+			execsA.add(execA2);
+			execsA.add(execA3);
+			execsA.add(execA4);
+			
+			compA.execs = execsA;
+			
+			HashMap<String, Component> components = new HashMap<>();
+			components.put("A", compA);
+			
+			Mockito.when(topology.getComponents()).thenReturn(components);
+			Mockito.when(topology.getTotalCpuReqTask(execA1)).thenReturn(10.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA2)).thenReturn(10.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA3)).thenReturn(10.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA4)).thenReturn(10.0);
+
+			Mockito.when(topology.getTotalMemReqTask(execA1)).thenReturn(32.0);
+			Mockito.when(topology.getTotalMemReqTask(execA2)).thenReturn(32.0);
+			Mockito.when(topology.getTotalMemReqTask(execA3)).thenReturn(32.0);
+			Mockito.when(topology.getTotalMemReqTask(execA4)).thenReturn(32.0);
+			
+			manager.storeTopologyConstraints(0, topology);
+
+			Mockito.when(topology.getComponents()).thenReturn(components);
+			Mockito.when(topology.getTotalCpuReqTask(execA1)).thenReturn(20.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA2)).thenReturn(20.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA3)).thenReturn(20.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA4)).thenReturn(20.0);
+
+			Mockito.when(topology.getTotalMemReqTask(execA1)).thenReturn(64.0);
+			Mockito.when(topology.getTotalMemReqTask(execA2)).thenReturn(64.0);
+			Mockito.when(topology.getTotalMemReqTask(execA3)).thenReturn(64.0);
+			Mockito.when(topology.getTotalMemReqTask(execA4)).thenReturn(64.0);
+			
+			manager.storeTopologyConstraints(1, topology);
+
+			Mockito.when(topology.getComponents()).thenReturn(components);
+			Mockito.when(topology.getTotalCpuReqTask(execA1)).thenReturn(30.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA2)).thenReturn(30.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA3)).thenReturn(30.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA4)).thenReturn(30.0);
+
+			Mockito.when(topology.getTotalMemReqTask(execA1)).thenReturn(128.0);
+			Mockito.when(topology.getTotalMemReqTask(execA2)).thenReturn(128.0);
+			Mockito.when(topology.getTotalMemReqTask(execA3)).thenReturn(128.0);
+			Mockito.when(topology.getTotalMemReqTask(execA4)).thenReturn(128.0);
+			
+			manager.storeTopologyConstraints(2, topology);
+			
+			assertEquals(true, manager.isInitialConstraint(0, "topologyTest", "A"));
+			assertEquals(true, manager.isInitialConstraint(0, "nottopologyTest", "A"));
+			assertEquals(false, manager.isInitialConstraint(1, "topologyTest", "A"));
+			assertEquals(false, manager.isInitialConstraint(2, "topologyTest", "A"));
+			assertEquals(true, manager.isInitialConstraint(0, "topologyTest", "B"));
+			
+			String testCleanQuery = "DELETE FROM operators_constraints";
+			connector.executeUpdate(testCleanQuery);
+		} catch (ClassNotFoundException | SQLException e) {
+			fail("StatStorageManager module has failed to store topology constraints because of " + e);
+		}
+	}
+	
+	public void testGetInitialCpuConstraint(){
+		try{
+			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
+			Mockito.when(parser.getDbHost()).thenReturn("localhost");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale_test");
+			Mockito.when(parser.getDbUser()).thenReturn("root");
+			Mockito.when(parser.getDbPassword()).thenReturn("");
+			
+			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			
+			TopologyDetails topology = Mockito.mock(TopologyDetails.class);
+			Mockito.when(topology.getName()).thenReturn("topologyTest");
+			
+			Component compA = new Component("A");
+			
+			ExecutorDetails execA1 = Mockito.mock(ExecutorDetails.class);
+			ExecutorDetails execA2 = Mockito.mock(ExecutorDetails.class);
+			ExecutorDetails execA3 = Mockito.mock(ExecutorDetails.class);
+			ExecutorDetails execA4 = Mockito.mock(ExecutorDetails.class);
+			
+			ArrayList<ExecutorDetails> execsA = new ArrayList<>();
+			execsA.add(execA1);
+			execsA.add(execA2);
+			execsA.add(execA3);
+			execsA.add(execA4);
+			
+			compA.execs = execsA;
+			
+			HashMap<String, Component> components = new HashMap<>();
+			components.put("A", compA);
+			
+			Mockito.when(topology.getComponents()).thenReturn(components);
+			Mockito.when(topology.getTotalCpuReqTask(execA1)).thenReturn(10.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA2)).thenReturn(10.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA3)).thenReturn(10.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA4)).thenReturn(10.0);
+
+			Mockito.when(topology.getTotalMemReqTask(execA1)).thenReturn(32.0);
+			Mockito.when(topology.getTotalMemReqTask(execA2)).thenReturn(32.0);
+			Mockito.when(topology.getTotalMemReqTask(execA3)).thenReturn(32.0);
+			Mockito.when(topology.getTotalMemReqTask(execA4)).thenReturn(32.0);
+			
+			manager.storeTopologyConstraints(0, topology);
+
+			Mockito.when(topology.getComponents()).thenReturn(components);
+			Mockito.when(topology.getTotalCpuReqTask(execA1)).thenReturn(20.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA2)).thenReturn(20.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA3)).thenReturn(20.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA4)).thenReturn(20.0);
+
+			Mockito.when(topology.getTotalMemReqTask(execA1)).thenReturn(64.0);
+			Mockito.when(topology.getTotalMemReqTask(execA2)).thenReturn(64.0);
+			Mockito.when(topology.getTotalMemReqTask(execA3)).thenReturn(64.0);
+			Mockito.when(topology.getTotalMemReqTask(execA4)).thenReturn(64.0);
+			
+			manager.storeTopologyConstraints(1, topology);
+
+			Mockito.when(topology.getComponents()).thenReturn(components);
+			Mockito.when(topology.getTotalCpuReqTask(execA1)).thenReturn(30.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA2)).thenReturn(30.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA3)).thenReturn(30.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA4)).thenReturn(30.0);
+
+			Mockito.when(topology.getTotalMemReqTask(execA1)).thenReturn(128.0);
+			Mockito.when(topology.getTotalMemReqTask(execA2)).thenReturn(128.0);
+			Mockito.when(topology.getTotalMemReqTask(execA3)).thenReturn(128.0);
+			Mockito.when(topology.getTotalMemReqTask(execA4)).thenReturn(128.0);
+			
+			manager.storeTopologyConstraints(2, topology);
+			
+			assertEquals(10.0, manager.getInitialCpuConstraint("topologyTest", "A"));
+			assertEquals(0.0, manager.getInitialCpuConstraint("nottopologyTest", "A"));
+			assertEquals(0.0, manager.getInitialCpuConstraint("topologyTest", "B"));
+			
+			String testCleanQuery = "DELETE FROM operators_constraints";
+			connector.executeUpdate(testCleanQuery);
+		} catch (ClassNotFoundException | SQLException e) {
+			fail("StatStorageManager module has failed to store topology constraints because of " + e);
+		}
+	}
+	
+	public void testGetInitialMemConstraint(){
+		try{
+			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
+			Mockito.when(parser.getDbHost()).thenReturn("localhost");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale_test");
+			Mockito.when(parser.getDbUser()).thenReturn("root");
+			Mockito.when(parser.getDbPassword()).thenReturn("");
+			
+			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			
+			TopologyDetails topology = Mockito.mock(TopologyDetails.class);
+			Mockito.when(topology.getName()).thenReturn("topologyTest");
+			
+			Component compA = new Component("A");
+			
+			ExecutorDetails execA1 = Mockito.mock(ExecutorDetails.class);
+			ExecutorDetails execA2 = Mockito.mock(ExecutorDetails.class);
+			ExecutorDetails execA3 = Mockito.mock(ExecutorDetails.class);
+			ExecutorDetails execA4 = Mockito.mock(ExecutorDetails.class);
+			
+			ArrayList<ExecutorDetails> execsA = new ArrayList<>();
+			execsA.add(execA1);
+			execsA.add(execA2);
+			execsA.add(execA3);
+			execsA.add(execA4);
+			
+			compA.execs = execsA;
+			
+			HashMap<String, Component> components = new HashMap<>();
+			components.put("A", compA);
+			
+			Mockito.when(topology.getComponents()).thenReturn(components);
+			Mockito.when(topology.getTotalCpuReqTask(execA1)).thenReturn(10.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA2)).thenReturn(10.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA3)).thenReturn(10.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA4)).thenReturn(10.0);
+
+			Mockito.when(topology.getTotalMemReqTask(execA1)).thenReturn(32.0);
+			Mockito.when(topology.getTotalMemReqTask(execA2)).thenReturn(32.0);
+			Mockito.when(topology.getTotalMemReqTask(execA3)).thenReturn(32.0);
+			Mockito.when(topology.getTotalMemReqTask(execA4)).thenReturn(32.0);
+			
+			manager.storeTopologyConstraints(0, topology);
+
+			Mockito.when(topology.getComponents()).thenReturn(components);
+			Mockito.when(topology.getTotalCpuReqTask(execA1)).thenReturn(20.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA2)).thenReturn(20.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA3)).thenReturn(20.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA4)).thenReturn(20.0);
+
+			Mockito.when(topology.getTotalMemReqTask(execA1)).thenReturn(64.0);
+			Mockito.when(topology.getTotalMemReqTask(execA2)).thenReturn(64.0);
+			Mockito.when(topology.getTotalMemReqTask(execA3)).thenReturn(64.0);
+			Mockito.when(topology.getTotalMemReqTask(execA4)).thenReturn(64.0);
+			
+			manager.storeTopologyConstraints(1, topology);
+
+			Mockito.when(topology.getComponents()).thenReturn(components);
+			Mockito.when(topology.getTotalCpuReqTask(execA1)).thenReturn(30.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA2)).thenReturn(30.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA3)).thenReturn(30.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA4)).thenReturn(30.0);
+
+			Mockito.when(topology.getTotalMemReqTask(execA1)).thenReturn(128.0);
+			Mockito.when(topology.getTotalMemReqTask(execA2)).thenReturn(128.0);
+			Mockito.when(topology.getTotalMemReqTask(execA3)).thenReturn(128.0);
+			Mockito.when(topology.getTotalMemReqTask(execA4)).thenReturn(128.0);
+			
+			manager.storeTopologyConstraints(2, topology);
+			
+			assertEquals(32.0, manager.getInitialMemConstraint("topologyTest", "A"));
+			assertEquals(0.0, manager.getInitialMemConstraint("nottopologyTest", "A"));
+			assertEquals(0.0, manager.getInitialMemConstraint("topologyTest", "B"));
+			
+			String testCleanQuery = "DELETE FROM operators_constraints";
+			connector.executeUpdate(testCleanQuery);
+		} catch (ClassNotFoundException | SQLException e) {
+			fail("StatStorageManager module has failed to store topology constraints because of " + e);
+		}
+	}
+	
+	public void testGetCurrentCpuConstraint(){
+		try{
+			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
+			Mockito.when(parser.getDbHost()).thenReturn("localhost");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale_test");
+			Mockito.when(parser.getDbUser()).thenReturn("root");
+			Mockito.when(parser.getDbPassword()).thenReturn("");
+			
+			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			
+			TopologyDetails topology = Mockito.mock(TopologyDetails.class);
+			Mockito.when(topology.getName()).thenReturn("topologyTest");
+			
+			Component compA = new Component("A");
+			
+			ExecutorDetails execA1 = Mockito.mock(ExecutorDetails.class);
+			ExecutorDetails execA2 = Mockito.mock(ExecutorDetails.class);
+			ExecutorDetails execA3 = Mockito.mock(ExecutorDetails.class);
+			ExecutorDetails execA4 = Mockito.mock(ExecutorDetails.class);
+			
+			ArrayList<ExecutorDetails> execsA = new ArrayList<>();
+			execsA.add(execA1);
+			execsA.add(execA2);
+			execsA.add(execA3);
+			execsA.add(execA4);
+			
+			compA.execs = execsA;
+			
+			HashMap<String, Component> components = new HashMap<>();
+			components.put("A", compA);
+			
+			Mockito.when(topology.getComponents()).thenReturn(components);
+			Mockito.when(topology.getTotalCpuReqTask(execA1)).thenReturn(10.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA2)).thenReturn(10.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA3)).thenReturn(10.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA4)).thenReturn(10.0);
+
+			Mockito.when(topology.getTotalMemReqTask(execA1)).thenReturn(32.0);
+			Mockito.when(topology.getTotalMemReqTask(execA2)).thenReturn(32.0);
+			Mockito.when(topology.getTotalMemReqTask(execA3)).thenReturn(32.0);
+			Mockito.when(topology.getTotalMemReqTask(execA4)).thenReturn(32.0);
+			
+			manager.storeTopologyConstraints(0, topology);
+
+			Mockito.when(topology.getComponents()).thenReturn(components);
+			Mockito.when(topology.getTotalCpuReqTask(execA1)).thenReturn(20.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA2)).thenReturn(20.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA3)).thenReturn(20.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA4)).thenReturn(20.0);
+
+			Mockito.when(topology.getTotalMemReqTask(execA1)).thenReturn(64.0);
+			Mockito.when(topology.getTotalMemReqTask(execA2)).thenReturn(64.0);
+			Mockito.when(topology.getTotalMemReqTask(execA3)).thenReturn(64.0);
+			Mockito.when(topology.getTotalMemReqTask(execA4)).thenReturn(64.0);
+			
+			manager.storeTopologyConstraints(1, topology);
+
+			Mockito.when(topology.getComponents()).thenReturn(components);
+			Mockito.when(topology.getTotalCpuReqTask(execA1)).thenReturn(30.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA2)).thenReturn(30.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA3)).thenReturn(30.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA4)).thenReturn(30.0);
+
+			Mockito.when(topology.getTotalMemReqTask(execA1)).thenReturn(128.0);
+			Mockito.when(topology.getTotalMemReqTask(execA2)).thenReturn(128.0);
+			Mockito.when(topology.getTotalMemReqTask(execA3)).thenReturn(128.0);
+			Mockito.when(topology.getTotalMemReqTask(execA4)).thenReturn(128.0);
+			
+			manager.storeTopologyConstraints(2, topology);
+			
+			assertEquals(30.0, manager.getCurrentCpuConstraint("topologyTest", "A"));
+			assertEquals(0.0, manager.getCurrentCpuConstraint("nottopologyTest", "A"));
+			assertEquals(0.0, manager.getCurrentCpuConstraint("topologyTest", "B"));
+			
+			String testCleanQuery = "DELETE FROM operators_constraints";
+			connector.executeUpdate(testCleanQuery);
+		} catch (ClassNotFoundException | SQLException e) {
+			fail("StatStorageManager module has failed to store topology constraints because of " + e);
+		}
+	}
+	
+	public void testGetCurrentMemConstraint(){
+		try{
+			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
+			Mockito.when(parser.getDbHost()).thenReturn("localhost");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale_test");
+			Mockito.when(parser.getDbUser()).thenReturn("root");
+			Mockito.when(parser.getDbPassword()).thenReturn("");
+			
+			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			
+			TopologyDetails topology = Mockito.mock(TopologyDetails.class);
+			Mockito.when(topology.getName()).thenReturn("topologyTest");
+			
+			Component compA = new Component("A");
+			
+			ExecutorDetails execA1 = Mockito.mock(ExecutorDetails.class);
+			ExecutorDetails execA2 = Mockito.mock(ExecutorDetails.class);
+			ExecutorDetails execA3 = Mockito.mock(ExecutorDetails.class);
+			ExecutorDetails execA4 = Mockito.mock(ExecutorDetails.class);
+			
+			ArrayList<ExecutorDetails> execsA = new ArrayList<>();
+			execsA.add(execA1);
+			execsA.add(execA2);
+			execsA.add(execA3);
+			execsA.add(execA4);
+			
+			compA.execs = execsA;
+			
+			HashMap<String, Component> components = new HashMap<>();
+			components.put("A", compA);
+			
+			Mockito.when(topology.getComponents()).thenReturn(components);
+			Mockito.when(topology.getTotalCpuReqTask(execA1)).thenReturn(10.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA2)).thenReturn(10.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA3)).thenReturn(10.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA4)).thenReturn(10.0);
+
+			Mockito.when(topology.getTotalMemReqTask(execA1)).thenReturn(32.0);
+			Mockito.when(topology.getTotalMemReqTask(execA2)).thenReturn(32.0);
+			Mockito.when(topology.getTotalMemReqTask(execA3)).thenReturn(32.0);
+			Mockito.when(topology.getTotalMemReqTask(execA4)).thenReturn(32.0);
+			
+			manager.storeTopologyConstraints(0, topology);
+
+			Mockito.when(topology.getComponents()).thenReturn(components);
+			Mockito.when(topology.getTotalCpuReqTask(execA1)).thenReturn(20.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA2)).thenReturn(20.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA3)).thenReturn(20.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA4)).thenReturn(20.0);
+
+			Mockito.when(topology.getTotalMemReqTask(execA1)).thenReturn(64.0);
+			Mockito.when(topology.getTotalMemReqTask(execA2)).thenReturn(64.0);
+			Mockito.when(topology.getTotalMemReqTask(execA3)).thenReturn(64.0);
+			Mockito.when(topology.getTotalMemReqTask(execA4)).thenReturn(64.0);
+			
+			manager.storeTopologyConstraints(1, topology);
+
+			Mockito.when(topology.getComponents()).thenReturn(components);
+			Mockito.when(topology.getTotalCpuReqTask(execA1)).thenReturn(30.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA2)).thenReturn(30.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA3)).thenReturn(30.0);
+			Mockito.when(topology.getTotalCpuReqTask(execA4)).thenReturn(30.0);
+
+			Mockito.when(topology.getTotalMemReqTask(execA1)).thenReturn(128.0);
+			Mockito.when(topology.getTotalMemReqTask(execA2)).thenReturn(128.0);
+			Mockito.when(topology.getTotalMemReqTask(execA3)).thenReturn(128.0);
+			Mockito.when(topology.getTotalMemReqTask(execA4)).thenReturn(128.0);
+			
+			manager.storeTopologyConstraints(2, topology);
+			
+			assertEquals(128.0, manager.getCurrentMemConstraint("topologyTest", "A"));
+			assertEquals(0.0, manager.getCurrentMemConstraint("nottopologyTest", "A"));
+			assertEquals(0.0, manager.getCurrentMemConstraint("topologyTest", "B"));
+			
+			String testCleanQuery = "DELETE FROM operators_constraints";
+			connector.executeUpdate(testCleanQuery);
+		} catch (ClassNotFoundException | SQLException e) {
+			fail("StatStorageManager module has failed to store topology constraints because of " + e);
+		}
+	}
+	
+	public void testGetCpuUsage(){
+		try {
+			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
+			Mockito.when(parser.getDbHost()).thenReturn("localhost");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale_test");
+			Mockito.when(parser.getDbUser()).thenReturn("root");
+			Mockito.when(parser.getDbPassword()).thenReturn("");
+			
+			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			Integer timestamp1 = 1;
+			Integer timestamp2 = 10;
+			Integer timestamp3 = 30;
+			String topology = "testTopology";
+			String component = "testComponent";
+			
+			String host1 = "testHost1";
+			Integer port1 = 0;
+			Integer startTask1 = 0;
+			Integer endTask1 = 10;
+			Long totalExecuted1 = 100L;
+			Long totalOutputs1 = 80L;
+			Long updateExecuted1 = 10L;
+			Long updateOutputs1 = 8L;
+			Double avgLatency1 = 50.0;
+			Double selectivity1 = 0.8;
+			Double cpuUsage1 = 50.0;
+			
+			String host2 = "testHost2";
+			Integer port2 = 0;
+			Integer startTask2 = 11;
+			Integer endTask2 = 20;
+			Long totalExecuted2 = 100L;
+			Long totalOutputs2 = 70L;
+			Long updateExecuted2 = 10L;
+			Long updateOutputs2 = 7L;
+			Double avgLatency2 = 60.0;
+			Double selectivity2 = 0.7;
+			Double cpuUsage2 = 30.0;
+			
+			Double cpuUsage3 = 60.0;
+			Double cpuUsage4 = 25.0;
+			
+			Double cpuUsage5 = 55.0;
+			Double cpuUsage6 = 32.0;
+			
+			manager.storeBoltExecutorStats(timestamp1, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted1, totalOutputs1, updateOutputs1, avgLatency1, selectivity1, cpuUsage1);
+			manager.storeBoltExecutorStats(timestamp1, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs2, avgLatency2, selectivity2, cpuUsage2);
+			
+			manager.storeBoltExecutorStats(timestamp2, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted1, totalOutputs1, updateOutputs1, avgLatency1, selectivity1, cpuUsage3);
+			manager.storeBoltExecutorStats(timestamp2, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs2, avgLatency2, selectivity2, cpuUsage4);
+			
+			manager.storeBoltExecutorStats(timestamp3, host1, port1, topology, component, startTask1, endTask1, totalExecuted1, updateExecuted1, totalOutputs1, updateOutputs1, avgLatency1, selectivity1, cpuUsage5);
+			manager.storeBoltExecutorStats(timestamp3, host2, port2, topology, component, startTask2, endTask2, totalExecuted2, updateExecuted2, totalOutputs2, updateOutputs2, avgLatency2, selectivity2, cpuUsage6);
+			
+			HashMap<Integer, ArrayList<Double>> cpuUsage = new HashMap<>();
+			ArrayList<Double> usages1 = new ArrayList<>();
+			usages1.add(50.0);
+			usages1.add(30.0);
+			
+			ArrayList<Double> usages2 = new ArrayList<>();
+			usages2.add(60.0);
+			usages2.add(25.0);
+			
+			ArrayList<Double> usages3 = new ArrayList<>();
+			usages3.add(55.0);
+			usages3.add(32.0);
+			
+			cpuUsage.put(timestamp1, usages1);
+			cpuUsage.put(timestamp2, usages2);
+			cpuUsage.put(timestamp3, usages3);
+			
+			assertEquals(cpuUsage, manager.getCpuUsage(component, timestamp3, 60));
+			
+			String testCleanQuery = "DELETE FROM all_time_bolts_stats";
+			connector.executeUpdate(testCleanQuery);
+		} catch (ClassNotFoundException | SQLException e) {
+			fail("StatStorageManager module has failed to retrieve component latency logs has failed because of " + e);
+		}
+	}
 }

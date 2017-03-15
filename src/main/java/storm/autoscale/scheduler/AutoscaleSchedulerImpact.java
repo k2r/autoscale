@@ -99,7 +99,6 @@ public class AutoscaleSchedulerImpact implements IScheduler {
 				this.explorer = new TopologyExplorer(topology.getName(), topology.getTopology());
 				this.assignMonitor.update();
 				this.compMonitor.getStatistics(explorer);
-				Integer timestamp = manager.getCurrentTimestamp();
 				if(!this.compMonitor.getRegisteredComponents().isEmpty()){
 					this.scaleManager = new ScalingManager(compMonitor, parser);
 					this.scaleManager.buildDegreeMap(assignMonitor);

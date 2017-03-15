@@ -68,13 +68,13 @@ public class ComponentMonitor {
 			HashMap<Integer, Long> inputRecords = new HashMap<>();
 			HashMap<Integer, Long> executedRecords = new HashMap<>();
 			HashMap<Integer, Double> selectivityRecords = new HashMap<>();
-			HashMap<Integer, Double> cpuUsageRecords = new HashMap<>();
+			HashMap<Integer, ArrayList<Double>> cpuUsageRecords = new HashMap<>();
 			ArrayList<Integer> recordedTimestamps = ComponentWindowedStats.getRecordedTimestamps(outputRecords);
 			for(Integer timestamp : recordedTimestamps){
 				inputRecords.put(timestamp, 0L);
 				executedRecords.put(timestamp, 0L);
 				selectivityRecords.put(timestamp, 1.0);
-				cpuUsageRecords.put(timestamp, 0.0);
+				cpuUsageRecords.put(timestamp, new ArrayList<Double>());
 			}
 			
 			ComponentWindowedStats componentRecords = new ComponentWindowedStats(spout, inputRecords, executedRecords, outputRecords, avgTopLatencyRecords, selectivityRecords, cpuUsageRecords);
@@ -113,7 +113,7 @@ public class ComponentMonitor {
 			HashMap<Integer, Long> outputRecords = this.manager.getBoltOutputs(bolt, this.timestamp, windowSize);
 			HashMap<Integer, Double> avgLatencyRecords = this.manager.getAvgLatency(bolt, this.timestamp, windowSize);
 			HashMap<Integer, Double> selectivityRecords = this.manager.getSelectivity(bolt, this.timestamp, windowSize);
-			HashMap<Integer, Double> cpuUsageRecords = this.manager.getCpuUsage(bolt, this.timestamp, windowSize);
+			HashMap<Integer, ArrayList<Double>> cpuUsageRecords = this.manager.getCpuUsage(bolt, this.timestamp, windowSize);
 			ComponentWindowedStats component = new ComponentWindowedStats(bolt, inputRecords, executedRecords, outputRecords, avgLatencyRecords, selectivityRecords, cpuUsageRecords);
 			this.stats.put(bolt, component);
 		}
@@ -193,5 +193,25 @@ public class ComponentMonitor {
 	
 	public void reset(){
 		this.stats = new HashMap<>();
+	}
+	
+	public HashMap<String, Double> getInitialCpuConstraints(TopologyExplorer explorer){
+		HashMap<String, Double> result = new HashMap<>();
+		Set<String> components = this.getRegisteredComponents();
+		for(String component : components){
+			Double constraint = this.manager.getInitialCpuConstraint(explorer.getTopologyName(), component);
+			result.put(component, constraint);
+		}
+		return result;
+	}
+	
+	public HashMap<String, Double> getCurrentCpuConstraints(TopologyExplorer explorer){
+		HashMap<String, Double> result = new HashMap<>();
+		Set<String> components = this.getRegisteredComponents();
+		for(String component : components){
+			Double constraint = this.manager.getCurrentCpuConstraint(explorer.getTopologyName(), component);
+			result.put(component, constraint);
+		}
+		return result;
 	}
 }

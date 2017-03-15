@@ -24,14 +24,14 @@ public class ComponentWindowedStats {
 	private final HashMap<Integer, Long> outputRecords;
 	private final HashMap<Integer, Double> avgLatencyRecords;
 	private final HashMap<Integer, Double> selectivityRecords;
-	private final HashMap<Integer, Double> cpuUsageRecords;
+	private final HashMap<Integer, ArrayList<Double>> cpuUsageRecords;
 	@SuppressWarnings("unused")
 	private static Logger logger = Logger.getLogger("ComponentWindowedStats");
 	
 	/**
 	 * 
 	 */
-	public ComponentWindowedStats(String id, HashMap<Integer, Long> inputs, HashMap<Integer, Long> executed, HashMap<Integer, Long> outputs, HashMap<Integer, Double> avgLatency, HashMap<Integer, Double> selectivity, HashMap<Integer, Double> cpuUsage) {
+	public ComponentWindowedStats(String id, HashMap<Integer, Long> inputs, HashMap<Integer, Long> executed, HashMap<Integer, Long> outputs, HashMap<Integer, Double> avgLatency, HashMap<Integer, Double> selectivity, HashMap<Integer, ArrayList<Double>> cpuUsage) {
 		this.id = id;
 		this.inputRecords = inputs;
 		this.executedRecords = executed;
@@ -137,13 +137,42 @@ public class ComponentWindowedStats {
 	public HashMap<Integer, Double> getSelectivityRecords() {
 		return selectivityRecords;
 	}
-	
-	
+
 	/**
 	 * @return the cpuUsageRecords
 	 */
-	public HashMap<Integer, Double> getCpuUsageRecords() {
+	public HashMap<Integer, ArrayList<Double>> getCpuUsageRecords() {
 		return cpuUsageRecords;
+	}
+	
+	public HashMap<Integer, Double> getAvgCpuUsageRecords(){
+		HashMap<Integer, Double> result = new HashMap<>();
+		ArrayList<Integer> timestamps = ComponentWindowedStats.getRecordedTimestamps(this.cpuUsageRecords);
+		for(Integer timestamp : timestamps){
+			ArrayList<Double> cpuUsages = this.cpuUsageRecords.get(timestamp);
+			result.put(timestamp, UtilFunctions.getAvgValue(cpuUsages));
+		}
+		return result;
+	}
+	
+	public HashMap<Integer, Double> getMaxCpuUsageRecords(){
+		HashMap<Integer, Double> result = new HashMap<>();
+		ArrayList<Integer> timestamps = ComponentWindowedStats.getRecordedTimestamps(this.cpuUsageRecords);
+		for(Integer timestamp : timestamps){
+			ArrayList<Double> cpuUsages = this.cpuUsageRecords.get(timestamp);
+			result.put(timestamp, UtilFunctions.getMaxValue(cpuUsages));
+		}
+		return result;
+	}
+	
+	public HashMap<Integer, Double> getMinCpuUsageRecords(){
+		HashMap<Integer, Double> result = new HashMap<>();
+		ArrayList<Integer> timestamps = ComponentWindowedStats.getRecordedTimestamps(this.cpuUsageRecords);
+		for(Integer timestamp : timestamps){
+			ArrayList<Double> cpuUsages = this.cpuUsageRecords.get(timestamp);
+			result.put(timestamp, UtilFunctions.getMinValue(cpuUsages));
+		}
+		return result;
 	}
 
 	public Long getTotalInput(){
@@ -168,9 +197,10 @@ public class ComponentWindowedStats {
 		ArrayList<Integer> outputTimestamps = ComponentWindowedStats.getRecordedTimestamps(this.outputRecords);
 		ArrayList<Integer> avgLatencyTimestamps = ComponentWindowedStats.getRecordedTimestamps(this.avgLatencyRecords);
 		ArrayList<Integer> selectivityTimestamps = ComponentWindowedStats.getRecordedTimestamps(this.selectivityRecords);
+		ArrayList<Integer> cpuTimestamps = ComponentWindowedStats.getRecordedTimestamps(this.cpuUsageRecords);
 		
 		return (!inputTimestamps.isEmpty() && !executedTimestamps.isEmpty() && !outputTimestamps.isEmpty()
-				&& !avgLatencyTimestamps.isEmpty() && !selectivityTimestamps.isEmpty());
+				&& !avgLatencyTimestamps.isEmpty() && !selectivityTimestamps.isEmpty() && !cpuTimestamps.isEmpty());
 	}
 	
 	@Override
@@ -181,6 +211,7 @@ public class ComponentWindowedStats {
 		HashMap<Integer, Long> output = this.getOutputRecords();
 		HashMap<Integer, Double> latency = this.getAvgLatencyRecords();
 		HashMap<Integer, Double> selectivity = this.getSelectivityRecords();
+		HashMap<Integer, ArrayList<Double>> cpuUsage = this.getCpuUsageRecords();
 		result += "Inputs :";
 		for(Integer timestamp : input.keySet()){
 			result += " [" + timestamp + "->" + input.get(timestamp) + "]";
@@ -204,6 +235,11 @@ public class ComponentWindowedStats {
 		result += "Selectivities :";
 		for(Integer timestamp : selectivity.keySet()){
 			result += " [" + timestamp + "->" + selectivity.get(timestamp) + "]";
+		}
+		result += "\n";
+		result += "Cpu usages :";
+		for(Integer timestamp : cpuUsage.keySet()){
+			result += " [" + timestamp + "->" + cpuUsage.get(timestamp) + "]";
 		}
 		return result;
 	}
