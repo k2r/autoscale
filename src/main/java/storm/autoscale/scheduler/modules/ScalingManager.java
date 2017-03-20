@@ -393,14 +393,16 @@ public class ScalingManager {
 		}
 	}
 	
-	public void adjustDegreesToCpuConstraint(TopologyExplorer explorer){
+	public void adjustDegreesToCpuConstraint(TopologyExplorer explorer, AssignmentMonitor assignMonitor){
 		HashMap<String, Double> cpuConstraints = this.monitor.getCurrentCpuConstraints(explorer);
+		
 		for(String component : this.scaleOutActions.keySet()){
+			Integer maxParallelism = assignMonitor.getAllSortedTasks(component).size();
 			Integer degree = this.scaleOutActions.get(component);
 			Double cpuConstraint = cpuConstraints.get(component);
 			Double cpuEstimatedUsage = this.getEstimatedCpuUsagePerExec(component);
 			if(cpuConstraint < cpuEstimatedUsage){
-				Integer cpuAwareDegree = (int) Math.round(degree * (cpuEstimatedUsage / cpuConstraint));
+				Integer cpuAwareDegree = Math.min(maxParallelism,(int) Math.round(degree * (cpuEstimatedUsage / cpuConstraint)));
 				this.scaleOutActions.put(component, cpuAwareDegree);
 			}
 		}

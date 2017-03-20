@@ -88,11 +88,10 @@ public class AutoscaleSchedulerCPUAware implements IScheduler {
 			if(!manager.isActive(topology.getId())){
 				logger.fine("Topology " + topology.getName() + " is inactive, killed or being rebalanced...");
 			}else{
+				this.compMonitor = new ComponentMonitor(this.parser, this.nimbusHost, this.nimbusPort);
 				if(!manager.existConstraint(topology.getName())){
 					manager.storeTopologyConstraints(this.compMonitor.getTimestamp(), topology);
 				}
-				manager.storeTopologyConstraints(this.compMonitor.getTimestamp(), topology);
-				this.compMonitor = new ComponentMonitor(this.parser, this.nimbusHost, this.nimbusPort);
 				this.assignMonitor = new AssignmentMonitor(cluster, topology);
 				this.explorer = new TopologyExplorer(topology.getName(), topology.getTopology());
 				this.assignMonitor.update();
@@ -104,7 +103,7 @@ public class AutoscaleSchedulerCPUAware implements IScheduler {
 					this.scaleManager.buildActionGraph(activityMetric, assignMonitor);
 					IMetric impactMetric = new ImpactMetric(this.scaleManager, this.explorer);
 					this.scaleManager.autoscaleAlgorithmWithImpact(impactMetric, this.explorer.getAncestors(), this.explorer, this.assignMonitor);
-					this.scaleManager.adjustDegreesToCpuConstraint(this.explorer);
+					this.scaleManager.adjustDegreesToCpuConstraint(this.explorer, this.assignMonitor);
 
 					if(this.scaleManager.getScaleOutActions().isEmpty()){
 						logger.fine("No component to scale out!");
