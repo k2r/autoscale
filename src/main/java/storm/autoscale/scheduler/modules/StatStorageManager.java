@@ -135,7 +135,6 @@ public class StatStorageManager{
 			}
 			logger.finest("Listening to the Nimbus...");
 			List<TopologySummary> topologies = client.getClusterInfo().get_topologies();
-			
 			for(TopologySummary topSummary : topologies){
 				String topId = topSummary.get_id();
 				this.timestamp = topSummary.get_uptime_secs();
@@ -154,7 +153,7 @@ public class StatStorageManager{
 					List<ExecutorSummary> executors = topology.get_executors();
 					for(ExecutorSummary executor : executors){
 						String componentId = executor.get_component_id();
-
+					
 						if(!componentId.contains("acker") && !componentId.contains("eventlog")){ //avoiding to catch acker and eventlogger which are unsplittable
 							String host = executor.get_host();
 							Integer port = executor.get_port();

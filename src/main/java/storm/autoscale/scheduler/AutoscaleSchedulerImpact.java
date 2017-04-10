@@ -95,6 +95,9 @@ public class AutoscaleSchedulerImpact implements IScheduler {
 				logger.fine("Topology " + topology.getName() + " is inactive, killed or being rebalanced...");
 			}else{
 				this.compMonitor = new ComponentMonitor(this.parser, this.nimbusHost, this.nimbusPort);
+				if(!manager.existConstraint(topology.getName())){
+					manager.storeTopologyConstraints(this.compMonitor.getTimestamp(), topology);
+				}
 				this.assignMonitor = new AssignmentMonitor(cluster, topology);
 				this.explorer = new TopologyExplorer(topology.getName(), topology.getTopology());
 				this.assignMonitor.update();
