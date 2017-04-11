@@ -18,7 +18,7 @@ import junit.framework.TestCase;
 import storm.autoscale.scheduler.config.XmlConfigParser;
 import storm.autoscale.scheduler.connector.database.IJDBCConnector;
 import storm.autoscale.scheduler.connector.database.MySQLConnector;
-import storm.autoscale.scheduler.modules.StatStorageManager;
+import storm.autoscale.scheduler.modules.stats.StatStorageManager;
 
 /**
  * @author Roland
@@ -27,7 +27,7 @@ import storm.autoscale.scheduler.modules.StatStorageManager;
 public class StatStorageManagerTest extends TestCase {
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.StatStorageManager#storeSpoutExecutorStats(java.lang.Integer, java.lang.String, java.lang.Integer, java.lang.String, java.lang.String, java.lang.Integer, java.lang.Integer, java.lang.Long, java.lang.Long, java.lang.Long, java.lang.Double)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#storeSpoutExecutorStats(java.lang.Integer, java.lang.String, java.lang.Integer, java.lang.String, java.lang.String, java.lang.Integer, java.lang.Integer, java.lang.Long, java.lang.Long, java.lang.Long, java.lang.Double)}.
 	 */
 	public void testStoreSpoutExecutorStats() {
 		try {
@@ -111,7 +111,7 @@ public class StatStorageManagerTest extends TestCase {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.StatStorageManager#storeBoltExecutorStats(java.lang.Integer, java.lang.String, java.lang.Integer, java.lang.String, java.lang.String, java.lang.Integer, java.lang.Integer, java.lang.Long, java.lang.Long, java.lang.Double, java.lang.Double)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#storeBoltExecutorStats(java.lang.Integer, java.lang.String, java.lang.Integer, java.lang.String, java.lang.String, java.lang.Integer, java.lang.Integer, java.lang.Long, java.lang.Long, java.lang.Double, java.lang.Double)}.
 	 */
 	public void testStoreBoltExecutorStats() {
 		try {
@@ -192,7 +192,7 @@ public class StatStorageManagerTest extends TestCase {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.StatStorageManager#storeActivityInfo(java.lang.Integer, java.lang.String, java.lang.String, java.lang.String, java.lang.Double, java.lang.Integer, java.lang.Double)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#storeActivityInfo(java.lang.Integer, java.lang.String, java.lang.String, java.lang.String, java.lang.Double, java.lang.Integer, java.lang.Double)}.
 	 */
 	public void testStoreActivityInfo() {
 		try {
@@ -247,7 +247,7 @@ public class StatStorageManagerTest extends TestCase {
 	}
 	
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.StatStorageManager#getWorkers(java.lang.String, java.lang.Integer)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#getWorkers(java.lang.String, java.lang.Integer)}.
 	 */
 	public void testGetWorkers() {
 		try {
@@ -315,7 +315,7 @@ public class StatStorageManagerTest extends TestCase {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.StatStorageManager#getExecuted(java.lang.String, java.lang.Integer)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#getExecuted(java.lang.String, java.lang.Integer)}.
 	 */
 	public void testGetExecuted() {
 		try {
@@ -383,7 +383,7 @@ public class StatStorageManagerTest extends TestCase {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.StatStorageManager#getOutputs(java.lang.String, java.lang.Integer)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#getOutputs(java.lang.String, java.lang.Integer)}.
 	 */
 	public void testGetOutputs() {
 		try {
@@ -451,7 +451,7 @@ public class StatStorageManagerTest extends TestCase {
 	}
 	
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.StatStorageManager#getAvgLatency(java.lang.String, java.lang.Integer)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#getAvgLatency(java.lang.String, java.lang.Integer)}.
 	 */
 	public void testGetAvgLatency() {
 		try {
@@ -519,7 +519,7 @@ public class StatStorageManagerTest extends TestCase {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.StatStorageManager#getSelectivity(java.lang.String, java.lang.Integer)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#getSelectivity(java.lang.String, java.lang.Integer)}.
 	 */
 	public void testGetSelectivity() {
 		try {
@@ -587,7 +587,7 @@ public class StatStorageManagerTest extends TestCase {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.StatStorageManager#getTopologyThroughput(java.lang.String, java.lang.Integer)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#getTopologyThroughput(java.lang.String, java.lang.Integer)}.
 	 */
 	public void testGetTopologyThroughput() {
 		try {
@@ -656,7 +656,7 @@ public class StatStorageManagerTest extends TestCase {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.StatStorageManager#getTopologyLosses(java.lang.String, java.lang.Integer)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#getTopologyLosses(java.lang.String, java.lang.Integer)}.
 	 */
 	public void testGetTopologyLosses() {
 		try {
@@ -725,7 +725,7 @@ public class StatStorageManagerTest extends TestCase {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.StatStorageManager#getTopologyAvgLatency(java.lang.String, java.lang.Integer)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#getTopologyAvgLatency(java.lang.String, java.lang.Integer)}.
 	 */
 	public void testGetTopologyAvgLatency() {
 		try {

@@ -15,7 +15,7 @@ import org.apache.storm.generated.Grouping;
 import org.apache.storm.generated.SpoutSpec;
 import org.apache.storm.generated.StormTopology;
 import junit.framework.TestCase;
-import storm.autoscale.scheduler.modules.TopologyExplorer;
+import storm.autoscale.scheduler.modules.explorer.TopologyExplorer;
 
 /**
  * @author Roland
@@ -24,7 +24,7 @@ import storm.autoscale.scheduler.modules.TopologyExplorer;
 public class TopologyExplorerTest extends TestCase {
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.TopologyExplorer#areLinked(java.lang.String, java.lang.String)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.explorer.TopologyExplorer#areLinked(java.lang.String, java.lang.String)}.
 	 */
 	public final void testAreLinked() {
 		GlobalStreamId gsA = Mockito.mock(GlobalStreamId.class);
@@ -101,7 +101,7 @@ public class TopologyExplorerTest extends TestCase {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.TopologyExplorer#getChildren(java.lang.String)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.explorer.TopologyExplorer#getChildren(java.lang.String)}.
 	 */
 	public final void testGetChildren() {
 		GlobalStreamId gsA = Mockito.mock(GlobalStreamId.class);
@@ -177,7 +177,7 @@ public class TopologyExplorerTest extends TestCase {
 	}
 	
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.TopologyExplorer#getAntecedents(java.lang.String)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.explorer.TopologyExplorer#getAntecedents(java.lang.String)}.
 	 */
 	public final void testGetAntecedents() {
 		GlobalStreamId gsA = Mockito.mock(GlobalStreamId.class);

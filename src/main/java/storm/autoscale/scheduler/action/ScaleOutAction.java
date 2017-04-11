@@ -1,7 +1,7 @@
 /**
  * 
  */
-package storm.autoscale.scheduler.actions;
+package storm.autoscale.scheduler.action;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -17,9 +17,9 @@ import org.apache.storm.generated.Nimbus;
 import org.apache.storm.generated.RebalanceOptions;
 import storm.autoscale.scheduler.connector.database.IJDBCConnector;
 import storm.autoscale.scheduler.connector.database.MySQLConnector;
-import storm.autoscale.scheduler.modules.AssignmentMonitor;
-import storm.autoscale.scheduler.modules.ScalingManager;
-import storm.autoscale.scheduler.modules.TopologyExplorer;
+import storm.autoscale.scheduler.modules.assignment.AssignmentMonitor;
+import storm.autoscale.scheduler.modules.explorer.TopologyExplorer;
+import storm.autoscale.scheduler.modules.scale.ScalingManager;
 
 /**
  * @author Roland

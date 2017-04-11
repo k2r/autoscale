@@ -1,7 +1,7 @@
 /**
  * 
  */
-package storm.autoscale.scheduler.modules;
+package storm.autoscale.scheduler.modules.scale;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -20,6 +20,9 @@ import storm.autoscale.scheduler.config.XmlConfigParser;
 import storm.autoscale.scheduler.metrics.ActivityMetric;
 import storm.autoscale.scheduler.metrics.IMetric;
 import storm.autoscale.scheduler.metrics.ImpactMetric;
+import storm.autoscale.scheduler.modules.assignment.AssignmentMonitor;
+import storm.autoscale.scheduler.modules.component.ComponentMonitor;
+import storm.autoscale.scheduler.modules.explorer.TopologyExplorer;
 import storm.autoscale.scheduler.regression.LinearRegressionTools;
 import storm.autoscale.scheduler.regression.RegressionSelector;
 

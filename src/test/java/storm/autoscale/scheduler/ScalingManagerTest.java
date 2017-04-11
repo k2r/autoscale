@@ -12,12 +12,12 @@ import junit.framework.TestCase;
 import storm.autoscale.scheduler.config.XmlConfigParser;
 import storm.autoscale.scheduler.metrics.ActivityMetric;
 import storm.autoscale.scheduler.metrics.ImpactMetric;
-import storm.autoscale.scheduler.modules.AssignmentMonitor;
-import storm.autoscale.scheduler.modules.ComponentMonitor;
-import storm.autoscale.scheduler.modules.ScalingManager;
-import storm.autoscale.scheduler.modules.StatStorageManager;
-import storm.autoscale.scheduler.modules.TopologyExplorer;
+import storm.autoscale.scheduler.modules.assignment.AssignmentMonitor;
+import storm.autoscale.scheduler.modules.component.ComponentMonitor;
+import storm.autoscale.scheduler.modules.explorer.TopologyExplorer;
+import storm.autoscale.scheduler.modules.scale.ScalingManager;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
+import storm.autoscale.scheduler.modules.stats.StatStorageManager;
 
 /**
  * @author Roland
@@ -28,7 +28,7 @@ public class ScalingManagerTest extends TestCase {
 	Long scaleFactor = 5L;
 	
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.ScalingManager#isInputDecreasing(java.lang.String)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.scale.ScalingManager#isInputDecreasing(java.lang.String)}.
 	 */
 	public void testIsInputDecreasing() {
 		HashMap<Integer, Long> inputRecords1 = new HashMap<>();
@@ -72,7 +72,7 @@ public class ScalingManagerTest extends TestCase {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.ScalingManager#isInputStable(java.lang.String)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.scale.ScalingManager#isInputStable(java.lang.String)}.
 	 */
 	public void testIsInputStable() {
 		HashMap<Integer, Long> inputRecords1 = new HashMap<>();
@@ -116,7 +116,7 @@ public class ScalingManagerTest extends TestCase {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.ScalingManager#isInputIncreasing(java.lang.String)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.scale.ScalingManager#isInputIncreasing(java.lang.String)}.
 	 */
 	public void testIsInputIncreasing() {
 		HashMap<Integer, Long> inputRecords1 = new HashMap<>();
@@ -160,7 +160,7 @@ public class ScalingManagerTest extends TestCase {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.ScalingManager#buildActionGraph()}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.scale.ScalingManager#buildActionGraph()}.
 	 */
 	public void testBuildActionGraph() {
 		
@@ -331,7 +331,7 @@ public class ScalingManagerTest extends TestCase {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.ScalingManager#autoscaleAlgorithm()}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.scale.ScalingManager#autoscaleAlgorithm()}.
 	 */
 	public void testAutoscaleAlgorithm(){
 		XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
@@ -404,7 +404,7 @@ public class ScalingManagerTest extends TestCase {
 	}
 	
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.ScalingManager#autoscaleAlgorithmWithImpact()}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.scale.ScalingManager#autoscaleAlgorithmWithImpact()}.
 	 */
 	public void testAutoscaleAlgorithmWithImpact(){
 		XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);

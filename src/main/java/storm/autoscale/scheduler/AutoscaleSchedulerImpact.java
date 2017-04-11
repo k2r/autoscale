@@ -17,18 +17,18 @@ import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.xml.sax.SAXException;
 
-import storm.autoscale.scheduler.actions.IAction;
-import storm.autoscale.scheduler.actions.ScaleInAction;
-import storm.autoscale.scheduler.actions.ScaleOutAction;
+import storm.autoscale.scheduler.action.IAction;
+import storm.autoscale.scheduler.action.ScaleInAction;
+import storm.autoscale.scheduler.action.ScaleOutAction;
 import storm.autoscale.scheduler.config.XmlConfigParser;
 import storm.autoscale.scheduler.metrics.ActivityMetric;
 import storm.autoscale.scheduler.metrics.IMetric;
 import storm.autoscale.scheduler.metrics.ImpactMetric;
-import storm.autoscale.scheduler.modules.AssignmentMonitor;
-import storm.autoscale.scheduler.modules.ComponentMonitor;
-import storm.autoscale.scheduler.modules.ScalingManager;
-import storm.autoscale.scheduler.modules.StatStorageManager;
-import storm.autoscale.scheduler.modules.TopologyExplorer;
+import storm.autoscale.scheduler.modules.assignment.AssignmentMonitor;
+import storm.autoscale.scheduler.modules.component.ComponentMonitor;
+import storm.autoscale.scheduler.modules.explorer.TopologyExplorer;
+import storm.autoscale.scheduler.modules.scale.ScalingManager;
+import storm.autoscale.scheduler.modules.stats.StatStorageManager;
 
 /**
  * @author Roland

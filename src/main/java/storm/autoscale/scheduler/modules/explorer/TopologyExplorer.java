@@ -1,7 +1,7 @@
 /**
  * 
  */
-package storm.autoscale.scheduler.modules;
+package storm.autoscale.scheduler.modules.explorer;
 
 import java.util.ArrayList;
 import java.util.HashSet;

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package storm.autoscale.scheduler.modules;
+package storm.autoscale.scheduler.modules.component;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -10,7 +10,9 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import storm.autoscale.scheduler.config.XmlConfigParser;
+import storm.autoscale.scheduler.modules.explorer.TopologyExplorer;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
+import storm.autoscale.scheduler.modules.stats.StatStorageManager;
 
 /**
  * @author Roland
@@ -213,5 +215,9 @@ public class ComponentMonitor {
 			result.put(component, constraint);
 		}
 		return result;
+	}
+	
+	public HashMap<Integer, Double> getCpuUsageOnWorker(String component, String host, Integer port){
+		return this.manager.getCpuUsagePerWorker(component, host, port, getTimestamp(), this.parser.getWindowSize());
 	}
 }

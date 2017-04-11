@@ -1,7 +1,7 @@
 /**
  * 
  */
-package storm.autoscale.scheduler.modules;
+package storm.autoscale.scheduler.modules.assignment;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,6 +18,8 @@ import org.apache.storm.scheduler.SupervisorDetails;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
 
+import storm.autoscale.scheduler.modules.explorer.TopologyExplorer;
+
 /**
  * @author Roland
  *
@@ -27,6 +29,7 @@ public class AssignmentMonitor {
 	private Cluster cluster;
 	private TopologyDetails topology;
 	private HashMap<WorkerSlot, ArrayList<String>> assignments;
+	private HashMap<String, ArrayList<WorkerSlot>> assignmentsPerComponent;
 	private HashMap<SupervisorDetails, ArrayList<WorkerSlot>> support;
 	
 	/**
@@ -36,6 +39,7 @@ public class AssignmentMonitor {
 		this.cluster = cluster;
 		this.topology = topology;
 		this.assignments = new HashMap<>();
+		this.assignmentsPerComponent = new HashMap<>();
 		this.support = new HashMap<>();
 		List<WorkerSlot> slots = cluster.getAssignableSlots();
 		for(WorkerSlot ws : slots){
@@ -69,6 +73,20 @@ public class AssignmentMonitor {
 					this.assignments.put(slot, affectedComponents);
 				}
 			}
+			Set<WorkerSlot> workers = this.assignments.keySet(); 
+			for(WorkerSlot ws : workers){
+				ArrayList<String> components = this.getRunningComponents(ws);
+				for(String component : components){
+					ArrayList<WorkerSlot> slots = new ArrayList<>();
+					if(this.assignmentsPerComponent.containsKey(component)){
+						slots = this.assignmentsPerComponent.get(component);
+					}
+					if(!slots.contains(ws)){
+						slots.add(ws);
+					}
+					this.assignmentsPerComponent.put(component, slots);
+				}
+			}
 		}
 	}
 	
@@ -78,6 +96,10 @@ public class AssignmentMonitor {
 	
 	public ArrayList<String> getRunningComponents(WorkerSlot worker){
 		return this.assignments.get(worker);
+	}
+	
+	public ArrayList<WorkerSlot> getAllocatedWorkers(String component){
+		return this.assignmentsPerComponent.get(component);
 	}
 	
 	public HashMap<SupervisorDetails, ArrayList<WorkerSlot>> getWorkers(){

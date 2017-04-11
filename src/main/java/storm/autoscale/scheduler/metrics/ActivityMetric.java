@@ -6,9 +6,9 @@ package storm.autoscale.scheduler.metrics;
 import java.math.BigDecimal;
 import java.util.HashMap;
 
-import storm.autoscale.scheduler.modules.ComponentMonitor;
-import storm.autoscale.scheduler.modules.ScalingManager;
-import storm.autoscale.scheduler.modules.TopologyExplorer;
+import storm.autoscale.scheduler.modules.component.ComponentMonitor;
+import storm.autoscale.scheduler.modules.explorer.TopologyExplorer;
+import storm.autoscale.scheduler.modules.scale.ScalingManager;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 import storm.autoscale.scheduler.regression.LinearRegressionTools;
 import storm.autoscale.scheduler.regression.RegressionSelector;

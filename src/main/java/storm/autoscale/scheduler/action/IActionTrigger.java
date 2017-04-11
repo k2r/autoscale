@@ -1,15 +1,10 @@
-/**
- * 
- */
-package storm.autoscale.scheduler.actions;
+package storm.autoscale.scheduler.action;
 
-/**
- * @author Roland
- *
- */
-public interface IAction extends Runnable{
-	
+public interface IActionTrigger extends Runnable{
+
 	public void storeAction(String component, Integer currentDegree, Integer newDegree);
 	
 	public boolean isGracePeriod(String component);
+	
+	
 }

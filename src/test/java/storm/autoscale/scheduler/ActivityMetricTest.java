@@ -10,9 +10,9 @@ import org.mockito.Mockito;
 import junit.framework.TestCase;
 import storm.autoscale.scheduler.config.XmlConfigParser;
 import storm.autoscale.scheduler.metrics.ActivityMetric;
-import storm.autoscale.scheduler.modules.ComponentMonitor;
-import storm.autoscale.scheduler.modules.ScalingManager;
-import storm.autoscale.scheduler.modules.TopologyExplorer;
+import storm.autoscale.scheduler.modules.component.ComponentMonitor;
+import storm.autoscale.scheduler.modules.explorer.TopologyExplorer;
+import storm.autoscale.scheduler.modules.scale.ScalingManager;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 
 /**

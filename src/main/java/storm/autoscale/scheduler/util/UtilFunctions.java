@@ -6,6 +6,7 @@ package storm.autoscale.scheduler.util;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Set;
 
 /**
  * @author Roland
@@ -83,6 +84,16 @@ public class UtilFunctions {
 		
 	}
 	
+	public static <T extends Number, U extends Number> ArrayList<U> getValues(HashMap<T, U> map){
+		ArrayList<U> values = new ArrayList<>();
+		Set<T> keys = map.keySet();
+		for(T key : keys){
+			U value = map.get(key);
+			values.add(value);
+		}
+		return values;
+	}
+	
 	public static <T extends Number> Double getAvgValue(ArrayList<T> values){
 		Double avgValue = 0.0;
 		int nbValues = values.size();
@@ -118,5 +129,19 @@ public class UtilFunctions {
 			}
 		}
 		return min;
+	}
+	
+	public static <T extends Number> Double getStdDerivation(ArrayList<T> values){
+		Double stdDerivation = 0.0;
+		if(!values.isEmpty()){
+			Double sqrSum = 0.0;
+			Double avg = UtilFunctions.getAvgValue(values);
+			for(T value : values){
+				sqrSum += Math.pow((value.doubleValue() - avg), 2);
+			}
+			Double variance = sqrSum / values.size();
+			stdDerivation = Math.sqrt(variance);
+		}
+		return stdDerivation;
 	}
 }

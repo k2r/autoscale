@@ -3,8 +3,8 @@
  */
 package storm.autoscale.scheduler.metrics;
 
-import storm.autoscale.scheduler.modules.ComponentMonitor;
-import storm.autoscale.scheduler.modules.TopologyExplorer;
+import storm.autoscale.scheduler.modules.component.ComponentMonitor;
+import storm.autoscale.scheduler.modules.explorer.TopologyExplorer;
 
 /**
  * @author Roland

@@ -6,7 +6,8 @@ package storm.autoscale.scheduler.allocation;
 import java.util.HashMap;
 
 import org.apache.storm.scheduler.WorkerSlot;
-import storm.autoscale.scheduler.modules.AssignmentMonitor;
+
+import storm.autoscale.scheduler.modules.assignment.AssignmentMonitor;
 
 /**
  * @author Roland
