@@ -5,9 +5,12 @@ package storm.autoscale.scheduler.action;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.logging.Logger;
 
 import org.apache.storm.generated.Nimbus;
+import org.apache.storm.generated.RebalanceOptions;
+import org.apache.storm.thrift.TException;
 import org.apache.storm.thrift.protocol.TBinaryProtocol;
 import org.apache.storm.thrift.transport.TFramedTransport;
 import org.apache.storm.thrift.transport.TSocket;
@@ -30,13 +33,13 @@ public class ScaleActionTrigger implements IActionTrigger {
 	private ScalingManager3 sm;
 	private ComponentMonitor cm;
 	private TopologyExplorer explorer;
-	private Double nbWorkers;
+	private Integer nbWorkers;
 	
 	private IJDBCConnector connector;
 	
 	private Logger logger = Logger.getLogger("ScaleActionTrigger");
 	
-	public ScaleActionTrigger(String nimbusHost, Integer nimbusPort, ComponentMonitor cm, ScalingManager3 sm, TopologyExplorer explorer, Double nbWorkers){
+	public ScaleActionTrigger(String nimbusHost, Integer nimbusPort, ComponentMonitor cm, ScalingManager3 sm, TopologyExplorer explorer, Integer nbWorkers){
 		this.nimbusHost = nimbusHost;
 		this.nimbusPort = nimbusPort;
 		this.cm = cm;
@@ -57,18 +60,11 @@ public class ScaleActionTrigger implements IActionTrigger {
 	}
 	
 	/* (non-Javadoc)
-	 * @see storm.autoscale.scheduler.action.IActionTrigger#storeAction(java.lang.String, java.lang.Integer, java.lang.Integer)
+	 * @see storm.autoscale.scheduler.action.IActionTrigger#storeAction(java.lang.String, java.lang.Integer, java.lang.Integer, java.lang.String)
 	 */
 	@Override
-	public void storeAction(String component, Integer currentDegree, Integer newDegree) {
+	public void storeAction(String component, Integer currentDegree, Integer newDegree, String actionType) {
 		try {
-			String actionType = "";
-			if(currentDegree < newDegree){
-				actionType += "scale-in";
-			}else{
-				actionType += "scale-out";
-			}
-			
 			String query = "INSERT INTO scales VALUES('" + this.cm.getTimestamp() + "', '" + component + "', '" + actionType + "', '" + currentDegree + "', '" + newDegree + "')";
 			this.connector.executeUpdate(query);
 		} catch (SQLException e) {
@@ -96,6 +92,29 @@ public class ScaleActionTrigger implements IActionTrigger {
 		return isGrace;
 	}
 
+	public void submitRebalance(Nimbus.Client client, String component, Integer curr, Integer next, Integer nbWorkers, String actionType){
+		try {
+			if(!isGracePeriod(component)){
+				RebalanceOptions options = new RebalanceOptions();
+				options.put_to_num_executors(component, next);
+				options.set_num_workers(nbWorkers);
+				options.set_wait_secs(0);
+
+				logger.fine("Changing parallelism degree of component " + component + " from " + curr + " to " + next + "...");
+
+				client.rebalance(explorer.getTopologyName(), options);
+
+				logger.fine("Parallelism of component " + component + " increased successfully!");
+				storeAction(component, curr, next, actionType);
+			}else{
+				logger.fine("This rebalance action will not modify the distribution of the operator");
+			}
+			Thread.sleep(1000);
+		} catch (TException | InterruptedException e) {
+			logger.severe("Unable to scale topology " + this.explorer.getTopologyName() + " because of " + e);
+		}
+	}
+	
 	@Override
 	public void run() {
 		TSocket tsocket = new TSocket(this.nimbusHost, this.nimbusPort);
@@ -106,7 +125,22 @@ public class ScaleActionTrigger implements IActionTrigger {
 			if(!tTransport.isOpen()){
 				tTransport.open();
 			}
-		
+			HashMap<String, Integer> scaleOutActions = this.sm.getScaleOutActions();
+			HashMap<String, Integer> scaleInActions = this.sm.getScaleInActions();
+			
+			for(String component : scaleOutActions.keySet()){
+				Integer curr = this.sm.getDegree(component);
+				Integer next = scaleOutActions.get(component);
+				submitRebalance(client, component, curr, next, this.nbWorkers, "scale-out");
+			}
+			for(String component : scaleInActions.keySet()){
+				Integer curr = this.sm.getDegree(component);
+				Integer next = scaleInActions.get(component);
+				submitRebalance(client, component, curr, next, this.nbWorkers, "scale-in");
+			}
+		}catch(TException e){
+			logger.severe("Unable to submit rebalance because of " + e);
+		}
 	}
 
 }
