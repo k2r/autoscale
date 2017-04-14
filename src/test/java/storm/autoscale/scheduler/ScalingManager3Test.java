@@ -257,9 +257,9 @@ public class ScalingManager3Test {
 		workerD.add(slot3);
 		workerD.add(slot6);
 		ArrayList<WorkerSlot> workerE = new ArrayList<>();
-		workerE.add(slot5);
 		workerE.add(slot6);
 		workerE.add(slot7);
+		workerE.add(slot8);
 		
 		this.am = Mockito.mock(AssignmentMonitor.class);
 		Mockito.when(this.am.getRunningComponents(slot1)).thenReturn(assignment1);
@@ -495,11 +495,11 @@ public class ScalingManager3Test {
 		ScalingManager3 sm = new ScalingManager3();
 		sm.computeEstimInputs(cm, explorer);
 		
-		assertEquals(4145, sm.getEstimInput("A"), 1.0);
-		assertEquals(4195, sm.getEstimInput("B"), 1.0);
-		assertEquals(4195, sm.getEstimInput("C"), 1.0);
-		assertEquals(2936, sm.getEstimInput("D"), 1.0);
-		assertEquals(3607, sm.getEstimInput("E"), 1.0);
+		assertEquals(4425, sm.getEstimInput("A"), 1.0);
+		assertEquals(5045, sm.getEstimInput("B"), 1.0);
+		assertEquals(5545, sm.getEstimInput("C"), 1.0);
+		assertEquals(3181, sm.getEstimInput("D"), 1.0);
+		assertEquals(3851, sm.getEstimInput("E"), 1.0);
 	}
 
 	/**
@@ -525,11 +525,11 @@ public class ScalingManager3Test {
 		ScalingManager3 sm = new ScalingManager3();
 		sm.computeUtilCPU(cm, am, explorer);
 		
-		assertEquals(45, sm.getUtilCPU("A"), 1.0);
-		assertEquals(40, sm.getUtilCPU("B"), 1.0);
-		assertEquals(25, sm.getUtilCPU("C"), 1.0);
-		assertEquals(50, sm.getUtilCPU("D"), 1.0);
-		assertEquals(65, sm.getUtilCPU("E"), 1.0);
+		assertEquals(0.475, sm.getUtilCPU("A"), 0.01);
+		assertEquals(0.4, sm.getUtilCPU("B"), 0.01);
+		assertEquals(0.25, sm.getUtilCPU("C"), 0.01);
+		assertEquals(0.417, sm.getUtilCPU("D"), 0.01);
+		assertEquals(0.55, sm.getUtilCPU("E"), 0.01);
 	}
 
 	/**
@@ -562,9 +562,9 @@ public class ScalingManager3Test {
 		sm.computeScalingActions(cm, am, explorer);
 		
 		HashMap<String, Integer> expected = new HashMap<>();
-		expected.put("B", 12);
-		expected.put("C", 10);
-		expected.put("E", 6);
+		expected.put("B", 16);
+		expected.put("C", 16);
+		expected.put("E", 12);
 		
 		assertEquals(expected, sm.getScaleOutActions());
 	}
