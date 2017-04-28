@@ -220,4 +220,16 @@ public class ComponentMonitor {
 	public HashMap<Integer, Double> getCpuUsageOnWorker(String component, String host, Integer port){
 		return this.manager.getCpuUsagePerWorker(component, host, port, getTimestamp(), this.parser.getWindowSize());
 	}
+	
+	public boolean isPopulated(){
+		boolean populated = true;
+		Set<String> components = this.getRegisteredComponents();
+		for(String component : components){
+			if(!this.getStats(component).hasRecords()){
+				populated = false;
+				break;
+			}
+		}
+		return populated;
+	}
 }

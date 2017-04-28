@@ -29,24 +29,24 @@ public class RegressionSelector<T extends Number, U extends Number> {
 	
 	public RegressionSelector(HashMap<T, U> coordinates){
 		this.coordinates = coordinates;
-		
+
 		HashMap<String, Double> correlations = new HashMap<>();
 		Double linearCorr = LinearRegressionTools.determinationCoeff(coordinates);
 		//Double expCorr = ExponentialRegressionTools.determinationCoeff(coordinates);
 		//Double powCorr = PowerRegressionTools.determinationCoeff(coordinates);
 		//Double logCorr = LogarithmicRegressionTools.determinationCoeff(coordinates);
-		
+
 		correlations.put(LINEAR, linearCorr);
 		//correlations.put(EXP, expCorr);
 		//correlations.put(POW, powCorr);
 		//correlations.put(LOG, logCorr);
-		
+
 		this.modelType = LINEAR;
 		String maxCategory = UtilFunctions.getMaxCategory(correlations);
 		if(!this.isConstantFunction() && maxCategory != null){
 			this.modelType = maxCategory;
 		}
-		
+
 		if(this.modelType.equalsIgnoreCase(LINEAR)){
 			this.regressionCoeff = LinearRegressionTools.regressionCoeff(coordinates);
 			this.regressionOffset = LinearRegressionTools.regressionOffset(coordinates);
@@ -67,6 +67,7 @@ public class RegressionSelector<T extends Number, U extends Number> {
 			this.regressionOffset = LogarithmicRegressionTools.regressionOffset(coordinates);
 			this.correlation = logCorr;
 		}*/
+
 	}
 	
 	/**
