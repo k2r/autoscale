@@ -67,6 +67,7 @@ public class AutoscaleScheduler3 implements IScheduler {
 	/* (non-Javadoc)
 	 * @see org.apache.storm.scheduler.IScheduler#schedule(org.apache.storm.scheduler.Topologies, org.apache.storm.scheduler.Cluster)
 	 */
+	@SuppressWarnings("unused")
 	@Override
 	public void schedule(Topologies topologies, Cluster cluster) {
 		String host = this.parser.getDbHost();
@@ -97,16 +98,13 @@ public class AutoscaleScheduler3 implements IScheduler {
 				this.compMonitor.getStatistics(explorer);
 				if(!this.compMonitor.getRegisteredComponents().isEmpty()){
 					this.sm = new ScalingManager3();
-					if(this.compMonitor.isPopulated()){
-						this.sm.initDegrees(compMonitor, assignMonitor);
-						this.sm.computeEstimInputs(compMonitor, explorer);
-						this.sm.computeEstimMaxCapacities(compMonitor);
-						this.sm.computeUtilCPU(compMonitor, assignMonitor, explorer);
-						this.sm.computeScalingActions(compMonitor, assignMonitor, explorer);
+					this.sm.initDegrees(compMonitor, assignMonitor);
+					this.sm.computeEstimInputs(compMonitor, explorer);
+					this.sm.computeEstimMaxCapacities(compMonitor);
+					this.sm.computeUtilCPU(compMonitor, assignMonitor, explorer);
+					this.sm.computeScalingActions(compMonitor, assignMonitor, explorer);
 
-						@SuppressWarnings("unused")
-						ScaleActionTrigger trigger = new ScaleActionTrigger(nimbusHost, monitFrequency, compMonitor, sm, explorer, assignMonitor.getNbWorkers());
-					}
+					ScaleActionTrigger trigger = new ScaleActionTrigger(nimbusHost, nimbusPort, compMonitor, sm, explorer, assignMonitor.getNbWorkers());
 				}
 			}
 		}

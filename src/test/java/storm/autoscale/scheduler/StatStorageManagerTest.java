@@ -247,6 +247,72 @@ public class StatStorageManagerTest extends TestCase {
 	}
 	
 	/**
+	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#storeEstimationInfo(java.lang.Integer, java.lang.String, java.lang.String, java.lang.Double, java.lang.Long, java.lang.Double, java.lang.Double, java.lang.Boolean, java.lang.Boolean)}.
+	 */
+	public void testStoreEstimationInfo() {
+		try {
+			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
+			Mockito.when(parser.getDbHost()).thenReturn("localhost");
+			Mockito.when(parser.getDbName()).thenReturn("autoscale_test");
+			Mockito.when(parser.getDbUser()).thenReturn("root");
+			Mockito.when(parser.getDbPassword()).thenReturn("");
+			
+			IJDBCConnector connector = new MySQLConnector(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
+			Integer timestamp = 1;
+			String topology = "testTopology";
+			String component = "testComponent";
+			Double estimInput = 2000.0;
+			Long pending = 300L;
+			Double estimCapacity = 1500.0;
+			Double utilCPU = 70.0;
+			Integer needScIn = 0;
+			Integer needScOut = 1;
+	
+			manager.storeEstimationInfo(timestamp, topology, component, estimInput, pending, estimCapacity, utilCPU, needScIn, needScOut);
+			
+			String testEstimationStorageQuery = "SELECT * FROM operators_estimation";
+			ResultSet result = connector.executeQuery(testEstimationStorageQuery);
+			
+			Integer actualTimestamp = null;
+			String actualTopology = null;
+			String actualComponent = null;
+			Double actualEstimInput = null;
+			Long actualPending = null;
+			Double actualEstimCapacity = null;
+			Double actualUtilCPU = null;
+			Integer actualNeedScIn = null;
+			Integer actualNeedScOut = null;
+			if(result.next()){
+				actualTimestamp = result.getInt("timestamp");
+				actualTopology = result.getString("topology");
+				actualComponent = result.getString("component");
+				actualEstimInput = result.getDouble("estim_input");
+				actualPending = result.getLong("pending");
+				actualEstimCapacity = result.getDouble("estim_max_capacity");
+				actualUtilCPU = result.getDouble("estim_util_cpu");
+				actualNeedScIn = result.getInt("need_scale_in");
+				actualNeedScOut = result.getInt("need_scale_out");
+			}
+			
+			assertEquals(timestamp, actualTimestamp);
+			assertEquals(topology, actualTopology);
+			assertEquals(component, actualComponent);
+			assertEquals(estimInput, actualEstimInput);
+			assertEquals(pending, actualPending);
+			assertEquals(estimCapacity, actualEstimCapacity);
+			assertEquals(utilCPU, actualUtilCPU);
+			assertEquals(needScIn, actualNeedScIn);
+			assertEquals(needScOut, actualNeedScOut);
+			
+			String testCleanQuery = "DELETE FROM operators_estimation";
+			connector.executeUpdate(testCleanQuery);
+		} catch (ClassNotFoundException | SQLException e) {
+			fail("StatStorageManager module has failed to retrieve estimation logs has failed because of " + e);
+		}
+	}
+	
+	/**
 	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#getWorkers(java.lang.String, java.lang.Integer)}.
 	 */
 	public void testGetWorkers() {

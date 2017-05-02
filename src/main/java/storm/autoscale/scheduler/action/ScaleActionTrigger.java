@@ -109,8 +109,7 @@ public class ScaleActionTrigger implements IActionTrigger {
 			}else{
 				logger.fine("This rebalance action will not modify the distribution of the operator");
 			}
-			Thread.sleep(1000);
-		} catch (TException | InterruptedException e) {
+		} catch (TException e) {
 			logger.severe("Unable to scale topology " + this.explorer.getTopologyName() + " because of " + e);
 		}
 	}
@@ -132,13 +131,15 @@ public class ScaleActionTrigger implements IActionTrigger {
 				Integer curr = this.sm.getDegree(component);
 				Integer next = scaleOutActions.get(component);
 				submitRebalance(client, component, curr, next, this.nbWorkers, "scale-out");
+				Thread.sleep(1000);
 			}
 			for(String component : scaleInActions.keySet()){
 				Integer curr = this.sm.getDegree(component);
 				Integer next = scaleInActions.get(component);
 				submitRebalance(client, component, curr, next, this.nbWorkers, "scale-in");
+				Thread.sleep(1000);
 			}
-		}catch(TException e){
+		}catch(TException | InterruptedException e){
 			logger.severe("Unable to submit rebalance because of " + e);
 		}
 	}

@@ -50,6 +50,7 @@ public class StatStorageManager{
 	public final static String TABLE_BOLT = "all_time_bolts_stats";
 	public final static String TABLE_TOPOLOGY = "topologies_status";
 	public final static String TABLE_ACTIVITY = "operators_activity";
+	public final static String TABLE_ESTIM = "operators_estimation";
 	public final static String TABLE_CONSTRAINT = "operators_constraints";
 	
 	private final static String COL_TOTAL_EXEC = "total_executed";
@@ -353,7 +354,7 @@ public class StatStorageManager{
 		try{
 			this.connector.executeUpdate(query);
 		}  catch (SQLException e) {
-			logger.severe("Unable to store topology state because of " + e);
+			logger.fine("Unable to store topology state because of " + e);
 		}
 	}
 	
@@ -393,6 +394,16 @@ public class StatStorageManager{
 			this.connector.executeUpdate(query);
 		} catch (SQLException e){
 			logger.fine("Unable to store activity info because of " + e);
+		}
+	}
+	
+	public void storeEstimationInfo(Integer timestamp, String topology, String component, Double estimInput, Long pending, Double estimMaxCapacity, Double estimUtilCpu, Integer needScaleIn, Integer needScaleOut){
+		String query = "INSERT INTO " + TABLE_ESTIM + " VALUES ('" + timestamp + "', '"
+				+ topology  + "', '" + component + "', '" + estimInput + "', '" + pending + "', '" + estimMaxCapacity + "', '" + estimUtilCpu + "', '" + needScaleIn + "', '" + needScaleOut + "')";
+		try{
+			this.connector.executeUpdate(query);
+		} catch (SQLException e){
+			logger.fine("Unable to store estimation info because of " + e);
 		}
 	}
 	

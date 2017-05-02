@@ -21,6 +21,7 @@ import storm.autoscale.scheduler.modules.component.ComponentMonitor;
 import storm.autoscale.scheduler.modules.explorer.TopologyExplorer;
 import storm.autoscale.scheduler.modules.scale.ScalingManager3;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
+import storm.autoscale.scheduler.modules.stats.StatStorageManager;
 
 /**
  * @author Roland
@@ -157,6 +158,13 @@ public class ScalingManager3Test {
 		
 		HashSet<String> ancestors = new HashSet<>();
 		ancestors.add("A");
+		ArrayList<String> bolts = new ArrayList<>();
+		bolts.add("A");
+		bolts.add("B");
+		bolts.add("C");
+		bolts.add("D");
+		bolts.add("E");
+		
 		ArrayList<String> parentA = new ArrayList<>();
 		ArrayList<String> parentB = new ArrayList<>();
 		parentB.add("A");
@@ -180,6 +188,8 @@ public class ScalingManager3Test {
 		ArrayList<String> childrenE = new ArrayList<>();
 		
 		this.explorer = Mockito.mock(TopologyExplorer.class);
+		Mockito.when(explorer.getTopologyName()).thenReturn("testTopology");
+		Mockito.when(explorer.getBolts()).thenReturn(bolts);
 		Mockito.when(explorer.getAncestors()).thenReturn(ancestors);
 		Mockito.when(explorer.getParents("A")).thenReturn(parentA);
 		Mockito.when(explorer.getParents("B")).thenReturn(parentB);
@@ -408,12 +418,14 @@ public class ScalingManager3Test {
 		cpuUsageE3.put(30, 80.0);
 		cpuUsageE3.put(40, 80.0);
 		cpuUsageE3.put(50, 80.0);
+		StatStorageManager manager = StatStorageManager.getManager("localhost", "autoscale_test", "root", "");
 		
  		this.cm = Mockito.mock(ComponentMonitor.class);
 		Mockito.when(this.cm.getParser()).thenReturn(parser);
 		Mockito.when(this.cm.getMonitoringFrequency()).thenReturn(10);
 		Mockito.when(this.cm.getTimestamp()).thenReturn(50);
 		Mockito.when(this.cm.getRegisteredComponents()).thenReturn(components);
+		Mockito.when(this.cm.getManager()).thenReturn(manager);
 		Mockito.when(this.cm.getStats("A")).thenReturn(statsA);
 		Mockito.when(this.cm.getStats("B")).thenReturn(statsB);
 		Mockito.when(this.cm.getStats("C")).thenReturn(statsC);

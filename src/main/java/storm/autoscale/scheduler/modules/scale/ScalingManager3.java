@@ -73,43 +73,47 @@ public class ScalingManager3 {
 		for(String component : components){
 			//System.out.println("Component " + component + ": ");
 			HashMap<Integer, Long> inputs = cm.getStats(component).getInputRecords();
-			if(!inputs.isEmpty()){
-				RegressionSelector<Integer, Long> regression = new RegressionSelector<>(inputs);
-				Double estimR = 0.0;
-				for(Integer timestamp : timestamps){
-					estimR += regression.estimateYCoordinate(timestamp);
-					//System.out.println("\t\t for timestamp " + timestamp + " estimated inputs are: " + regression.estimateYCoordinate(timestamp));
-				}
-
-				//System.out.println("\t Global inputs are: " + estimR);
-				Double estimParentOutputs = 0.0;
-				ArrayList<String> parents = explorer.getParents(component);
-				if(!parents.isEmpty()){
-					for(String parent : parents){
-						//System.out.println("\t\t Estimating outputs for parent " + parent + " of component " + component);
-						HashMap<Integer, Long> parentInputs = cm.getStats(parent).getInputRecords();
-						RegressionSelector<Integer, Long> parentRegression = new RegressionSelector<>(parentInputs);
-						Double estimParentR = 0.0;
-						for(Integer timestamp : timestamps){
-							estimParentR += parentRegression.estimateYCoordinate(timestamp);
-						}
-
-						Double parentSelectivity = ComponentWindowedStats.getLastRecord(cm.getStats(parent).getSelectivityRecords());
-						Double estimParentOutput = estimParentR * parentSelectivity;
-						//System.out.println("\t\t Estimated outputs for parent " + parent + " of component " + component + ": " + estimParentOutput);
-						estimParentOutputs += estimParentOutput;
+			try{
+				if(!inputs.isEmpty()){
+					RegressionSelector<Integer, Long> regression = new RegressionSelector<>(inputs);
+					Double estimR = 0.0;
+					for(Integer timestamp : timestamps){
+						estimR += regression.estimateYCoordinate(timestamp);
+						//System.out.println("\t\t for timestamp " + timestamp + " estimated inputs are: " + regression.estimateYCoordinate(timestamp));
 					}
+
+					//System.out.println("\t Global inputs are: " + estimR);
+					Double estimParentOutputs = 0.0;
+					ArrayList<String> parents = explorer.getParents(component);
+					if(!parents.isEmpty()){
+						for(String parent : parents){
+							//System.out.println("\t\t Estimating outputs for parent " + parent + " of component " + component);
+							HashMap<Integer, Long> parentInputs = cm.getStats(parent).getInputRecords();
+							RegressionSelector<Integer, Long> parentRegression = new RegressionSelector<>(parentInputs);
+							Double estimParentR = 0.0;
+							for(Integer timestamp : timestamps){
+								estimParentR += parentRegression.estimateYCoordinate(timestamp);
+							}
+
+							Double parentSelectivity = ComponentWindowedStats.getLastRecord(cm.getStats(parent).getSelectivityRecords());
+							Double estimParentOutput = estimParentR * parentSelectivity;
+							//System.out.println("\t\t Estimated outputs for parent " + parent + " of component " + component + ": " + estimParentOutput);
+							estimParentOutputs += estimParentOutput;
+						}
+					}
+
+					//System.out.println("\t\t Estimated outputs for all parents of component " + component + ": " + estimParentOutputs);
+					Long pending = cm.getPendingTuples(explorer).get(component);
+					Double estimInput = combine(estimR, estimParentOutputs) + pending; 
+					//System.out.println("\t Estimated inputs for component " + component + ": " + estimInput);
+					this.estimInput.put(component, estimInput);
+
+					ArrayList<String> children = explorer.getChildren(component);
+					allChildren.addAll(children);
+				}else{
+					this.estimInput.put(component, 0.0);
 				}
-
-				//System.out.println("\t\t Estimated outputs for all parents of component " + component + ": " + estimParentOutputs);
-				Long pending = cm.getPendingTuples(explorer).get(component);
-				Double estimInput = combine(estimR, estimParentOutputs) + pending; 
-				//System.out.println("\t Estimated inputs for component " + component + ": " + estimInput);
-				this.estimInput.put(component, estimInput);
-
-				ArrayList<String> children = explorer.getChildren(component);
-				allChildren.addAll(children);
-			}else{
+			}catch(NullPointerException e){
 				this.estimInput.put(component, 0.0);
 			}
 			if(!allChildren.isEmpty()){
@@ -123,22 +127,25 @@ public class ScalingManager3 {
 		Integer delta = cm.getParser().getWindowSize();
 		for(String component : components){
 			HashMap<Integer, Double> latencyRecords = cm.getStats(component).getAvgLatencyRecords();
-			
-			if(!latencyRecords.isEmpty()){
-				ArrayList<Double> latencies = UtilFunctions.getValues(latencyRecords);
-				ArrayList<Double> capacities = new ArrayList<>();
-				Integer size = latencies.size();
-				for(int i = 0; i < size; i++){
-					capacities.add(1000 / latencies.get(i));//to consider capacity as a number of processed items per second
+			try{
+				if(!latencyRecords.isEmpty()){
+					ArrayList<Double> latencies = UtilFunctions.getValues(latencyRecords);
+					ArrayList<Double> capacities = new ArrayList<>();
+					Integer size = latencies.size();
+					for(int i = 0; i < size; i++){
+						capacities.add(1000 / latencies.get(i));//to consider capacity as a number of processed items per second
+					}
+
+					Double lastCapacity = 1000 / ComponentWindowedStats.getLastRecord(latencyRecords);
+					Double stdDerivation = UtilFunctions.getStdDerivation(capacities);
+
+					Double estimMaxCapacity = delta * (lastCapacity + stdDerivation);
+
+					this.estimMaxCap.put(component, estimMaxCapacity);
+				}else{
+					this.estimMaxCap.put(component, 1.0);
 				}
-
-				Double lastCapacity = 1000 / ComponentWindowedStats.getLastRecord(latencyRecords);
-				Double stdDerivation = UtilFunctions.getStdDerivation(capacities);
-
-				Double estimMaxCapacity = delta * (lastCapacity + stdDerivation);
-
-				this.estimMaxCap.put(component, estimMaxCapacity);
-			}else{
+			}catch(NullPointerException e){
 				this.estimMaxCap.put(component, 1.0);
 			}
 		}
@@ -149,38 +156,42 @@ public class ScalingManager3 {
 		HashMap<String, Double> cpuConstraints = cm.getCurrentCpuConstraints(explorer);
 		for(String component : components){
 			//System.out.println("Component " + component + ": ");
-			ArrayList<WorkerSlot> workers = am.getAllocatedWorkers(component);
-			ArrayList<Double> utilCPUs = new ArrayList<>();
-			if(workers != null && !workers.isEmpty()){
-				for(WorkerSlot worker : workers){
-					String host = worker.getNodeId();
-					Integer port = worker.getPort();
-					//System.out.println("\t Computing utilizable CPU on worker " + host + "@" + port);
-					Double freeCPU = 100.0;
-					Double allocatedCPU = 0.0;
-					ArrayList<String> runningComponents = am.getRunningComponents(worker);
-					for(String other : runningComponents){
+			try{
+				ArrayList<WorkerSlot> workers = am.getAllocatedWorkers(component);
+				ArrayList<Double> utilCPUs = new ArrayList<>();
+				if(workers != null && !workers.isEmpty()){
+					for(WorkerSlot worker : workers){
+						String host = worker.getNodeId();
+						Integer port = worker.getPort();
+						//System.out.println("\t Computing utilizable CPU on worker " + host + "@" + port);
+						Double freeCPU = 100.0;
+						Double allocatedCPU = 0.0;
+						ArrayList<String> runningComponents = am.getRunningComponents(worker);
+						for(String other : runningComponents){
 
-						if(!other.equalsIgnoreCase(component)){
-							allocatedCPU += cpuConstraints.get(other);
-							//System.out.println("\t Component " + other + " is also affected on worker " + host + "@" + port + " and requires " + cpuConstraints.get(other) + " CPU usage");
+							if(!other.equalsIgnoreCase(component)){
+								allocatedCPU += cpuConstraints.get(other);
+								//System.out.println("\t Component " + other + " is also affected on worker " + host + "@" + port + " and requires " + cpuConstraints.get(other) + " CPU usage");
+							}
 						}
+
+						Double requiredCPU = Math.max(ComponentWindowedStats.getLastRecord(cm.getCpuUsageOnWorker(component, host, port)), cpuConstraints.get(component));
+						//System.out.println("\t Required CPU on worker " + host + "@" + port + " by component " +  component + " is " + requiredCPU);
+						freeCPU -= allocatedCPU;
+						freeCPU -= requiredCPU;
+
+						//System.out.println("\t Free CPU on worker " + host + "@" + port + " is " + freeCPU);
+						Double utilCPU = requiredCPU + (freeCPU / runningComponents.size());
+
+						//System.out.println("\t Utilizable CPU on worker " + host + "@" + port + " is " + utilCPU);
+						utilCPUs.add(utilCPU / 100);// from percentage to ratio
 					}
-
-					Double requiredCPU = Math.max(ComponentWindowedStats.getLastRecord(cm.getCpuUsageOnWorker(component, host, port)), cpuConstraints.get(component));
-					//System.out.println("\t Required CPU on worker " + host + "@" + port + " by component " +  component + " is " + requiredCPU);
-					freeCPU -= allocatedCPU;
-					freeCPU -= requiredCPU;
-
-					//System.out.println("\t Free CPU on worker " + host + "@" + port + " is " + freeCPU);
-					Double utilCPU = requiredCPU + (freeCPU / runningComponents.size());
-
-					//System.out.println("\t Utilizable CPU on worker " + host + "@" + port + " is " + utilCPU);
-					utilCPUs.add(utilCPU / 100);// from percentage to ratio
+					this.utilCPU.put(component, UtilFunctions.getMinValue(utilCPUs));
+					//System.out.println("Global utilizable CPU for component " + component + " is " + UtilFunctions.getMinValue(utilCPUs));
+				}else{
+					this.utilCPU.put(component, 1.0);
 				}
-				this.utilCPU.put(component, UtilFunctions.getMinValue(utilCPUs));
-				//System.out.println("Global utilizable CPU for component " + component + " is " + UtilFunctions.getMinValue(utilCPUs));
-			}else{
+			}catch(NullPointerException e){
 				this.utilCPU.put(component, 1.0);
 			}
 		}
@@ -189,22 +200,26 @@ public class ScalingManager3 {
 	public void computeScalingActions(ComponentMonitor cm, AssignmentMonitor am, TopologyExplorer explorer){
 		Double alpha = 0.8;// to turn into config parameter
 		Integer delta = cm.getParser().getWindowSize();
-		Set<String> components = cm.getRegisteredComponents();
+		ArrayList<String> components = explorer.getBolts();
 		HashMap<String, Double> cpuConstraints = cm.getCurrentCpuConstraints(explorer);
 		for(String component : components){
+			
+			Double estimInput = getEstimInput(component);
+			
+			Double allocCPU = cpuConstraints.get(component);
+			
+			HashMap<Integer, Double> latencyRecords = cm.getStats(component).getAvgLatencyRecords();
+			Double lastLatency = ComponentWindowedStats.getLastRecord(latencyRecords);
+			ArrayList<Double> latencies = UtilFunctions.getValues(latencyRecords);
+			Double stdDerivation = UtilFunctions.getStdDerivation(latencies);
+			Double latency = lastLatency + stdDerivation;
+			Integer currentDegree = getDegree(component);
+			
+			Integer scaleOut = 0;
+			Integer scaleIn = 0;
 			if(needScaleOut(component)){
-				Double estimInput = getEstimInput(component);
-				
-				Double allocCPU = cpuConstraints.get(component);
-				
-				HashMap<Integer, Double> latencyRecords = cm.getStats(component).getAvgLatencyRecords();
-				Double lastLatency = ComponentWindowedStats.getLastRecord(latencyRecords);
-				ArrayList<Double> latencies = UtilFunctions.getValues(latencyRecords);
-				Double stdDerivation = UtilFunctions.getStdDerivation(latencies);
-				Double latency = lastLatency + stdDerivation;
-				
+				scaleOut = 1;
 				Integer maxDegree = am.getAllSortedTasks(component).size();
-				Integer currentDegree = getDegree(component);
 				
 				/*System.out.println("Component " + component + ": ");
 				System.out.println("\t Estim inputs: " + estimInput);
@@ -230,18 +245,7 @@ public class ScalingManager3 {
 				}
 			}else{
 				if(needScaleIn(component, cm.getParser())){
-					Double estimInput = getEstimInput(component);
-					
-					Double allocCPU = cpuConstraints.get(component);
-					
-					HashMap<Integer, Double> latencyRecords = cm.getStats(component).getAvgLatencyRecords();
-					Double lastLatency = ComponentWindowedStats.getLastRecord(latencyRecords);
-					ArrayList<Double> latencies = UtilFunctions.getValues(latencyRecords);
-					Double stdDerivation = UtilFunctions.getStdDerivation(latencies);
-					Double latency = lastLatency + stdDerivation;
-					
-					Integer currentDegree = am.getParallelism(component);
-					
+					scaleIn = 1; 
 				  /*System.out.println("Component " + component + ": ");
 					System.out.println("\t Estim inputs: " + estimInput);
 					System.out.println("\t CPU constraint: " + allocCPU);
@@ -265,6 +269,7 @@ public class ScalingManager3 {
 					}
 				}
 			}
+			cm.getManager().storeEstimationInfo(cm.getTimestamp(), explorer.getTopologyName(), component, estimInput, cm.getPendingTuples(explorer).get(component), this.getEstimMaxCapacity(component), this.getUtilCPU(component), scaleIn, scaleOut);
 		}
 	}
 	
@@ -280,10 +285,14 @@ public class ScalingManager3 {
 	}
 	
 	public boolean needScaleIn(String component, XmlConfigParser parser){
+		boolean result = false;
 		Integer k = getDegree(component);
-		Double thetaMin = parser.getLowActivityThreshold();
-		Double estimGlobalCapacity = k * Math.ceil(getEstimMaxCapacity(component) * getUtilCPU(component));
-		return (getEstimInput(component) / estimGlobalCapacity) < thetaMin;
+		if(k > 1){
+			Double thetaMin = parser.getLowActivityThreshold();
+			Double estimGlobalCapacity = k * Math.ceil(getEstimMaxCapacity(component) * getUtilCPU(component));
+			result = (getEstimInput(component) / estimGlobalCapacity) < thetaMin;
+		}
+		return result;
 	}
 	
 	public Double combine(Double estim1, Double estim2){
