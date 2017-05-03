@@ -198,30 +198,40 @@ public class ScalingManager3 {
 	}
 	
 	public void computeScalingActions(ComponentMonitor cm, AssignmentMonitor am, TopologyExplorer explorer){
-		Double alpha = 0.8;// to turn into config parameter
-		Integer delta = cm.getParser().getWindowSize();
+		XmlConfigParser parser = cm.getParser();
+
+		Double balancingFactor = 1 - parser.getAlpha();
+		Integer delta = parser.getWindowSize();
+		Integer windowSize = parser.getWindowSize();
+		Integer monitFrequency = cm.getMonitoringFrequency();
+
 		ArrayList<String> components = explorer.getBolts();
 		HashMap<String, Double> cpuConstraints = cm.getCurrentCpuConstraints(explorer);
+
 		for(String component : components){
-			
-			Double estimInput = getEstimInput(component);
-			
-			Double allocCPU = cpuConstraints.get(component);
-			
-			HashMap<Integer, Double> latencyRecords = cm.getStats(component).getAvgLatencyRecords();
-			Double lastLatency = ComponentWindowedStats.getLastRecord(latencyRecords);
-			ArrayList<Double> latencies = UtilFunctions.getValues(latencyRecords);
-			Double stdDerivation = UtilFunctions.getStdDerivation(latencies);
-			Double latency = lastLatency + stdDerivation;
-			Integer currentDegree = getDegree(component);
-			
+			HashMap<Integer, Long> inputs = cm.getStats(component).getInputRecords();
 			Integer scaleOut = 0;
 			Integer scaleIn = 0;
-			if(needScaleOut(component)){
-				scaleOut = 1;
-				Integer maxDegree = am.getAllSortedTasks(component).size();
+			Double estimInput = getEstimInput(component);
+			if(ComponentWindowedStats.isSignificantSample(inputs, windowSize, monitFrequency)){
 				
-				/*System.out.println("Component " + component + ": ");
+
+				Double allocCPU = cpuConstraints.get(component);
+
+				HashMap<Integer, Double> latencyRecords = cm.getStats(component).getAvgLatencyRecords();
+				Double lastLatency = ComponentWindowedStats.getLastRecord(latencyRecords);
+				ArrayList<Double> latencies = UtilFunctions.getValues(latencyRecords);
+				Double stdDerivation = UtilFunctions.getStdDerivation(latencies);
+				Double latency = lastLatency + stdDerivation;
+				Integer currentDegree = getDegree(component);
+
+				
+
+				if(needScaleOut(component)){
+					scaleOut = 1;
+					Integer maxDegree = am.getAllSortedTasks(component).size();
+
+					/*System.out.println("Component " + component + ": ");
 				System.out.println("\t Estim inputs: " + estimInput);
 				System.out.println("\t CPU constraint: " + allocCPU);
 				System.out.println("\t Latency per tuple: " + latency);
@@ -229,45 +239,46 @@ public class ScalingManager3 {
 				System.out.println("\t Max degree: " + maxDegree);
 				System.out.println("\t alpha: " + alpha);
 				System.out.println("\t delta: " + delta);*/
-				
-				Integer kprime = Math.min(maxDegree, (int) Math.floor(estimInput / ((allocCPU / 100) * alpha * (1000 / latency) * delta)));
-				
-				Integer argmink = kprime - 1;
-				while(validDegree(argmink, estimInput, allocCPU, latency, alpha, delta)){
-					//System.out.println("Reducing kprime from " + kprime + " to " + argmink);
-					kprime = argmink;
-					argmink--;
-				}
-				//System.out.println("\t New degree: " + kprime);
-				
-				if(kprime > currentDegree){
-					this.scaleOutActions.put(component, kprime);
-				}
-			}else{
-				if(needScaleIn(component, cm.getParser())){
-					scaleIn = 1; 
-				  /*System.out.println("Component " + component + ": ");
+
+					Integer kprime = Math.min(maxDegree, (int) Math.floor(estimInput / ((allocCPU / 100) * balancingFactor * (1000 / latency) * delta)));
+
+					Integer argmink = kprime - 1;
+					while(validDegree(argmink, estimInput, allocCPU, latency, balancingFactor, delta)){
+						//System.out.println("Reducing kprime from " + kprime + " to " + argmink);
+						kprime = argmink;
+						argmink--;
+					}
+					//System.out.println("\t New degree: " + kprime);
+
+					if(kprime > currentDegree){
+						this.scaleOutActions.put(component, kprime);
+					}
+				}else{
+					if(needScaleIn(component, cm.getParser())){
+						scaleIn = 1; 
+						/*System.out.println("Component " + component + ": ");
 					System.out.println("\t Estim inputs: " + estimInput);
 					System.out.println("\t CPU constraint: " + allocCPU);
 					System.out.println("\t Latency per tuple: " + latency);
 					System.out.println("\t Current degree: " + currentDegree);
 					System.out.println("\t alpha: " + alpha);
 					System.out.println("\t delta: " + delta);*/
-					
-					Integer kprime = Math.max(1, (int) Math.floor(estimInput / ((allocCPU / 100) * alpha * (1000 / latency) * delta)));
-					
-					
-					Integer argmink = kprime - 1;
-					while(validDegree(argmink, estimInput, allocCPU, latency, alpha, delta)){
-						//System.out.println("Reducing kprime from " + kprime + " to " + argmink);
-						kprime = argmink;
-						argmink--;
+
+						Integer kprime = Math.max(1, (int) Math.floor(estimInput / ((allocCPU / 100) * balancingFactor * (1000 / latency) * delta)));
+
+
+						Integer argmink = kprime - 1;
+						while(validDegree(argmink, estimInput, allocCPU, latency, balancingFactor, delta)){
+							//System.out.println("Reducing kprime from " + kprime + " to " + argmink);
+							kprime = argmink;
+							argmink--;
+						}
+						//System.out.println("\t New degree: " + kprime);
+						if(kprime < currentDegree){
+							this.scaleInActions.put(component, kprime);
+						}
 					}
-					//System.out.println("\t New degree: " + kprime);
-					if(kprime < currentDegree){
-						this.scaleInActions.put(component, kprime);
-					}
-				}
+				}		
 			}
 			cm.getManager().storeEstimationInfo(cm.getTimestamp(), explorer.getTopologyName(), component, estimInput, cm.getPendingTuples(explorer).get(component), this.getEstimMaxCapacity(component), this.getUtilCPU(component), scaleIn, scaleOut);
 		}

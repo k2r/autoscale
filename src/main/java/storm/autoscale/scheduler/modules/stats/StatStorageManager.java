@@ -764,6 +764,42 @@ public class StatStorageManager{
 		return result;
 	}
 	
+	public Long getCurrentUpdateOutput(Integer timestamp, Integer windowSize, String component, String table){
+		Long result = 0L;
+		Integer start = timestamp - windowSize;
+		String query = "SELECT timestamp, SUM(" + COL_UPDT_OUTPUT + ") AS outputs FROM " + table +
+				" WHERE component = '" + component + "' " + 
+				" AND timestamp BETWEEN " + start + " AND " + timestamp +
+				" GROUP BY timestamp, component";
+		try {
+			ResultSet results = this.connector.executeQuery(query);
+			if(results.first()){
+				result = results.getLong("outputs");
+			}
+		} catch (SQLException e) {
+			logger.severe("Unable to retrieve former updated value of outcoming tuples because of " + e);
+		}
+		return result;
+	}
+	
+	public Long getCurrentUpdateExecuted(Integer timestamp, Integer windowSize, String component, String table){
+		Long result = 0L;
+		Integer start = timestamp - windowSize;
+		String query = "SELECT timestamp, SUM(" + COL_UPDT_EXEC + ") AS executed FROM " + table +
+				" WHERE component = '" + component + "' " + 
+				" AND timestamp BETWEEN " + start + " AND " + timestamp +
+				" GROUP BY timestamp, component";
+		try {
+			ResultSet results = this.connector.executeQuery(query);
+			if(results.first()){
+				result = results.getLong("executed");
+			}
+		} catch (SQLException e) {
+			logger.severe("Unable to retrieve former updated value of executed tuples because of " + e);
+		}
+		return result;
+	}
+	
 	public boolean existConstraint(String topology){
 		boolean result = false;
 		String query = "SELECT * FROM " + TABLE_CONSTRAINT + " WHERE topology = '" + topology + "';";

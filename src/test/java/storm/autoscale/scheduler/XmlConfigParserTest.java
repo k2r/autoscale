@@ -92,7 +92,7 @@ public class XmlConfigParserTest extends TestCase {
 	public void testGetLowActivityThreshold() throws ParserConfigurationException, SAXException, IOException {
 		XmlConfigParser parser = new XmlConfigParser("./conf/autoscale_parameters.xml");
 		parser.initParameters();
-		Double expected = 0.4;
+		Double expected = 0.1;
 		assertEquals(expected, parser.getLowActivityThreshold(), 0);
 	}
 
@@ -157,7 +157,7 @@ public class XmlConfigParserTest extends TestCase {
 	public void testGetDbName() throws ParserConfigurationException, SAXException, IOException {
 		XmlConfigParser parser = new XmlConfigParser("./conf/autoscale_parameters.xml");
 		parser.initParameters();
-		String expected = "autoscale";
+		String expected = "autoscale_test";
 		assertEquals(expected, parser.getDbName());
 	}
 

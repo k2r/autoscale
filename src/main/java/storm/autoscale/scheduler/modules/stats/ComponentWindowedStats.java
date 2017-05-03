@@ -103,6 +103,11 @@ public class ComponentWindowedStats {
 		return variations;
 	}
 	
+	public static boolean isSignificantSample(HashMap<? extends Number, ? extends Number> records, Integer windowSize, Integer frequency){
+		Integer significant = (windowSize / frequency) - 1;// we accept that an offset, due to data storage and retrieval, prevents from getting the oldest value
+		return records.size() >= significant;
+	}
+	
 	/**
 	 * @return the inputRecords
 	 */
@@ -202,6 +207,8 @@ public class ComponentWindowedStats {
 		return (!inputTimestamps.isEmpty() && !executedTimestamps.isEmpty() && !outputTimestamps.isEmpty()
 				&& !avgLatencyTimestamps.isEmpty() && !selectivityTimestamps.isEmpty() && !cpuTimestamps.isEmpty());
 	}
+	
+	
 	
 	@Override
 	public String toString(){

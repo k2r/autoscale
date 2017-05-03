@@ -12,7 +12,8 @@
 	<window_size>60</window_size>
 	
 	<!-- Activity delimiters -->
-	<low_activity_threshold>0.4</low_activity_threshold>
+	<alpha_balancing>0.01</alpha_balancing>
+	<low_activity_threshold>0.1</low_activity_threshold>
 	<high_activity_threshold>0.8</high_activity_threshold>
 	
 	<!-- Stability parameters -->
@@ -25,7 +26,7 @@
 	<db_host>localhost</db_host>
 	
 	<!-- Database name, for reminder only MySQL databases are supported -->
-	<db_name>autoscale</db_name>
+	<db_name>autoscale_test</db_name>
 	
 	<!-- Database credentials -->
 	<db_user>root</db_user>

@@ -56,6 +56,7 @@ public class ComponentMonitor {
 	public StatStorageManager getManager() {
 		return manager;
 	}
+	
 
 	public void getStatistics(TopologyExplorer explorer){
 		this.reset();
@@ -177,6 +178,7 @@ public class ComponentMonitor {
 	
 	public HashMap<String, Long> getPendingTuples(TopologyExplorer explorer){
 		HashMap<String, Long> result = new HashMap<>();
+		Integer windowSize = this.getParser().getWindowSize();
 		for(String component : this.stats.keySet()){
 			ArrayList<String> parents = explorer.getParents(component);
 			Long input = 0L;
@@ -185,9 +187,9 @@ public class ComponentMonitor {
 				if(explorer.getSpouts().contains(parent)){
 					table = StatStorageManager.TABLE_SPOUT;
 				}
-				input += this.manager.getCurrentTotalOutput(this.timestamp, parent, table);
+				input += this.manager.getCurrentUpdateOutput(this.timestamp, windowSize, parent, table);
 			}
-			Long executed = this.manager.getCurrentTotalExecuted(this.timestamp, component, StatStorageManager.TABLE_BOLT);
+			Long executed = this.manager.getCurrentUpdateExecuted(this.timestamp, windowSize, component, StatStorageManager.TABLE_BOLT);
 			result.put(component, Math.max(0, input - executed));
 		}
 		return result;
@@ -221,15 +223,4 @@ public class ComponentMonitor {
 		return this.manager.getCpuUsagePerWorker(component, host, port, getTimestamp(), this.parser.getWindowSize());
 	}
 	
-	public boolean isPopulated(){
-		boolean populated = true;
-		Set<String> components = this.getRegisteredComponents();
-		for(String component : components){
-			if(!this.getStats(component).hasRecords()){
-				populated = false;
-				break;
-			}
-		}
-		return populated;
-	}
 }

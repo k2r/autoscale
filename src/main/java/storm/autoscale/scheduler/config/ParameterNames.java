@@ -15,6 +15,7 @@ public enum ParameterNames {
 	MONITFREQ("monitoring_frequency"),
 	WINSIZE("window_size"),
 	LOWACT("low_activity_threshold"),
+	ALPHA("alpha_balancing"),
 	HIGHACT("high_activity_threshold"),
 	STABCOEFF("stabilization_coeff"),
 	SLOPE("slope_threshold"),

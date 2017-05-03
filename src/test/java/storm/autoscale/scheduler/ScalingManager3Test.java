@@ -432,6 +432,7 @@ public class ScalingManager3Test {
 		Mockito.when(this.cm.getStats("D")).thenReturn(statsD);
 		Mockito.when(this.cm.getStats("E")).thenReturn(statsE);
 		Mockito.when(this.cm.getPendingTuples(explorer)).thenReturn(pending);
+		
 		Mockito.when(this.cm.getCurrentCpuConstraints(explorer)).thenReturn(cpuConstraints);
 		Mockito.when(this.cm.getCpuUsageOnWorker("A", "supervisor1", 6700)).thenReturn(cpuUsageA1);
 		Mockito.when(this.cm.getCpuUsageOnWorker("A", "supervisor1", 6701)).thenReturn(cpuUsageA2);
@@ -447,6 +448,7 @@ public class ScalingManager3Test {
 		Mockito.when(this.cm.getCpuUsageOnWorker("E", "supervisor2", 6701)).thenReturn(cpuUsageE1);
 		Mockito.when(this.cm.getCpuUsageOnWorker("E", "supervisor2", 6702)).thenReturn(cpuUsageE2);
 		Mockito.when(this.cm.getCpuUsageOnWorker("E", "supervisor2", 6703)).thenReturn(cpuUsageE3);
+		
 	}
 
 	/**
@@ -506,7 +508,6 @@ public class ScalingManager3Test {
 	public void testGetEstimInput() {
 		ScalingManager3 sm = new ScalingManager3();
 		sm.computeEstimInputs(cm, explorer);
-		
 		assertEquals(4425, sm.getEstimInput("A"), 1.0);
 		assertEquals(5045, sm.getEstimInput("B"), 1.0);
 		assertEquals(5545, sm.getEstimInput("C"), 1.0);
@@ -576,7 +577,7 @@ public class ScalingManager3Test {
 		HashMap<String, Integer> expected = new HashMap<>();
 		expected.put("B", 16);
 		expected.put("C", 16);
-		expected.put("E", 12);
+		expected.put("E", 9);
 		
 		assertEquals(expected, sm.getScaleOutActions());
 	}

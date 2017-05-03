@@ -33,6 +33,7 @@ public class XmlConfigParser {
 	/*Monitoring parameters*/
 	private Integer monitoringFrequency;
 	private Integer windowSize;
+	private Double alpha;
 	private Double lowActivityThreshold;
 	private Double highActivityThreshold;
 	private Double stabilizationCoeff;
@@ -126,6 +127,20 @@ public class XmlConfigParser {
 	 */
 	public void setWindowSize(Integer windowSize) {
 		this.windowSize = windowSize;
+	}
+
+	/**
+	 * @return the alpha
+	 */
+	public Double getAlpha() {
+		return alpha;
+	}
+
+	/**
+	 * @param alpha the alpha to set
+	 */
+	public void setAlpha(Double alpha) {
+		this.alpha = alpha;
 	}
 
 	/**
@@ -251,6 +266,8 @@ public class XmlConfigParser {
 		this.setMonitoringFrequency(Integer.parseInt(monitFreq.item(0).getTextContent()));
 		final NodeList winSize = parameters.getElementsByTagName(ParameterNames.WINSIZE.toString());
 		this.setWindowSize(Integer.parseInt(winSize.item(0).getTextContent()));
+		final NodeList alphaBalancing = parameters.getElementsByTagName(ParameterNames.ALPHA.toString());
+		this.setAlpha(Double.parseDouble(alphaBalancing.item(0).getTextContent()));
 		final NodeList lowAct = parameters.getElementsByTagName(ParameterNames.LOWACT.toString());
 		this.setLowActivityThreshold(Double.parseDouble(lowAct.item(0).getTextContent()));
 		final NodeList highAct = parameters.getElementsByTagName(ParameterNames.HIGHACT.toString());
