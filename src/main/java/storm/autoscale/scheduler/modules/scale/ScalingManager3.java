@@ -104,7 +104,7 @@ public class ScalingManager3 {
 
 					//System.out.println("\t\t Estimated outputs for all parents of component " + component + ": " + estimParentOutputs);
 					Long pending = cm.getPendingTuples(explorer).get(component);
-					Double estimInput = combine(estimR, estimParentOutputs) + pending; 
+					Double estimInput = Math.max(0.0, combine(estimR, estimParentOutputs) + pending); 
 					//System.out.println("\t Estimated inputs for component " + component + ": " + estimInput);
 					this.estimInput.put(component, estimInput);
 
