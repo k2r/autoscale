@@ -156,6 +156,7 @@ public class ScalingManager3 {
 		HashMap<String, Double> cpuConstraints = cm.getCurrentCpuConstraints(explorer);
 		for(String component : components){
 			//System.out.println("Component " + component + ": ");
+			Double thisResCPU = cpuConstraints.get(component);
 			try{
 				ArrayList<WorkerSlot> workers = am.getAllocatedWorkers(component);
 				ArrayList<Double> utilCPUs = new ArrayList<>();
@@ -164,24 +165,25 @@ public class ScalingManager3 {
 						String host = worker.getNodeId();
 						Integer port = worker.getPort();
 						//System.out.println("\t Computing utilizable CPU on worker " + host + "@" + port);
-						Double freeCPU = 100.0;
-						Double allocatedCPU = 0.0;
+					
+						Double thisUsedCPU = ComponentWindowedStats.getLastRecord(cm.getCpuUsageOnWorker(component, host, port));
+						Double unusedCPU = 100.0 - thisUsedCPU;
+						Double resUnused = 0.0;
 						ArrayList<String> runningComponents = am.getRunningComponents(worker);
-						for(String other : runningComponents){
-
+						for(String other : runningComponents){	
 							if(!other.equalsIgnoreCase(component)){
-								allocatedCPU += cpuConstraints.get(other);
+								Double resCPU = cpuConstraints.get(other);
+								Double usedCPU = ComponentWindowedStats.getLastRecord(cm.getCpuUsageOnWorker(other, host, port));
+								
+								unusedCPU -= usedCPU;
+								if(resCPU > usedCPU){
+									resUnused += resCPU - usedCPU;
+								}								
 								//System.out.println("\t Component " + other + " is also affected on worker " + host + "@" + port + " and requires " + cpuConstraints.get(other) + " CPU usage");
 							}
-						}
-
-						Double requiredCPU = Math.max(ComponentWindowedStats.getLastRecord(cm.getCpuUsageOnWorker(component, host, port)), cpuConstraints.get(component));
-						//System.out.println("\t Required CPU on worker " + host + "@" + port + " by component " +  component + " is " + requiredCPU);
-						freeCPU -= allocatedCPU;
-						freeCPU -= requiredCPU;
-
+						}						
 						//System.out.println("\t Free CPU on worker " + host + "@" + port + " is " + freeCPU);
-						Double utilCPU = requiredCPU + (freeCPU / runningComponents.size());
+						Double utilCPU = Math.max(thisResCPU, thisUsedCPU) + ((unusedCPU - resUnused) / runningComponents.size());
 
 						//System.out.println("\t Utilizable CPU on worker " + host + "@" + port + " is " + utilCPU);
 						utilCPUs.add(utilCPU / 100);// from percentage to ratio
@@ -214,8 +216,6 @@ public class ScalingManager3 {
 			Integer scaleIn = 0;
 			Double estimInput = getEstimInput(component);
 			if(ComponentWindowedStats.isSignificantSample(inputs, windowSize, monitFrequency)){
-				
-
 				Double allocCPU = cpuConstraints.get(component);
 
 				HashMap<Integer, Double> latencyRecords = cm.getStats(component).getAvgLatencyRecords();
@@ -225,29 +225,21 @@ public class ScalingManager3 {
 				Double latency = lastLatency + stdDerivation;
 				Integer currentDegree = getDegree(component);
 
-				
-
 				if(needScaleOut(component)){
 					scaleOut = 1;
 					Integer maxDegree = am.getAllSortedTasks(component).size();
 
 					/*System.out.println("Component " + component + ": ");
-				System.out.println("\t Estim inputs: " + estimInput);
-				System.out.println("\t CPU constraint: " + allocCPU);
-				System.out.println("\t Latency per tuple: " + latency);
-				System.out.println("\t Current degree: " + currentDegree);
-				System.out.println("\t Max degree: " + maxDegree);
-				System.out.println("\t alpha: " + alpha);
-				System.out.println("\t delta: " + delta);*/
+					System.out.println("\t Estim inputs: " + estimInput);
+					System.out.println("\t CPU constraint: " + allocCPU);
+					System.out.println("\t Latency per tuple: " + latency);
+					System.out.println("\t Current degree: " + currentDegree);
+					System.out.println("\t Max degree: " + maxDegree);
+					System.out.println("\t alpha: " + alpha);
+					System.out.println("\t delta: " + delta);*/
 
 					Integer kprime = Math.min(maxDegree, (int) Math.floor(estimInput / ((allocCPU / 100) * balancingFactor * (1000 / latency) * delta)));
 
-					Integer argmink = kprime - 1;
-					while(validDegree(argmink, estimInput, allocCPU, latency, balancingFactor, delta)){
-						//System.out.println("Reducing kprime from " + kprime + " to " + argmink);
-						kprime = argmink;
-						argmink--;
-					}
 					//System.out.println("\t New degree: " + kprime);
 
 					if(kprime > currentDegree){
@@ -257,23 +249,16 @@ public class ScalingManager3 {
 					if(needScaleIn(component, cm.getParser())){
 						scaleIn = 1; 
 						/*System.out.println("Component " + component + ": ");
-					System.out.println("\t Estim inputs: " + estimInput);
-					System.out.println("\t CPU constraint: " + allocCPU);
-					System.out.println("\t Latency per tuple: " + latency);
-					System.out.println("\t Current degree: " + currentDegree);
-					System.out.println("\t alpha: " + alpha);
-					System.out.println("\t delta: " + delta);*/
+						System.out.println("\t Estim inputs: " + estimInput);
+						System.out.println("\t CPU constraint: " + allocCPU);
+						System.out.println("\t Latency per tuple: " + latency);
+						System.out.println("\t Current degree: " + currentDegree);
+						System.out.println("\t alpha: " + alpha);
+						System.out.println("\t delta: " + delta);*/
 
 						Integer kprime = Math.max(1, (int) Math.floor(estimInput / ((allocCPU / 100) * balancingFactor * (1000 / latency) * delta)));
-
-
-						Integer argmink = kprime - 1;
-						while(validDegree(argmink, estimInput, allocCPU, latency, balancingFactor, delta)){
-							//System.out.println("Reducing kprime from " + kprime + " to " + argmink);
-							kprime = argmink;
-							argmink--;
-						}
 						//System.out.println("\t New degree: " + kprime);
+
 						if(kprime < currentDegree){
 							this.scaleInActions.put(component, kprime);
 						}
@@ -284,9 +269,9 @@ public class ScalingManager3 {
 		}
 	}
 	
-	public boolean validDegree(Integer degree, Double estimInput, Double allocCPU, Double latency, Double alpha, Integer delta){
-		Double adequation = estimInput / (degree * Math.ceil((allocCPU / 100) * alpha * (1000 / latency) * delta));
-		return adequation < 1;
+	public boolean validDegree(Integer degree, Double estimInput, Double allocCPU, Double latency, Double balancingFactor, Integer delta){
+		Double balance = estimInput / (degree * Math.ceil((allocCPU / 100) * balancingFactor * (1000 / latency) * delta));
+		return balance < 1;
 	}
 	
 	public boolean needScaleOut(String component){
@@ -295,13 +280,20 @@ public class ScalingManager3 {
 		return (getEstimInput(component) / estimGlobalCapacity) >= 1;
 	}
 	
-	public boolean needScaleIn(String component, XmlConfigParser parser){
+	public boolean needScaleIn(String component, XmlConfigParser parser, ComponentMonitor cm, TopologyExplorer explorer){
 		boolean result = false;
+		HashMap<String, Double> cpuConstraints = cm.getCurrentCpuConstraints(explorer);
 		Integer k = getDegree(component);
+		
+		HashMap<Integer, Double> latencyRecords = cm.getStats(component).getAvgLatencyRecords();
+		Double lastLatency = ComponentWindowedStats.getLastRecord(latencyRecords);
+		ArrayList<Double> latencies = UtilFunctions.getValues(latencyRecords);
+		Double stdDerivation = UtilFunctions.getStdDerivation(latencies);
+		Double latency = lastLatency + stdDerivation;
+		
 		if(k > 1){
-			Double thetaMin = parser.getLowActivityThreshold();
-			Double estimGlobalCapacity = k * Math.ceil(getEstimMaxCapacity(component) * getUtilCPU(component));
-			result = (getEstimInput(component) / estimGlobalCapacity) < thetaMin;
+			Integer kprime = ((Long) Math.round(k * parser.getLowActivityThreshold())).intValue();
+			result = validDegree(kprime, getEstimInput(component), cpuConstraints.get(component), latency, 1 - parser.getAlpha(), parser.getWindowSize());
 		}
 		return result;
 	}
