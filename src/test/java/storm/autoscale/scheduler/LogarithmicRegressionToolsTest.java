@@ -53,13 +53,14 @@ public class LogarithmicRegressionToolsTest extends TestCase {
 	 */
 	public void testLinearizedCoordinates() {
 		HashMap<Double, Double> expectedRandom = new HashMap<>();
-		expectedRandom.put(1.0/2.0, 0.01);
-		expectedRandom.put(1.0/3.0, 0.008);
-		expectedRandom.put(1.0/4.0, 0.025);
-		expectedRandom.put(1.0/5.0, 0.013);
-		expectedRandom.put(1.0/6.0, 0.033);
-		expectedRandom.put(1.0/7.0, 0.011);
-		expectedRandom.put(1.0/8.0, 0.1);
+		expectedRandom.put(Math.log(1.0), 0.0);
+		expectedRandom.put(Math.log(2.0), 100.0);
+		expectedRandom.put(Math.log(3.0), 120.0);
+		expectedRandom.put(Math.log(4.0), 40.0);
+		expectedRandom.put(Math.log(5.0), 75.0);
+		expectedRandom.put(Math.log(6.0), 30.0);
+		expectedRandom.put(Math.log(7.0), 90.0);
+		expectedRandom.put(Math.log(8.0), 10.0);
 		
 		HashMap<Double, Double> actualRandom = LogarithmicRegressionTools.linearizeCoordinates(coordinatesRandom);
 		
@@ -68,13 +69,14 @@ public class LogarithmicRegressionToolsTest extends TestCase {
 		}
 		
 		HashMap<Double, Double> expectedLogarithmic = new HashMap<>();
-		expectedLogarithmic.put(1.0/2.0, 0.025);
-		expectedLogarithmic.put(1.0/3.0, 0.0125);
-		expectedLogarithmic.put(1.0/4.0, 0.009);
-		expectedLogarithmic.put(1.0/5.0, 0.009);
-		expectedLogarithmic.put(1.0/6.0, 0.009);
-		expectedLogarithmic.put(1.0/7.0, 0.01);
-		expectedLogarithmic.put(1.0/8.0, 0.009);
+		expectedRandom.put(Math.log(1.0), 2.0);
+		expectedRandom.put(Math.log(2.0), 40.0);
+		expectedRandom.put(Math.log(3.0), 80.0);
+		expectedRandom.put(Math.log(4.0), 110.0);
+		expectedRandom.put(Math.log(5.0), 104.0);
+		expectedRandom.put(Math.log(6.0), 112.0);
+		expectedRandom.put(Math.log(7.0), 103.0);
+		expectedRandom.put(Math.log(8.0), 116.0);
 		
 		HashMap<Double, Double> actualLogarithmic = LogarithmicRegressionTools.linearizeCoordinates(coordinatesLogarithmic);
 		
@@ -88,8 +90,8 @@ public class LogarithmicRegressionToolsTest extends TestCase {
 	 */
 	@Test
 	public void testRegressionCoeff() {
-		assertEquals(Double.NaN, LogarithmicRegressionTools.regressionCoeff(coordinatesRandom), 0.001);
-		assertEquals(0.541, LogarithmicRegressionTools.regressionCoeff(coordinatesLogarithmic), 0.001);
+		assertEquals(3.059, LogarithmicRegressionTools.regressionCoeff(coordinatesRandom), 0.001);
+		assertEquals(55.914, LogarithmicRegressionTools.regressionCoeff(coordinatesLogarithmic), 0.001);
 	}
 
 	/**
@@ -97,8 +99,8 @@ public class LogarithmicRegressionToolsTest extends TestCase {
 	 */
 	@Test
 	public void testRegressionOffset() {
-		assertEquals(Double.NaN, LogarithmicRegressionTools.regressionOffset(coordinatesRandom), 0.001);
-		assertEquals(-0.111, LogarithmicRegressionTools.regressionOffset(coordinatesLogarithmic), 0.001);
+		assertEquals(54.07, LogarithmicRegressionTools.regressionOffset(coordinatesRandom), 0.001);
+		assertEquals(9.256, LogarithmicRegressionTools.regressionOffset(coordinatesLogarithmic), 0.001);
 	}
 
 	/**
@@ -106,8 +108,8 @@ public class LogarithmicRegressionToolsTest extends TestCase {
 	 */
 	@Test
 	public void testDeterminationCoeff() {
-		assertEquals(Double.NaN, LogarithmicRegressionTools.determinationCoeff(coordinatesRandom), 0.001);
-		assertEquals(0.847, LogarithmicRegressionTools.determinationCoeff(coordinatesLogarithmic), 0.001);
+		assertEquals(0.002, LogarithmicRegressionTools.determinationCoeff(coordinatesRandom), 0.001);
+		assertEquals(0.908, LogarithmicRegressionTools.determinationCoeff(coordinatesLogarithmic), 0.001);
 	}
 
 	/**
@@ -115,8 +117,8 @@ public class LogarithmicRegressionToolsTest extends TestCase {
 	 */
 	@Test
 	public void testEstimateYCoordinate() {
-		assertEquals(Double.NaN, LogarithmicRegressionTools.estimateYCoordinate(12, coordinatesRandom), 1.0);
-		assertEquals(0.04, LogarithmicRegressionTools.estimateYCoordinate(12, coordinatesLogarithmic), 1.0);
+		assertEquals(61, LogarithmicRegressionTools.estimateYCoordinate(12, coordinatesRandom), 1.0);
+		assertEquals(148, LogarithmicRegressionTools.estimateYCoordinate(12, coordinatesLogarithmic), 1.0);
 	}
 
 }

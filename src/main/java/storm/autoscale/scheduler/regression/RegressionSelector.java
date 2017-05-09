@@ -25,7 +25,7 @@ public class RegressionSelector<T extends Number, U extends Number> {
 	public static final String LINEAR = "linear";
 	//public static final String EXP = "exponential";
 	//public static final String POW = "power";
-	//public static final String LOG = "logarithmic";
+	public static final String LOG = "logarithmic";
 	
 	public RegressionSelector(HashMap<T, U> coordinates){
 		this.coordinates = coordinates;
@@ -34,12 +34,12 @@ public class RegressionSelector<T extends Number, U extends Number> {
 		Double linearCorr = LinearRegressionTools.determinationCoeff(coordinates);
 		//Double expCorr = ExponentialRegressionTools.determinationCoeff(coordinates);
 		//Double powCorr = PowerRegressionTools.determinationCoeff(coordinates);
-		//Double logCorr = LogarithmicRegressionTools.determinationCoeff(coordinates);
+		Double logCorr = LogarithmicRegressionTools.determinationCoeff(coordinates);
 
 		correlations.put(LINEAR, linearCorr);
 		//correlations.put(EXP, expCorr);
 		//correlations.put(POW, powCorr);
-		//correlations.put(LOG, logCorr);
+		correlations.put(LOG, logCorr);
 
 		this.modelType = LINEAR;
 		String maxCategory = UtilFunctions.getMaxCategory(correlations);
@@ -61,13 +61,13 @@ public class RegressionSelector<T extends Number, U extends Number> {
 			this.regressionCoeff = PowerRegressionTools.regressionCoeff(coordinates);
 			this.regressionOffset = PowerRegressionTools.regressionOffset(coordinates);
 			this.correlation = powCorr;
-		}
+		}*/
 		if(this.modelType.equalsIgnoreCase(LOG)){
 			this.regressionCoeff = LogarithmicRegressionTools.regressionCoeff(coordinates);
 			this.regressionOffset = LogarithmicRegressionTools.regressionOffset(coordinates);
 			this.correlation = logCorr;
-		}*/
-
+		}
+		//System.out.println(this.toString());
 	}
 	
 	/**
@@ -109,15 +109,15 @@ public class RegressionSelector<T extends Number, U extends Number> {
 		if(this.modelType.equalsIgnoreCase(LINEAR)){
 			result = LinearRegressionTools.estimateYCoordinate(xCoordinate, this.coordinates);
 		}
-//		if(this.modelType.equalsIgnoreCase(EXP)){
-//			result = ExponentialRegressionTools.estimateYCoordinate(xCoordinate, this.coordinates);
-//		}
-//		if(this.modelType.equalsIgnoreCase(POW)){
-//			result = PowerRegressionTools.estimateYCoordinate(xCoordinate, this.coordinates);
-//		}
-//		if(this.modelType.equalsIgnoreCase(LOG)){
-//			result = LogarithmicRegressionTools.estimateYCoordinate(xCoordinate, this.coordinates);
-//		}
+		/*if(this.modelType.equalsIgnoreCase(EXP)){
+			result = ExponentialRegressionTools.estimateYCoordinate(xCoordinate, this.coordinates);
+		}
+		if(this.modelType.equalsIgnoreCase(POW)){
+			result = PowerRegressionTools.estimateYCoordinate(xCoordinate, this.coordinates);
+		}*/
+		if(this.modelType.equalsIgnoreCase(LOG)){
+			result = LogarithmicRegressionTools.estimateYCoordinate(xCoordinate, this.coordinates);
+		}
 		
 		return result;
 	}
@@ -128,15 +128,15 @@ public class RegressionSelector<T extends Number, U extends Number> {
 		if(this.modelType.equalsIgnoreCase(LINEAR)){
 			result += this.getRegressionCoeff() + "*x + " + this.getRegressionOffset();
 		}
-//		if(this.modelType.equalsIgnoreCase(EXP)){
-//			result += this.getRegressionCoeff() + "*e^(x*" + this.getRegressionOffset() + ")";
-//		}
-//		if(this.modelType.equalsIgnoreCase(POW)){
-//			result += this.getRegressionCoeff() + "*x^" + this.getRegressionOffset();
-//		}
-//		if(this.modelType.equalsIgnoreCase(LOG)){
-//			result += "(" + this.getRegressionCoeff() + "*x) / (" + this.getRegressionOffset() + " + x)";
-//		}
+		/*if(this.modelType.equalsIgnoreCase(EXP)){
+			result += this.getRegressionCoeff() + "*e^(x*" + this.getRegressionOffset() + ")";
+		}
+		if(this.modelType.equalsIgnoreCase(POW)){
+			result += this.getRegressionCoeff() + "*x^" + this.getRegressionOffset();
+		}*/
+		if(this.modelType.equalsIgnoreCase(LOG)){
+			result += this.getRegressionCoeff() + "*ln(x) + " + this.getRegressionOffset();
+		}
 		return result;
 	}
 	

@@ -182,7 +182,7 @@ public class ScalingManager3 {
 								//System.out.println("\t Component " + other + " is also affected on worker " + host + "@" + port + " and requires " + cpuConstraints.get(other) + " CPU usage");
 							}
 						}						
-						//System.out.println("\t Free CPU on worker " + host + "@" + port + " is " + freeCPU);
+						//System.out.println("\t Free CPU on worker " + host + "@" + port + " is " + (unusedCPU - resUnused));
 						Double utilCPU = Math.max(thisResCPU, thisUsedCPU) + ((unusedCPU - resUnused) / runningComponents.size());
 
 						//System.out.println("\t Utilizable CPU on worker " + host + "@" + port + " is " + utilCPU);
@@ -246,7 +246,7 @@ public class ScalingManager3 {
 						this.scaleOutActions.put(component, kprime);
 					}
 				}else{
-					if(needScaleIn(component, cm.getParser())){
+					if(needScaleIn(component, cm.getParser(), cm, explorer)){
 						scaleIn = 1; 
 						/*System.out.println("Component " + component + ": ");
 						System.out.println("\t Estim inputs: " + estimInput);

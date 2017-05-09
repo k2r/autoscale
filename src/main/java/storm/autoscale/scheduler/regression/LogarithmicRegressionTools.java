@@ -22,7 +22,7 @@ public class LogarithmicRegressionTools {
 			if(yCoordinate == 0.0){
 				yCoordinate = Double.MIN_VALUE;
 			}
-			result.put(1.0 / xCoordinate, 1.0 / yCoordinate);	
+			result.put(Math.log(x.doubleValue()), yCoordinate);	
 		}
 		return result;
 	}
@@ -45,6 +45,6 @@ public class LogarithmicRegressionTools {
 	public static <T extends Number, U extends Number> Double estimateYCoordinate(T xCoordinate, HashMap<T, U> coordinates){
 		Double regressionCoeff = LogarithmicRegressionTools.regressionCoeff(coordinates);
 		Double regressionOffset = LogarithmicRegressionTools.regressionOffset(coordinates);
-		return (regressionCoeff * xCoordinate.doubleValue()) / (regressionOffset + xCoordinate.doubleValue());
+		return regressionCoeff * Math.log(xCoordinate.doubleValue()) + regressionOffset;
 	}
 }

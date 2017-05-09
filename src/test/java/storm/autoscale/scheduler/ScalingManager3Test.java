@@ -494,11 +494,11 @@ public class ScalingManager3Test {
 		sm.computeEstimMaxCapacities(cm);
 		sm.computeUtilCPU(cm, am, explorer);
 		
-		assertTrue(!sm.needScaleIn("A", cm.getParser()));
-		assertTrue(!sm.needScaleIn("B", cm.getParser()));
-		assertTrue(!sm.needScaleIn("C", cm.getParser()));
-		assertTrue(sm.needScaleIn("D", cm.getParser()));
-		assertTrue(!sm.needScaleIn("E", cm.getParser()));
+		assertTrue(!sm.needScaleIn("A", cm.getParser(), cm, explorer));
+		assertTrue(!sm.needScaleIn("B", cm.getParser(), cm, explorer));
+		assertTrue(!sm.needScaleIn("C", cm.getParser(), cm, explorer));
+		assertTrue(sm.needScaleIn("D", cm.getParser(), cm, explorer));
+		assertTrue(!sm.needScaleIn("E", cm.getParser(), cm, explorer));
 	}
 
 	/**
@@ -508,11 +508,11 @@ public class ScalingManager3Test {
 	public void testGetEstimInput() {
 		ScalingManager3 sm = new ScalingManager3();
 		sm.computeEstimInputs(cm, explorer);
-		assertEquals(4425, sm.getEstimInput("A"), 1.0);
-		assertEquals(5045, sm.getEstimInput("B"), 1.0);
-		assertEquals(5545, sm.getEstimInput("C"), 1.0);
-		assertEquals(3181, sm.getEstimInput("D"), 1.0);
-		assertEquals(3851, sm.getEstimInput("E"), 1.0);
+		assertEquals(3676, sm.getEstimInput("A"), 1.0);
+		assertEquals(4198, sm.getEstimInput("B"), 1.0);
+		assertEquals(4698, sm.getEstimInput("C"), 1.0);
+		assertEquals(2589, sm.getEstimInput("D"), 1.0);
+		assertEquals(3207, sm.getEstimInput("E"), 1.0);
 	}
 
 	/**
@@ -539,10 +539,10 @@ public class ScalingManager3Test {
 		sm.computeUtilCPU(cm, am, explorer);
 		
 		assertEquals(0.475, sm.getUtilCPU("A"), 0.01);
-		assertEquals(0.4, sm.getUtilCPU("B"), 0.01);
-		assertEquals(0.25, sm.getUtilCPU("C"), 0.01);
-		assertEquals(0.417, sm.getUtilCPU("D"), 0.01);
-		assertEquals(0.55, sm.getUtilCPU("E"), 0.01);
+		assertEquals(0.38, sm.getUtilCPU("B"), 0.01);
+		assertEquals(0.23, sm.getUtilCPU("C"), 0.01);
+		assertEquals(0.4, sm.getUtilCPU("D"), 0.01);
+		assertEquals(0.5, sm.getUtilCPU("E"), 0.01);
 	}
 
 	/**
@@ -577,7 +577,7 @@ public class ScalingManager3Test {
 		HashMap<String, Integer> expected = new HashMap<>();
 		expected.put("B", 16);
 		expected.put("C", 16);
-		expected.put("E", 9);
+		expected.put("E", 8);
 		
 		assertEquals(expected, sm.getScaleOutActions());
 	}
