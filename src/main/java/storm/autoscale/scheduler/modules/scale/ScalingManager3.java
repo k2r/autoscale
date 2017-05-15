@@ -265,7 +265,7 @@ public class ScalingManager3 {
 					}
 				}		
 			}
-			cm.getManager().storeEstimationInfo(cm.getTimestamp(), explorer.getTopologyName(), component, estimInput, cm.getPendingTuples(explorer).get(component), this.getEstimMaxCapacity(component), this.getUtilCPU(component), scaleIn, scaleOut);
+			cm.getManager().storeEstimationInfo(cm.getTimestamp(), explorer.getTopologyName(), component, estimInput, cm.getPendingTuples(explorer).get(component), this.getEstimMaxCapacity(component), this.getUtilCPU(component), this.getDegree(component), scaleIn, scaleOut);
 		}
 	}
 	

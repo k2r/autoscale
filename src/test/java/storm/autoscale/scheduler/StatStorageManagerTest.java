@@ -265,11 +265,12 @@ public class StatStorageManagerTest extends TestCase {
 			Double estimInput = 2000.0;
 			Long pending = 300L;
 			Double estimCapacity = 1500.0;
-			Double utilCPU = 70.0;
+			Double utilCPU = 0.7;
+			Integer degree = 3;
 			Integer needScIn = 0;
 			Integer needScOut = 1;
 	
-			manager.storeEstimationInfo(timestamp, topology, component, estimInput, pending, estimCapacity, utilCPU, needScIn, needScOut);
+			manager.storeEstimationInfo(timestamp, topology, component, estimInput, pending, estimCapacity, utilCPU, degree, needScIn, needScOut);
 			
 			String testEstimationStorageQuery = "SELECT * FROM operators_estimation";
 			ResultSet result = connector.executeQuery(testEstimationStorageQuery);
@@ -281,6 +282,7 @@ public class StatStorageManagerTest extends TestCase {
 			Long actualPending = null;
 			Double actualEstimCapacity = null;
 			Double actualUtilCPU = null;
+			Integer actualDegree = null;
 			Integer actualNeedScIn = null;
 			Integer actualNeedScOut = null;
 			if(result.next()){
@@ -291,6 +293,7 @@ public class StatStorageManagerTest extends TestCase {
 				actualPending = result.getLong("pending");
 				actualEstimCapacity = result.getDouble("estim_max_capacity");
 				actualUtilCPU = result.getDouble("estim_util_cpu");
+				actualDegree = result.getInt("paral_degree");
 				actualNeedScIn = result.getInt("need_scale_in");
 				actualNeedScOut = result.getInt("need_scale_out");
 			}
@@ -302,6 +305,7 @@ public class StatStorageManagerTest extends TestCase {
 			assertEquals(pending, actualPending);
 			assertEquals(estimCapacity, actualEstimCapacity);
 			assertEquals(utilCPU, actualUtilCPU);
+			assertEquals(degree, actualDegree);
 			assertEquals(needScIn, actualNeedScIn);
 			assertEquals(needScOut, actualNeedScOut);
 			

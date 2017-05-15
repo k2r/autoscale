@@ -397,9 +397,9 @@ public class StatStorageManager{
 		}
 	}
 	
-	public void storeEstimationInfo(Integer timestamp, String topology, String component, Double estimInput, Long pending, Double estimMaxCapacity, Double estimUtilCpu, Integer needScaleIn, Integer needScaleOut){
+	public void storeEstimationInfo(Integer timestamp, String topology, String component, Double estimInput, Long pending, Double estimMaxCapacity, Double estimUtilCpu, Integer degree, Integer needScaleIn, Integer needScaleOut){
 		String query = "INSERT INTO " + TABLE_ESTIM + " VALUES ('" + timestamp + "', '"
-				+ topology  + "', '" + component + "', '" + estimInput + "', '" + pending + "', '" + estimMaxCapacity + "', '" + estimUtilCpu + "', '" + needScaleIn + "', '" + needScaleOut + "')";
+				+ topology  + "', '" + component + "', '" + estimInput + "', '" + pending + "', '" + estimMaxCapacity + "', '" + estimUtilCpu + "', '" + degree + "', '" + needScaleIn + "', '" + needScaleOut + "')";
 		try{
 			this.connector.executeUpdate(query);
 		} catch (SQLException e){
