@@ -204,7 +204,6 @@ public class ScalingManager3 {
 
 		Double balancingFactor = 1 - parser.getAlpha();
 		Integer delta = parser.getWindowSize();
-		Integer windowSize = parser.getWindowSize();
 		Integer monitFrequency = cm.getMonitoringFrequency();
 
 		ArrayList<String> components = explorer.getBolts();
@@ -215,7 +214,7 @@ public class ScalingManager3 {
 			Integer scaleOut = 0;
 			Integer scaleIn = 0;
 			Double estimInput = getEstimInput(component);
-			if(ComponentWindowedStats.isSignificantSample(inputs, windowSize, monitFrequency)){
+			if(ComponentWindowedStats.isSignificantSample(inputs, delta, monitFrequency)){
 				Double allocCPU = cpuConstraints.get(component);
 
 				HashMap<Integer, Double> latencyRecords = cm.getStats(component).getAvgLatencyRecords();
