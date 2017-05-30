@@ -18,13 +18,10 @@ import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.xml.sax.SAXException;
 
 import storm.autoscale.scheduler.config.XmlConfigParser;
-import storm.autoscale.scheduler.metrics.ActivityMetric;
-import storm.autoscale.scheduler.metrics.IMetric;
-import storm.autoscale.scheduler.metrics.ImpactMetric;
 import storm.autoscale.scheduler.modules.assignment.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.component.ComponentMonitor;
 import storm.autoscale.scheduler.modules.explorer.TopologyExplorer;
-import storm.autoscale.scheduler.modules.scale.ScalingManager;
+import storm.autoscale.scheduler.modules.scale.ScalingManager3;
 import storm.autoscale.scheduler.modules.stats.StatStorageManager;
 
 /**
@@ -35,7 +32,7 @@ public class MonitoredResourceAwareScheduler implements IScheduler {
 
 	@SuppressWarnings("rawtypes")
 	Map conf;
-	private ScalingManager scaleManager;
+	private ScalingManager3 sm;
 	private ComponentMonitor compMonitor;
 	private AssignmentMonitor assignMonitor;
 	private TopologyExplorer explorer;
@@ -96,12 +93,13 @@ public class MonitoredResourceAwareScheduler implements IScheduler {
 				this.assignMonitor.update();
 				this.compMonitor.getStatistics(explorer);
 				if(!this.compMonitor.getRegisteredComponents().isEmpty()){
-					this.scaleManager = new ScalingManager(compMonitor, parser);
-					this.scaleManager.buildDegreeMap(assignMonitor);
-					IMetric activityMetric = new ActivityMetric(this.scaleManager, this.explorer);
-					this.scaleManager.buildActionGraph(activityMetric, assignMonitor);
-					IMetric impactMetric = new ImpactMetric(this.scaleManager, this.explorer);
-					this.scaleManager.autoscaleAlgorithmWithImpact(impactMetric, this.explorer.getAncestors(), this.explorer, this.assignMonitor);		
+					this.sm = new ScalingManager3();
+					this.sm.initDegrees(compMonitor, assignMonitor);
+					this.sm.computeEstimInputs(compMonitor, explorer);
+					this.sm.computeEstimMaxCapacities(compMonitor);
+					this.sm.computeUtilCPU(compMonitor, assignMonitor, explorer);
+					this.sm.computeScalingActions(compMonitor, assignMonitor, explorer);
+
 				}
 			}
 		}
