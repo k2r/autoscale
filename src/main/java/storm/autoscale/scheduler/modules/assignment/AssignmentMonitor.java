@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.ExecutorDetails;
@@ -31,6 +32,8 @@ public class AssignmentMonitor {
 	private HashMap<WorkerSlot, ArrayList<String>> assignments;
 	private HashMap<String, ArrayList<WorkerSlot>> assignmentsPerComponent;
 	private HashMap<SupervisorDetails, ArrayList<WorkerSlot>> support;
+	
+	private Logger logger = Logger.getLogger("AssignmentMonitor");
 	
 	/**
 	 * 
@@ -60,33 +63,37 @@ public class AssignmentMonitor {
 	}
 	
 	public void update(){
-		SchedulerAssignment schedAssignment = this.cluster.getAssignmentById(this.topology.getId());
-		if(schedAssignment != null){
-			Map<ExecutorDetails, WorkerSlot> executorToSlots = schedAssignment.getExecutorToSlot();
-			for(ExecutorDetails executor : executorToSlots.keySet()){
-				WorkerSlot slot = executorToSlots.get(executor);
-				String component = this.topology.getExecutorToComponent().get(executor);
-				ArrayList<String> affectedComponents = this.assignments.get(slot);
-				if(!affectedComponents.contains(component)){
-					affectedComponents.add(component);
-					this.assignments.remove(slot);
-					this.assignments.put(slot, affectedComponents);
+		try{
+			SchedulerAssignment schedAssignment = this.cluster.getAssignmentById(this.topology.getId());
+			if(schedAssignment != null){
+				Map<ExecutorDetails, WorkerSlot> executorToSlots = schedAssignment.getExecutorToSlot();
+				for(ExecutorDetails executor : executorToSlots.keySet()){
+					WorkerSlot slot = executorToSlots.get(executor);
+					String component = this.topology.getExecutorToComponent().get(executor);
+					ArrayList<String> affectedComponents = this.assignments.get(slot);
+					if(!affectedComponents.contains(component)){
+						affectedComponents.add(component);
+						this.assignments.remove(slot);
+						this.assignments.put(slot, affectedComponents);
+					}
+				}
+				Set<WorkerSlot> workers = this.assignments.keySet(); 
+				for(WorkerSlot ws : workers){
+					ArrayList<String> components = this.getRunningComponents(ws);
+					for(String component : components){
+						ArrayList<WorkerSlot> slots = new ArrayList<>();
+						if(this.assignmentsPerComponent.containsKey(component)){
+							slots = this.assignmentsPerComponent.get(component);
+						}
+						if(!slots.contains(ws)){
+							slots.add(ws);
+						}
+						this.assignmentsPerComponent.put(component, slots);
+					}
 				}
 			}
-			Set<WorkerSlot> workers = this.assignments.keySet(); 
-			for(WorkerSlot ws : workers){
-				ArrayList<String> components = this.getRunningComponents(ws);
-				for(String component : components){
-					ArrayList<WorkerSlot> slots = new ArrayList<>();
-					if(this.assignmentsPerComponent.containsKey(component)){
-						slots = this.assignmentsPerComponent.get(component);
-					}
-					if(!slots.contains(ws)){
-						slots.add(ws);
-					}
-					this.assignmentsPerComponent.put(component, slots);
-				}
-			}
+		}catch(NullPointerException e){
+			logger.info("No assignment defined yet for topology " + this.topology.getId());
 		}
 	}
 	
