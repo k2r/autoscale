@@ -91,13 +91,15 @@ public class RegressionSelector<T extends Number, U extends Number> {
 		for(T x : this.coordinates.keySet()){
 			yCoordinates.add(this.coordinates.get(x));
 		}
-		Double value = yCoordinates.get(0).doubleValue();
-		int n = yCoordinates.size();
-		for(int i = 1; i < n; i++){
-			Double yCoordinate = yCoordinates.get(i).doubleValue();
-			if(Math.abs(value - yCoordinate) > 0.001){
-				isConstant = false;
-				break;
+		if(!yCoordinates.isEmpty()){
+			Double value = yCoordinates.get(0).doubleValue();
+			int n = yCoordinates.size();
+			for(int i = 1; i < n; i++){
+				Double yCoordinate = yCoordinates.get(i).doubleValue();
+				if(Math.abs(value - yCoordinate) > 0.001){
+					isConstant = false;
+					break;
+				}
 			}
 		}
 		return isConstant;
