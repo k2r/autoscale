@@ -292,7 +292,7 @@ public class ScalingManager3 {
 		
 		if(k > 1){
 			Integer kprime = ((Long) Math.round(k * parser.getLowActivityThreshold())).intValue();
-			result = validDegree(kprime, getEstimInput(component), cpuConstraints.get(component), latency, 1 - parser.getAlpha(), parser.getWindowSize());
+			result = validDegree(kprime, Math.max(getEstimInput(component), cm.getStats(component).getTotalInput()), cpuConstraints.get(component), latency, 1 - parser.getAlpha(), parser.getWindowSize());
 		}
 		return result;
 	}
