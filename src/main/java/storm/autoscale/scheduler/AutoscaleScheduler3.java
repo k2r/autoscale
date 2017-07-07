@@ -93,7 +93,7 @@ public class AutoscaleScheduler3 implements IScheduler {
 					manager.storeTopologyConstraints(this.compMonitor.getTimestamp(), topology);
 				}
 				this.assignMonitor = new AssignmentMonitor(cluster, topology);
-				this.explorer = new TopologyExplorer(topology.getName(), topology.getTopology());
+				this.explorer = new TopologyExplorer(topology.getId(), topology.getTopology());
 				this.assignMonitor.update();
 				this.compMonitor.getStatistics(explorer);
 				if(!this.compMonitor.getRegisteredComponents().isEmpty()){
@@ -104,7 +104,7 @@ public class AutoscaleScheduler3 implements IScheduler {
 					this.sm.computeUtilCPU(compMonitor, assignMonitor, explorer);
 					this.sm.computeScalingActions(compMonitor, assignMonitor, explorer);
 
-					ScaleActionTrigger trigger = new ScaleActionTrigger(nimbusHost, nimbusPort, compMonitor, sm, explorer, assignMonitor.getNbWorkers());
+					ScaleActionTrigger trigger = new ScaleActionTrigger(nimbusHost, nimbusPort, compMonitor, sm, explorer, assignMonitor.getNbWorkers(), topology.getId());
 				}
 			}
 		}

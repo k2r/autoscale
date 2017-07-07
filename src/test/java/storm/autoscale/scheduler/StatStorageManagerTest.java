@@ -190,12 +190,13 @@ public class StatStorageManagerTest extends TestCase {
 			fail("StatStorageManager module has failed to store and retrieve bolts logs has failed because of " + e);
 		}
 	}
-
+	
+	//deprecated
 	/**
 	 * Test method for {@link storm.autoscale.scheduler.modules.stats.StatStorageManager#storeActivityInfo(java.lang.Integer, java.lang.String, java.lang.String, java.lang.String, java.lang.Double, java.lang.Integer, java.lang.Double)}.
 	 */
 	public void testStoreActivityInfo() {
-		try {
+		/*try {
 			XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
 			Mockito.when(parser.getDbHost()).thenReturn("localhost");
 			Mockito.when(parser.getDbName()).thenReturn("autoscale_test");
@@ -243,7 +244,7 @@ public class StatStorageManagerTest extends TestCase {
 			connector.executeUpdate(testCleanQuery);
 		} catch (ClassNotFoundException | SQLException e) {
 			fail("StatStorageManager module has failed to retrieve activity level logs has failed because of " + e);
-		}
+		}*/
 	}
 	
 	/**

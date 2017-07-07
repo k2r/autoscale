@@ -34,18 +34,19 @@ public class ScaleActionTrigger implements IActionTrigger {
 	private ComponentMonitor cm;
 	private TopologyExplorer explorer;
 	private Integer nbWorkers;
-	
+	private String topologyId;
 	private IJDBCConnector connector;
 	
 	private Logger logger = Logger.getLogger("ScaleActionTrigger");
 	
-	public ScaleActionTrigger(String nimbusHost, Integer nimbusPort, ComponentMonitor cm, ScalingManager3 sm, TopologyExplorer explorer, Integer nbWorkers){
+	public ScaleActionTrigger(String nimbusHost, Integer nimbusPort, ComponentMonitor cm, ScalingManager3 sm, TopologyExplorer explorer, Integer nbWorkers, String topologyId){
 		this.nimbusHost = nimbusHost;
 		this.nimbusPort = nimbusPort;
 		this.cm = cm;
 		this.sm = sm;
 		this.explorer = explorer;
 		this.nbWorkers = nbWorkers;
+		this.topologyId = topologyId;
 		try {
 			String host = this.cm.getParser().getDbHost();
 			String name = this.cm.getParser().getDbName();
@@ -63,9 +64,9 @@ public class ScaleActionTrigger implements IActionTrigger {
 	 * @see storm.autoscale.scheduler.action.IActionTrigger#storeAction(java.lang.String, java.lang.Integer, java.lang.Integer, java.lang.String)
 	 */
 	@Override
-	public void storeAction(String component, Integer currentDegree, Integer newDegree, String actionType) {
+	public void storeAction(String component, String topology, Integer currentDegree, Integer newDegree, String actionType) {
 		try {
-			String query = "INSERT INTO scales VALUES('" + this.cm.getTimestamp() + "', '" + component + "', '" + actionType + "', '" + currentDegree + "', '" + newDegree + "')";
+			String query = "INSERT INTO scales VALUES('" + this.cm.getTimestamp() + "', '" + topology + "', '" + component + "', '" + actionType + "', '" + currentDegree + "', '" + newDegree + "')";
 			this.connector.executeUpdate(query);
 		} catch (SQLException e) {
 			logger.severe("Unable to store scale in action for component " + component + " because of " + e);
@@ -92,7 +93,7 @@ public class ScaleActionTrigger implements IActionTrigger {
 		return isGrace;
 	}
 
-	public void submitRebalance(Nimbus.Client client, String component, Integer curr, Integer next, Integer nbWorkers, String actionType){
+	public void submitRebalance(Nimbus.Client client, String component, String topology, Integer curr, Integer next, Integer nbWorkers, String actionType){
 		try {
 			if(!isGracePeriod(component)){
 				RebalanceOptions options = new RebalanceOptions();
@@ -105,7 +106,7 @@ public class ScaleActionTrigger implements IActionTrigger {
 				client.rebalance(explorer.getTopologyName(), options);
 
 				logger.fine("Parallelism of component " + component + " increased successfully!");
-				storeAction(component, curr, next, actionType);
+				storeAction(component, topology, curr, next, actionType);
 				Thread.sleep(1000);
 			}else{
 				logger.fine("This rebalance action will not modify the distribution of the operator");
@@ -131,13 +132,13 @@ public class ScaleActionTrigger implements IActionTrigger {
 			for(String component : scaleOutActions.keySet()){
 				Integer curr = this.sm.getDegree(component);
 				Integer next = scaleOutActions.get(component);
-				submitRebalance(client, component, curr, next, this.nbWorkers, "scale-out");
+				submitRebalance(client, this.topologyId, component, curr, next, this.nbWorkers, "scale-out");
 				
 			}
 			for(String component : scaleInActions.keySet()){
 				Integer curr = this.sm.getDegree(component);
 				Integer next = scaleInActions.get(component);
-				submitRebalance(client, component, curr, next, this.nbWorkers, "scale-in");
+				submitRebalance(client, this.topologyId, component, curr, next, this.nbWorkers, "scale-in");
 			
 			}
 		}catch(TException e){
