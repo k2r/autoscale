@@ -104,7 +104,7 @@ public class AutoscaleScheduler3 implements IScheduler {
 					this.sm.computeUtilCPU(compMonitor, assignMonitor, explorer);
 					this.sm.computeScalingActions(compMonitor, assignMonitor, explorer);
 
-					ScaleActionTrigger trigger = new ScaleActionTrigger(nimbusHost, nimbusPort, compMonitor, sm, explorer, assignMonitor.getNbWorkers(), topology.getId());
+					ScaleActionTrigger trigger = new ScaleActionTrigger(nimbusHost, nimbusPort, compMonitor, sm, assignMonitor.getNbWorkers(), topology);
 				}
 			}
 		}

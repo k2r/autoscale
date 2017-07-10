@@ -166,7 +166,7 @@ public class ScalingManagerTest extends TestCase {
 		
 		XmlConfigParser parser = Mockito.mock(XmlConfigParser.class);
 		Mockito.when(parser.getWindowSize()).thenReturn(6);
-		Mockito.when(parser.getLowActivityThreshold()).thenReturn(0.3);
+		Mockito.when(parser.getStabilityThreshold()).thenReturn(0.3);
 		Mockito.when(parser.getHighActivityThreshold()).thenReturn(0.8);
 		Mockito.when(parser.getSlopeThreshold()).thenReturn(0.2);
 		

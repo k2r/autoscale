@@ -11,15 +11,15 @@
 	<monitoring_frequency>10</monitoring_frequency>
 	<window_size>60</window_size>
 	
-	<!-- Activity delimiters -->
-	<alpha_balancing>0.01</alpha_balancing>
-	<low_activity_threshold>0.1</low_activity_threshold>
-	<high_activity_threshold>0.8</high_activity_threshold>
+	<!-- Detection parameters -->
+	<alpha>0.01</alpha>
+	<stability_threshold>0.1</stability_threshold>
+	<high_activity_threshold>1</high_activity_threshold>
 	
 	<!-- Stability parameters -->
-	<!-- The coefficient of stabilization defines how many windows are skipped after a scale-in/scale-out before triggering a new modification, per default 1 -->
-	<stabilization_coeff>1</stabilization_coeff>
-	<!-- This threshold defines an interval centered on 0 which discriminates slopes (computed thanks to regression) considered as null from increasing or decreasing ones, per default its value is 0.1 -->
+	<!-- The grace coefficient defines how many iterations are skipped after a scale-in/scale-out before triggering a new modification, per default 1 -->
+	<grace_coeff>1</grace_coeff>
+	<!-- This threshold defines an interval centered on 0 which discriminates slopes (computed through regression) considered as null from increasing or decreasing ones, per default its value is 0.1 -->
 	<slope_threshold>0.1</slope_threshold>
 	
 	<!-- Database host -->

@@ -34,9 +34,9 @@ public class XmlConfigParser {
 	private Integer monitoringFrequency;
 	private Integer windowSize;
 	private Double alpha;
-	private Double lowActivityThreshold;
+	private Double stabilityThreshold;
 	private Double highActivityThreshold;
-	private Double stabilizationCoeff;
+	private Double graceCoeff;
 	private Double slopeThreshold;
 	
 	/*Database parameters*/
@@ -144,17 +144,17 @@ public class XmlConfigParser {
 	}
 
 	/**
-	 * @return the lowActivityThreshold
+	 * @return the stabilityThreshold
 	 */
-	public Double getLowActivityThreshold() {
-		return lowActivityThreshold;
+	public Double getStabilityThreshold() {
+		return stabilityThreshold;
 	}
 
 	/**
-	 * @param lowActivityThreshold the lowActivityThreshold to set
+	 * @param stabilityThreshold the stabilityThreshold to set
 	 */
-	public void setLowActivityThreshold(Double lowActivityThreshold) {
-		this.lowActivityThreshold = lowActivityThreshold;
+	public void setStabilityThreshold(Double stabilityThreshold) {
+		this.stabilityThreshold = stabilityThreshold;
 	}
 
 	/**
@@ -172,17 +172,17 @@ public class XmlConfigParser {
 	}
 
 	/**
-	 * @return the stabilizationCoeff
+	 * @return the graceCoeff
 	 */
-	public Double getStabilizationCoeff() {
-		return stabilizationCoeff;
+	public Double getGraceCoeff() {
+		return graceCoeff;
 	}
 
 	/**
-	 * @param stabilizationCoeff the stabilizationCoeff to set
+	 * @param graceCoeff the graceCoeff to set
 	 */
-	public void setStabilizationCoeff(Double stabilizationCoeff) {
-		this.stabilizationCoeff = stabilizationCoeff;
+	public void setGraceCoeff(Double stabilizationCoeff) {
+		this.graceCoeff = stabilizationCoeff;
 	}
 
 	/**
@@ -268,12 +268,12 @@ public class XmlConfigParser {
 		this.setWindowSize(Integer.parseInt(winSize.item(0).getTextContent()));
 		final NodeList alphaBalancing = parameters.getElementsByTagName(ParameterNames.ALPHA.toString());
 		this.setAlpha(Double.parseDouble(alphaBalancing.item(0).getTextContent()));
-		final NodeList lowAct = parameters.getElementsByTagName(ParameterNames.LOWACT.toString());
-		this.setLowActivityThreshold(Double.parseDouble(lowAct.item(0).getTextContent()));
+		final NodeList stab = parameters.getElementsByTagName(ParameterNames.STABIL.toString());
+		this.setStabilityThreshold(Double.parseDouble(stab.item(0).getTextContent()));
 		final NodeList highAct = parameters.getElementsByTagName(ParameterNames.HIGHACT.toString());
 		this.setHighActivityThreshold(Double.parseDouble(highAct.item(0).getTextContent()));
-		final NodeList stabCoeff = parameters.getElementsByTagName(ParameterNames.STABCOEFF.toString());
-		this.setStabilizationCoeff(Double.parseDouble(stabCoeff.item(0).getTextContent()));
+		final NodeList graceCoeff = parameters.getElementsByTagName(ParameterNames.GRACECOEFF.toString());
+		this.setGraceCoeff(Double.parseDouble(graceCoeff.item(0).getTextContent()));
 		final NodeList slope = parameters.getElementsByTagName(ParameterNames.SLOPE.toString());
 		this.setSlopeThreshold(Double.parseDouble(slope.item(0).getTextContent()));
 		final NodeList dbHost = parameters.getElementsByTagName(ParameterNames.DBHOST.toString());

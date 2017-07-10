@@ -216,7 +216,7 @@ public class ScalingManager {
 	}
 	
 	public void buildActionGraph(IMetric metric, AssignmentMonitor assignmentMonitor){
-		Double lowActivityThreshold = this.parser.getLowActivityThreshold();
+		Double lowActivityThreshold = this.parser.getStabilityThreshold();
 		Double highActivityThreshold = this.parser.getHighActivityThreshold();
 		logger.fine("low threshold: " + lowActivityThreshold + ", high threshold: " + highActivityThreshold);
 		ActivityMetric activityMetric = (ActivityMetric) metric;//cast to the metric you want

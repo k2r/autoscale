@@ -202,7 +202,7 @@ public class ScalingManager3 {
 	public void computeScalingActions(ComponentMonitor cm, AssignmentMonitor am, TopologyExplorer explorer){
 		XmlConfigParser parser = cm.getParser();
 
-		Double balancingFactor = 1 - parser.getAlpha();
+		Double safetyFactor = 1 - parser.getAlpha();
 		Integer delta = parser.getWindowSize();
 		Integer monitFrequency = cm.getMonitoringFrequency();
 
@@ -237,7 +237,7 @@ public class ScalingManager3 {
 					System.out.println("\t alpha: " + alpha);
 					System.out.println("\t delta: " + delta);*/
 
-					Integer kprime = Math.min(maxDegree, (int) Math.floor(estimInput / ((allocCPU / 100) * balancingFactor * (1000 / latency) * delta)));
+					Integer kprime = Math.min(maxDegree, (int) Math.floor(estimInput / ((allocCPU / 100) * safetyFactor * (1000 / latency) * delta)));
 
 					//System.out.println("\t New degree: " + kprime);
 
@@ -255,7 +255,7 @@ public class ScalingManager3 {
 						System.out.println("\t alpha: " + alpha);
 						System.out.println("\t delta: " + delta);*/
 
-						Integer kprime = Math.max(1, (int) Math.floor(estimInput / ((allocCPU / 100) * balancingFactor * (1000 / latency) * delta)));
+						Integer kprime = Math.max(1, (int) Math.floor(Math.max(estimInput, cm.getStats(component).getTotalInput()) / ((allocCPU / 100) * safetyFactor * (1000 / latency) * delta)));
 						//System.out.println("\t New degree: " + kprime);
 
 						if(kprime < currentDegree){
@@ -291,7 +291,7 @@ public class ScalingManager3 {
 		Double latency = lastLatency + stdDerivation;
 		
 		if(k > 1){
-			Integer kprime = ((Long) Math.round(k * parser.getLowActivityThreshold())).intValue();
+			Integer kprime = ((Long) Math.round(k * parser.getStabilityThreshold())).intValue();
 			result = validDegree(kprime, Math.max(getEstimInput(component), cm.getStats(component).getTotalInput()), cpuConstraints.get(component), latency, 1 - parser.getAlpha(), parser.getWindowSize());
 		}
 		return result;

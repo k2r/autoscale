@@ -116,7 +116,7 @@ public class ScaleInAction implements IAction {
 	public boolean isGracePeriod(String component) {
 		boolean isGrace = false;
 		Integer previousTimestamp = this.sm.getMonitor().getTimestamp() - 1;
-		Integer oldTimestamp = (int) (previousTimestamp - Math.round((this.sm.getParser().getWindowSize() * this.sm.getParser().getStabilizationCoeff())));
+		Integer oldTimestamp = (int) (previousTimestamp - Math.round((this.sm.getParser().getWindowSize() * this.sm.getParser().getGraceCoeff())));
 		String query = "SELECT * FROM scales WHERE component = '" + component + "' AND timestamp BETWEEN " + oldTimestamp + " AND " + previousTimestamp;
 		try {
 			ResultSet result = this.connector.executeQuery(query);

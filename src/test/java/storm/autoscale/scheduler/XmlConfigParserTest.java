@@ -84,7 +84,7 @@ public class XmlConfigParserTest extends TestCase {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.config.XmlConfigParser#getLowActivityThreshold()}.
+	 * Test method for {@link storm.autoscale.scheduler.config.XmlConfigParser#getStabilityThreshold()}.
 	 * @throws IOException 
 	 * @throws SAXException 
 	 * @throws ParserConfigurationException 
@@ -93,7 +93,7 @@ public class XmlConfigParserTest extends TestCase {
 		XmlConfigParser parser = new XmlConfigParser("./conf/autoscale_parameters.xml");
 		parser.initParameters();
 		Double expected = 0.1;
-		assertEquals(expected, parser.getLowActivityThreshold(), 0);
+		assertEquals(expected, parser.getStabilityThreshold(), 0);
 	}
 
 	/**
@@ -105,21 +105,21 @@ public class XmlConfigParserTest extends TestCase {
 	public void testGetHighActivityThreshold() throws ParserConfigurationException, SAXException, IOException {
 		XmlConfigParser parser = new XmlConfigParser("./conf/autoscale_parameters.xml");
 		parser.initParameters();
-		Double expected = 0.8;
+		Double expected = 1.0;
 		assertEquals(expected, parser.getHighActivityThreshold(), 0);
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.config.XmlConfigParser#getStabilizationCoeff()}.
+	 * Test method for {@link storm.autoscale.scheduler.config.XmlConfigParser#getGraceCoeff()}.
 	 * @throws IOException 
 	 * @throws SAXException 
 	 * @throws ParserConfigurationException 
 	 */
-	public void testGetStabilizationCoeff() throws ParserConfigurationException, SAXException, IOException {
+	public void testGetGraceCoeff() throws ParserConfigurationException, SAXException, IOException {
 		XmlConfigParser parser = new XmlConfigParser("./conf/autoscale_parameters.xml");
 		parser.initParameters();
 		Double expected = 1.0;
-		assertEquals(expected, parser.getStabilizationCoeff(), 0);
+		assertEquals(expected, parser.getGraceCoeff(), 0);
 	}
 
 	/**

@@ -193,7 +193,7 @@ public class ComponentMonitorTest {
 		this.parser = Mockito.mock(XmlConfigParser.class);
 		Mockito.when(parser.getWindowSize()).thenReturn(50);
 		Mockito.when(parser.getMonitoringFrequency()).thenReturn(10);
-		Mockito.when(parser.getLowActivityThreshold()).thenReturn(0.3);
+		Mockito.when(parser.getStabilityThreshold()).thenReturn(0.3);
 		
 		Set<String> components = new HashSet<>();
 		components.add("A");
