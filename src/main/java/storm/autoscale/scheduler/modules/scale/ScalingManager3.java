@@ -3,7 +3,14 @@
  */
 package storm.autoscale.scheduler.modules.scale;
 
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -34,9 +41,25 @@ public class ScalingManager3 {
 	private HashMap<String, Integer> scaleInActions;
 	private HashMap<String, Integer> scaleOutActions;
 	
+	Path logs;
 	private static Logger logger = Logger.getLogger("ScalingManager3");
 	
 	public ScalingManager3() {
+		Path logDir = Paths.get("./logs/");
+		if (!Files.exists(logDir))
+			try {
+				Files.createDirectories(logDir);
+			} catch (IOException e1) {
+				System.out.println("Unable to create log directory for scaling decisions because " + e1);
+			}
+		this.logs = Paths.get("./logs/autoscale.log");
+		if(!Files.exists(this.logs)){
+			try {
+				Files.createFile(this.logs);
+			} catch (IOException e) {
+				System.out.println("Unable to create log file for scaling decisions because " + e);
+			}
+		}  
 		logger.fine("Evaluating scaling requirements on recent history...");
 		this.estimInput = new HashMap<>();
 		this.estimMaxCap = new HashMap<>();
@@ -188,7 +211,7 @@ public class ScalingManager3 {
 						//System.out.println("\t Utilizable CPU on worker " + host + "@" + port + " is " + utilCPU);
 						utilCPUs.add(utilCPU / 100);// from percentage to ratio
 					}
-					this.utilCPU.put(component, UtilFunctions.getMinValue(utilCPUs));
+					this.utilCPU.put(component, Math.min(1.0, UtilFunctions.getMinValue(utilCPUs)));
 					//System.out.println("Global utilizable CPU for component " + component + " is " + UtilFunctions.getMinValue(utilCPUs));
 				}else{
 					this.utilCPU.put(component, 1.0);
@@ -227,19 +250,24 @@ public class ScalingManager3 {
 				if(needScaleOut(component)){
 					scaleOut = 1;
 					Integer maxDegree = am.getAllSortedTasks(component).size();
-
-					/*System.out.println("Component " + component + ": ");
-					System.out.println("\t Estim inputs: " + estimInput);
-					System.out.println("\t CPU constraint: " + allocCPU);
-					System.out.println("\t Latency per tuple: " + latency);
-					System.out.println("\t Current degree: " + currentDegree);
-					System.out.println("\t Max degree: " + maxDegree);
-					System.out.println("\t alpha: " + alpha);
-					System.out.println("\t delta: " + delta);*/
+					String info = "Scale-out need of component " + component + ": ";
+					info += "\n\t Timestamp: " + (System.currentTimeMillis() / 1000);
+					info += "\n\t Estim inputs: " + estimInput;
+					info += "\n\t CPU constraint: " + allocCPU;
+					info += "\n\t Latency per tuple: " + latency;
+					info += "\n\t Current degree: " + currentDegree;
+					info += "\n\t Max degree: " + maxDegree;
+					info += "\n\t alpha: " + parser.getAlpha();
+					info += "\n\t delta: " + delta;
 
 					Integer kprime = Math.min(maxDegree, (int) Math.floor(estimInput / ((allocCPU / 100) * safetyFactor * (1000 / latency) * delta)));
 
-					//System.out.println("\t New degree: " + kprime);
+					info += "\n\t New degree: " + kprime;
+					try {
+						Files.write(this.logs, Arrays.asList(info), Charset.defaultCharset(), StandardOpenOption.APPEND);
+					} catch (IOException e) {
+						logger.severe("Unable to persist logs because " + e);
+					}
 
 					if(kprime > currentDegree){
 						this.scaleOutActions.put(component, kprime);
@@ -247,17 +275,24 @@ public class ScalingManager3 {
 				}else{
 					if(needScaleIn(component, cm.getParser(), cm, explorer)){
 						scaleIn = 1; 
-						/*System.out.println("Component " + component + ": ");
-						System.out.println("\t Estim inputs: " + estimInput);
-						System.out.println("\t CPU constraint: " + allocCPU);
-						System.out.println("\t Latency per tuple: " + latency);
-						System.out.println("\t Current degree: " + currentDegree);
-						System.out.println("\t alpha: " + alpha);
-						System.out.println("\t delta: " + delta);*/
+						String info = "Scale-in opportunity of component " + component + ": ";
+						info += "\n\t Timestamp: " + (System.currentTimeMillis() / 1000);
+						info += "\n\t Estim inputs: " + estimInput;
+						info += "\n\t CPU constraint: " + allocCPU;
+						info += "\n\t Latency per tuple: " + latency;
+						info += "\n\t Current degree: " + currentDegree;
+						info += "\n\t alpha: " + parser.getAlpha();
+						info += "\n\t delta: " + delta;
 
 						Integer kprime = Math.max(1, (int) Math.floor(Math.max(estimInput, cm.getStats(component).getTotalInput()) / ((allocCPU / 100) * safetyFactor * (1000 / latency) * delta)));
-						//System.out.println("\t New degree: " + kprime);
-
+						
+						info += "\n\t New degree: " + kprime;
+						try {
+							Files.write(this.logs, Arrays.asList(info), Charset.defaultCharset(), StandardOpenOption.APPEND);
+						} catch (IOException e) {
+							logger.severe("Unable to persist logs because " + e);
+						}
+						
 						if(kprime < currentDegree){
 							this.scaleInActions.put(component, kprime);
 						}
@@ -266,6 +301,8 @@ public class ScalingManager3 {
 			}
 			cm.getManager().storeEstimationInfo(cm.getTimestamp(), explorer.getTopologyName(), component, estimInput, cm.getPendingTuples(explorer).get(component), this.getEstimMaxCapacity(component), this.getUtilCPU(component), this.getDegree(component), scaleIn, scaleOut);
 		}
+		
+		
 	}
 	
 	public boolean validDegree(Integer degree, Double estimInput, Double allocCPU, Double latency, Double balancingFactor, Integer delta){

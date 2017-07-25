@@ -5,12 +5,14 @@ package storm.autoscale.scheduler;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.storm.scheduler.WorkerSlot;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -22,6 +24,7 @@ import storm.autoscale.scheduler.modules.explorer.TopologyExplorer;
 import storm.autoscale.scheduler.modules.scale.ScalingManager3;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 import storm.autoscale.scheduler.modules.stats.StatStorageManager;
+import storm.autoscale.scheduler.util.UtilFunctions;
 
 /**
  * @author Roland
@@ -451,6 +454,12 @@ public class ScalingManager3Test {
 		
 	}
 
+	@After
+	public void tearDown() throws Exception{
+		File logs = new File("logs");
+		UtilFunctions.delete(logs);
+	}
+	
 	/**
 	 * Test method for {@link storm.autoscale.scheduler.modules.scale.ScalingManager3#validDegree(java.lang.Integer, java.lang.Double, java.lang.Double, java.lang.Double, java.lang.Double, java.lang.Integer)}.
 	 */

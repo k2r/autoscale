@@ -371,14 +371,14 @@ public class StatStorageManager{
 				break;
 			}
 			String type = "";
-			if(this.isInitialConstraint(timestamp, topology.getName(), component.id)){
+			if(this.isInitialConstraint(timestamp, topology.getId(), component.id)){
 				type = "initial";
 			}else{
 				type = "update";
 			}
 			
 			String query = "INSERT INTO " + TABLE_CONSTRAINT + " VALUES ('" + timestamp + "', '"
-					+ topology.getName() + "', '" + component.id + "', '" + type + "', '" + cpuReq + "', '" + memReq + "')";
+					+ topology.getId() + "', '" + component.id + "', '" + type + "', '" + cpuReq + "', '" + memReq + "')";
 			try{
 				this.connector.executeUpdate(query);
 			} catch (SQLException e){

@@ -79,7 +79,7 @@ public class ScaleActionTrigger implements IActionTrigger {
 		boolean isGrace = false;
 		Integer previousTimestamp = this.cm.getTimestamp() - 1;
 		Integer oldTimestamp = (int) (previousTimestamp - Math.round((this.cm.getParser().getWindowSize() * this.cm.getParser().getGraceCoeff())));
-		String query = "SELECT * FROM scales WHERE component = '" + component + "' AND timestamp BETWEEN " + oldTimestamp + " AND " + previousTimestamp;
+		String query = "SELECT * FROM scales WHERE topology = '" + this.topology.getId() + "' AND component = '" + component + "' AND timestamp BETWEEN " + oldTimestamp + " AND " + previousTimestamp;
 		try {
 			ResultSet result = this.connector.executeQuery(query);
 			if(result.next()){

@@ -946,7 +946,7 @@ public class StatStorageManagerTest extends TestCase {
 			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			
 			TopologyDetails topology = Mockito.mock(TopologyDetails.class);
-			Mockito.when(topology.getName()).thenReturn("topologyTest");
+			Mockito.when(topology.getId()).thenReturn("topologyTest123");
 			
 			Component compA = new Component("A");
 			Component compB = new Component("B");
@@ -1019,7 +1019,7 @@ public class StatStorageManagerTest extends TestCase {
 			}
 			
 			assertEquals(0, timestampA, 0);
-			assertEquals("topologyTest", topologyA);
+			assertEquals("topologyTest123", topologyA);
 			assertEquals("A", componentA);
 			assertEquals("initial", typeA);
 			assertEquals(10.0, cpuA, 0.0);
@@ -1044,7 +1044,7 @@ public class StatStorageManagerTest extends TestCase {
 			}
 			
 			assertEquals(0, timestampB, 0);
-			assertEquals("topologyTest", topologyB);
+			assertEquals("topologyTest123", topologyB);
 			assertEquals("B", componentB);
 			assertEquals("initial", typeB);
 			assertEquals(20.0, cpuB, 0.0);
@@ -1069,7 +1069,7 @@ public class StatStorageManagerTest extends TestCase {
 			}
 			
 			assertEquals(0, timestampC, 0);
-			assertEquals("topologyTest", topologyC);
+			assertEquals("topologyTest123", topologyC);
 			assertEquals("C", componentC);
 			assertEquals("initial", typeC);
 			assertEquals(30.0, cpuC, 0.0);
@@ -1094,7 +1094,7 @@ public class StatStorageManagerTest extends TestCase {
 			}
 			
 			assertEquals(0, timestampD, 0);
-			assertEquals("topologyTest", topologyD);
+			assertEquals("topologyTest123", topologyD);
 			assertEquals("D", componentD);
 			assertEquals("initial", typeD);
 			assertEquals(40.0, cpuD, 0.0);
@@ -1119,7 +1119,7 @@ public class StatStorageManagerTest extends TestCase {
 			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			
 			TopologyDetails topology = Mockito.mock(TopologyDetails.class);
-			Mockito.when(topology.getName()).thenReturn("topologyTest");
+			Mockito.when(topology.getId()).thenReturn("topologyTest123");
 			
 			Component compA = new Component("A");
 			
@@ -1178,11 +1178,11 @@ public class StatStorageManagerTest extends TestCase {
 			
 			manager.storeTopologyConstraints(2, topology);
 			
-			assertEquals(true, manager.isInitialConstraint(0, "topologyTest", "A"));
-			assertEquals(true, manager.isInitialConstraint(0, "nottopologyTest", "A"));
-			assertEquals(false, manager.isInitialConstraint(1, "topologyTest", "A"));
-			assertEquals(false, manager.isInitialConstraint(2, "topologyTest", "A"));
-			assertEquals(true, manager.isInitialConstraint(0, "topologyTest", "B"));
+			assertEquals(true, manager.isInitialConstraint(0, "topologyTest123", "A"));
+			assertEquals(true, manager.isInitialConstraint(0, "nottopologyTest123", "A"));
+			assertEquals(false, manager.isInitialConstraint(1, "topologyTest123", "A"));
+			assertEquals(false, manager.isInitialConstraint(2, "topologyTest123", "A"));
+			assertEquals(true, manager.isInitialConstraint(0, "topologyTest123", "B"));
 			
 			String testCleanQuery = "DELETE FROM operators_constraints";
 			connector.executeUpdate(testCleanQuery);
@@ -1203,7 +1203,7 @@ public class StatStorageManagerTest extends TestCase {
 			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			
 			TopologyDetails topology = Mockito.mock(TopologyDetails.class);
-			Mockito.when(topology.getName()).thenReturn("topologyTest");
+			Mockito.when(topology.getId()).thenReturn("topologyTest123");
 			
 			Component compA = new Component("A");
 			
@@ -1262,9 +1262,9 @@ public class StatStorageManagerTest extends TestCase {
 			
 			manager.storeTopologyConstraints(2, topology);
 			
-			assertEquals(10.0, manager.getInitialCpuConstraint("topologyTest", "A"));
-			assertEquals(0.0, manager.getInitialCpuConstraint("nottopologyTest", "A"));
-			assertEquals(0.0, manager.getInitialCpuConstraint("topologyTest", "B"));
+			assertEquals(10.0, manager.getInitialCpuConstraint("topologyTest123", "A"));
+			assertEquals(0.0, manager.getInitialCpuConstraint("nottopologyTest123", "A"));
+			assertEquals(0.0, manager.getInitialCpuConstraint("topologyTest123", "B"));
 			
 			String testCleanQuery = "DELETE FROM operators_constraints";
 			connector.executeUpdate(testCleanQuery);
@@ -1285,7 +1285,7 @@ public class StatStorageManagerTest extends TestCase {
 			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			
 			TopologyDetails topology = Mockito.mock(TopologyDetails.class);
-			Mockito.when(topology.getName()).thenReturn("topologyTest");
+			Mockito.when(topology.getId()).thenReturn("topologyTest123");
 			
 			Component compA = new Component("A");
 			
@@ -1344,9 +1344,9 @@ public class StatStorageManagerTest extends TestCase {
 			
 			manager.storeTopologyConstraints(2, topology);
 			
-			assertEquals(32.0, manager.getInitialMemConstraint("topologyTest", "A"));
-			assertEquals(0.0, manager.getInitialMemConstraint("nottopologyTest", "A"));
-			assertEquals(0.0, manager.getInitialMemConstraint("topologyTest", "B"));
+			assertEquals(32.0, manager.getInitialMemConstraint("topologyTest123", "A"));
+			assertEquals(0.0, manager.getInitialMemConstraint("nottopologyTest123", "A"));
+			assertEquals(0.0, manager.getInitialMemConstraint("topologyTest123", "B"));
 			
 			String testCleanQuery = "DELETE FROM operators_constraints";
 			connector.executeUpdate(testCleanQuery);
@@ -1367,7 +1367,7 @@ public class StatStorageManagerTest extends TestCase {
 			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			
 			TopologyDetails topology = Mockito.mock(TopologyDetails.class);
-			Mockito.when(topology.getName()).thenReturn("topologyTest");
+			Mockito.when(topology.getId()).thenReturn("topologyTest123");
 			
 			Component compA = new Component("A");
 			
@@ -1426,9 +1426,9 @@ public class StatStorageManagerTest extends TestCase {
 			
 			manager.storeTopologyConstraints(2, topology);
 			
-			assertEquals(30.0, manager.getCurrentCpuConstraint("topologyTest", "A"));
-			assertEquals(0.0, manager.getCurrentCpuConstraint("nottopologyTest", "A"));
-			assertEquals(0.0, manager.getCurrentCpuConstraint("topologyTest", "B"));
+			assertEquals(30.0, manager.getCurrentCpuConstraint("topologyTest123", "A"));
+			assertEquals(0.0, manager.getCurrentCpuConstraint("nottopologyTest123", "A"));
+			assertEquals(0.0, manager.getCurrentCpuConstraint("topologyTest123", "B"));
 			
 			String testCleanQuery = "DELETE FROM operators_constraints";
 			connector.executeUpdate(testCleanQuery);
@@ -1449,7 +1449,7 @@ public class StatStorageManagerTest extends TestCase {
 			StatStorageManager manager = StatStorageManager.getManager(parser.getDbHost(), parser.getDbName(), parser.getDbUser(), parser.getDbPassword());
 			
 			TopologyDetails topology = Mockito.mock(TopologyDetails.class);
-			Mockito.when(topology.getName()).thenReturn("topologyTest");
+			Mockito.when(topology.getId()).thenReturn("topologyTest123");
 			
 			Component compA = new Component("A");
 			
@@ -1508,9 +1508,9 @@ public class StatStorageManagerTest extends TestCase {
 			
 			manager.storeTopologyConstraints(2, topology);
 			
-			assertEquals(128.0, manager.getCurrentMemConstraint("topologyTest", "A"));
-			assertEquals(0.0, manager.getCurrentMemConstraint("nottopologyTest", "A"));
-			assertEquals(0.0, manager.getCurrentMemConstraint("topologyTest", "B"));
+			assertEquals(128.0, manager.getCurrentMemConstraint("topologyTest123", "A"));
+			assertEquals(0.0, manager.getCurrentMemConstraint("nottopologyTest123", "A"));
+			assertEquals(0.0, manager.getCurrentMemConstraint("topologyTest123", "B"));
 			
 			String testCleanQuery = "DELETE FROM operators_constraints";
 			connector.executeUpdate(testCleanQuery);
