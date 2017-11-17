@@ -22,7 +22,15 @@ public enum ParameterNames {
 	DBHOST("db_host"),
 	DBNAME("db_name"),
 	DBUSER("db_user"),
-	DBPWD("db_password");
+	DBPWD("db_password"),
+	DELTA("delta"),
+	ACTMIN("activity_min"),
+	ACTMAX("activity_max"),
+	RULES("rules"),
+	RULE("rule"),
+	STATE("state"),
+	DEG("degree"),
+	RWD("reward");
 	
 	
 	private String name;

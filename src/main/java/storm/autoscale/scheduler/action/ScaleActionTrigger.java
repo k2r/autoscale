@@ -19,7 +19,7 @@ import org.apache.storm.thrift.transport.TSocket;
 import storm.autoscale.scheduler.connector.database.IJDBCConnector;
 import storm.autoscale.scheduler.connector.database.MySQLConnector;
 import storm.autoscale.scheduler.modules.component.ComponentMonitor;
-import storm.autoscale.scheduler.modules.scale.ScalingManager3;
+import storm.autoscale.scheduler.modules.scale.ScalingManagerPlus;
 
 /**
  * @author Roland
@@ -30,7 +30,7 @@ public class ScaleActionTrigger implements IActionTrigger {
 	private String nimbusHost;
 	private Integer nimbusPort;
 	
-	private ScalingManager3 sm;
+	private ScalingManagerPlus sm;
 	private ComponentMonitor cm;
 	private Integer nbWorkers;
 	private TopologyDetails topology;
@@ -38,7 +38,7 @@ public class ScaleActionTrigger implements IActionTrigger {
 	
 	private Logger logger = Logger.getLogger("ScaleActionTrigger");
 	
-	public ScaleActionTrigger(String nimbusHost, Integer nimbusPort, ComponentMonitor cm, ScalingManager3 sm, Integer nbWorkers, TopologyDetails topology){
+	public ScaleActionTrigger(String nimbusHost, Integer nimbusPort, ComponentMonitor cm, ScalingManagerPlus sm, Integer nbWorkers, TopologyDetails topology){
 		this.nimbusHost = nimbusHost;
 		this.nimbusPort = nimbusPort;
 		this.cm = cm;

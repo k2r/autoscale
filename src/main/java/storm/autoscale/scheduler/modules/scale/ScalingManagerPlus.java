@@ -30,7 +30,7 @@ import storm.autoscale.scheduler.util.UtilFunctions;
  * @author Roland
  *
  */
-public class ScalingManager3 {
+public class ScalingManagerPlus {
 	
 	private HashMap<String, Double> estimInput;
 	private HashMap<String, Double> estimMaxCap;
@@ -42,9 +42,9 @@ public class ScalingManager3 {
 	private HashMap<String, Integer> scaleOutActions;
 	
 	Path logs;
-	private static Logger logger = Logger.getLogger("ScalingManager3");
+	private static Logger logger = Logger.getLogger("ScalingManagerPlus");
 	
-	public ScalingManager3() {
+	public ScalingManagerPlus() {
 		Path logDir = Paths.get("./logs/");
 		if (!Files.exists(logDir))
 			try {
@@ -352,6 +352,14 @@ public class ScalingManager3 {
 	
 	public HashMap<String, Integer> getScaleInActions(){
 		return this.scaleInActions;
+	}
+	
+	public void addScaleInAction(String component, Integer degree){
+		this.scaleInActions.put(component, degree);
+	}
+	
+	public void addScaleOutAction(String component, Integer degree){
+		this.scaleOutActions.put(component, degree);
 	}
 	
 	public HashMap<String, Integer> getScaleOutActions(){

@@ -21,7 +21,7 @@ import storm.autoscale.scheduler.config.XmlConfigParser;
 import storm.autoscale.scheduler.modules.assignment.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.component.ComponentMonitor;
 import storm.autoscale.scheduler.modules.explorer.TopologyExplorer;
-import storm.autoscale.scheduler.modules.scale.ScalingManager3;
+import storm.autoscale.scheduler.modules.scale.ScalingManagerPlus;
 import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 import storm.autoscale.scheduler.modules.stats.StatStorageManager;
 import storm.autoscale.scheduler.util.UtilFunctions;
@@ -30,7 +30,7 @@ import storm.autoscale.scheduler.util.UtilFunctions;
  * @author Roland
  *
  */
-public class ScalingManager3Test {
+public class ScalingManagerPlusTest {
 
 	private ComponentMonitor cm;
 	private TopologyExplorer explorer;
@@ -461,11 +461,11 @@ public class ScalingManager3Test {
 	}
 	
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.scale.ScalingManager3#validDegree(java.lang.Integer, java.lang.Double, java.lang.Double, java.lang.Double, java.lang.Double, java.lang.Integer)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.scale.ScalingManagerPlus#validDegree(java.lang.Integer, java.lang.Double, java.lang.Double, java.lang.Double, java.lang.Double, java.lang.Integer)}.
 	 */
 	@Test
 	public void testValidDegree() {
-		ScalingManager3 sm = new ScalingManager3();
+		ScalingManagerPlus sm = new ScalingManagerPlus();
 		boolean valid1 = sm.validDegree(3, 5000.0, 50.0, 20.0, 0.8, 50);
 		boolean valid2 = sm.validDegree(5, 5000.0, 50.0, 20.0, 0.8, 50);
 		boolean valid3 = sm.validDegree(6, 5000.0, 50.0, 20.0, 0.8, 50);
@@ -475,11 +475,11 @@ public class ScalingManager3Test {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.scale.ScalingManager3#needScaleOut(java.lang.String)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.scale.ScalingManagerPlus#needScaleOut(java.lang.String)}.
 	 */
 	@Test
 	public void testNeedScaleOut() {
-		ScalingManager3 sm = new ScalingManager3();
+		ScalingManagerPlus sm = new ScalingManagerPlus();
 		sm.initDegrees(cm, am);
 		sm.computeEstimInputs(cm, explorer);
 		sm.computeEstimMaxCapacities(cm);
@@ -493,11 +493,11 @@ public class ScalingManager3Test {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.scale.ScalingManager3#needScaleIn(java.lang.String, storm.autoscale.scheduler.config.XmlConfigParser)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.scale.ScalingManagerPlus#needScaleIn(java.lang.String, storm.autoscale.scheduler.config.XmlConfigParser)}.
 	 */
 	@Test
 	public void testNeedScaleIn() {
-		ScalingManager3 sm = new ScalingManager3();
+		ScalingManagerPlus sm = new ScalingManagerPlus();
 		sm.initDegrees(cm, am);
 		sm.computeEstimInputs(cm, explorer);
 		sm.computeEstimMaxCapacities(cm);
@@ -511,11 +511,11 @@ public class ScalingManager3Test {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.scale.ScalingManager3#getEstimInput(java.lang.String)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.scale.ScalingManagerPlus#getEstimInput(java.lang.String)}.
 	 */
 	@Test
 	public void testGetEstimInput() {
-		ScalingManager3 sm = new ScalingManager3();
+		ScalingManagerPlus sm = new ScalingManagerPlus();
 		sm.computeEstimInputs(cm, explorer);
 		assertEquals(3676, sm.getEstimInput("A"), 1.0);
 		assertEquals(4198, sm.getEstimInput("B"), 1.0);
@@ -525,11 +525,11 @@ public class ScalingManager3Test {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.scale.ScalingManager3#getEstimMaxCapacity(java.lang.String)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.scale.ScalingManagerPlus#getEstimMaxCapacity(java.lang.String)}.
 	 */
 	@Test
 	public void testGetEstimMaxCapacity() {
-		ScalingManager3 sm = new ScalingManager3();
+		ScalingManagerPlus sm = new ScalingManagerPlus();
 		sm.computeEstimMaxCapacities(cm);
 		
 		assertEquals(5000, sm.getEstimMaxCapacity("A"), 1.0);
@@ -540,11 +540,11 @@ public class ScalingManager3Test {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.scale.ScalingManager3#getUtilCPU(java.lang.String)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.scale.ScalingManagerPlus#getUtilCPU(java.lang.String)}.
 	 */
 	@Test
 	public void testGetUtilCPU() {
-		ScalingManager3 sm = new ScalingManager3();
+		ScalingManagerPlus sm = new ScalingManagerPlus();
 		sm.computeUtilCPU(cm, am, explorer);
 		
 		assertEquals(0.475, sm.getUtilCPU("A"), 0.01);
@@ -555,11 +555,11 @@ public class ScalingManager3Test {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.scale.ScalingManager3#getScaleInActions()}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.scale.ScalingManagerPlus#getScaleInActions()}.
 	 */
 	@Test
 	public void testGetScaleInActions() {
-		ScalingManager3 sm = new ScalingManager3();
+		ScalingManagerPlus sm = new ScalingManagerPlus();
 		sm.initDegrees(cm, am);
 		sm.computeEstimInputs(cm, explorer);
 		sm.computeEstimMaxCapacities(cm);
@@ -572,11 +572,11 @@ public class ScalingManager3Test {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.scale.ScalingManager3#getScaleOutActions()}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.scale.ScalingManagerPlus#getScaleOutActions()}.
 	 */
 	@Test
 	public void testGetScaleOutActions() {
-		ScalingManager3 sm = new ScalingManager3();
+		ScalingManagerPlus sm = new ScalingManagerPlus();
 		sm.initDegrees(cm, am);
 		sm.computeEstimInputs(cm, explorer);
 		sm.computeEstimMaxCapacities(cm);
@@ -592,11 +592,11 @@ public class ScalingManager3Test {
 	}
 
 	/**
-	 * Test method for {@link storm.autoscale.scheduler.modules.scale.ScalingManager3#getDegree(java.lang.String)}.
+	 * Test method for {@link storm.autoscale.scheduler.modules.scale.ScalingManagerPlus#getDegree(java.lang.String)}.
 	 */
 	@Test
 	public void testGetDegree() {
-		ScalingManager3 sm = new ScalingManager3();
+		ScalingManagerPlus sm = new ScalingManagerPlus();
 		sm.initDegrees(cm, am);
 		
 		assertEquals(3, sm.getDegree("A"), 0);

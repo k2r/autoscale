@@ -1,11 +1,10 @@
-/**
- * 
- */
 package storm.autoscale.scheduler;
-
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -17,63 +16,77 @@ import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.xml.sax.SAXException;
 
-import storm.autoscale.scheduler.action.IAction;
-import storm.autoscale.scheduler.action.ScaleInAction;
-import storm.autoscale.scheduler.action.ScaleOutAction;
+import storm.autoscale.scheduler.action.ScaleActionTrigger;
+import storm.autoscale.scheduler.config.XmlThresholdsParser;
 import storm.autoscale.scheduler.config.XmlConfigParser;
-import storm.autoscale.scheduler.metrics.ActivityMetric;
-import storm.autoscale.scheduler.metrics.IMetric;
-import storm.autoscale.scheduler.metrics.ImpactMetric;
 import storm.autoscale.scheduler.modules.assignment.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.component.ComponentMonitor;
 import storm.autoscale.scheduler.modules.explorer.TopologyExplorer;
-import storm.autoscale.scheduler.modules.scale.ScalingManager;
+import storm.autoscale.scheduler.modules.scale.ScalingManagerPlus;
+import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 import storm.autoscale.scheduler.modules.stats.StatStorageManager;
+import storm.autoscale.scheduler.util.UtilFunctions;
+
+/**
+ * 
+ */
 
 /**
  * @author Roland
  *
  */
-public class AutoscaleSchedulerCPUAware implements IScheduler {
-
+public class IncrementalScheduler implements IScheduler {
+	
 	@SuppressWarnings("rawtypes")
 	Map conf;
-	private ScalingManager scaleManager;
+	private ScalingManagerPlus scaleManager;
 	private ComponentMonitor compMonitor;
 	private AssignmentMonitor assignMonitor;
 	private TopologyExplorer explorer;
 	private String nimbusHost;
 	private Integer nimbusPort;
 	private XmlConfigParser parser;
-
-	private static Logger logger = Logger.getLogger("AutoscaleSchedulerCPUAware");
-
-	public AutoscaleSchedulerCPUAware() {
-		logger.info("The auto-scaling scheduler for Storm is starting...");
+	private XmlThresholdsParser thresholdParser;
+	private Double activityMin;
+	private Double activityMax;
+	
+	private static Logger logger = Logger.getLogger("IncrementalScheduler");
+	
+	public IncrementalScheduler() {
+		logger.info("The threshold-based scheduler for Storm is starting...");
 	}
-
+	
+	/* (non-Javadoc)
+	 * @see org.apache.storm.scheduler.IScheduler#prepare(java.util.Map)
+	 */
 	@SuppressWarnings("rawtypes")
 	@Override
 	public void prepare(Map conf) {
 		this.conf = conf;
 		try {
 			this.parser = new XmlConfigParser("./conf/autoscale_parameters.xml");
+			this.thresholdParser = new XmlThresholdsParser("./conf/threshold_parameters.xml");
 			this.parser.initParameters();
+			this.thresholdParser.initParameters();
 			this.nimbusHost = parser.getNimbusHost();
 			this.nimbusPort = parser.getNimbusPort();
+			this.activityMin = thresholdParser.getActivityMin();
+			this.activityMax = thresholdParser.getActivityMax();
 		} catch (ParserConfigurationException | SAXException | IOException e) {
 			logger.severe("Unable to load the configuration file for AUTOSCALE because " + e);
 		}
 	}
 
-	@SuppressWarnings("unused")
+	/* (non-Javadoc)
+	 * @see org.apache.storm.scheduler.IScheduler#schedule(org.apache.storm.scheduler.Topologies, org.apache.storm.scheduler.Cluster)
+	 */
 	@Override
 	public void schedule(Topologies topologies, Cluster cluster) {
 		String host = this.parser.getDbHost();
 		String name = this.parser.getDbName();
 		String user = this.parser.getDbUser();
 		String pwd = this.parser.getDbPassword();
-
+		
 		Integer monitFrequency = this.parser.getMonitoringFrequency();
 		StatStorageManager manager = null;
 		try {
@@ -82,8 +95,7 @@ public class AutoscaleSchedulerCPUAware implements IScheduler {
 		} catch (ClassNotFoundException | SQLException e1) {
 			logger.severe("Unable to start the StatStorageManage because of " + e1);
 		}
-
-		/*In a first time, we take all scaling decisions*/
+		
 		for(TopologyDetails topology : topologies.getTopologies()){
 			if(!manager.isActive(topology.getId())){
 				logger.fine("Topology " + topology.getName() + " is inactive, killed or being rebalanced...");
@@ -93,48 +105,57 @@ public class AutoscaleSchedulerCPUAware implements IScheduler {
 					manager.storeTopologyConstraints(this.compMonitor.getTimestamp(), topology);
 				}
 				this.assignMonitor = new AssignmentMonitor(cluster, topology);
-				this.explorer = new TopologyExplorer(topology.getName(), topology.getTopology());
+				this.explorer = new TopologyExplorer(topology.getId(), topology.getTopology());
 				this.assignMonitor.update();
 				this.compMonitor.getStatistics(explorer);
+				this.scaleManager = new ScalingManagerPlus();
+				this.scaleManager.initDegrees(compMonitor, assignMonitor);
 				if(!this.compMonitor.getRegisteredComponents().isEmpty()){
-					this.scaleManager = new ScalingManager(compMonitor, parser);
-					this.scaleManager.buildDegreeMap(assignMonitor);
-					IMetric activityMetric = new ActivityMetric(this.scaleManager, this.explorer);
-					this.scaleManager.buildActionGraph(activityMetric, assignMonitor);
-					IMetric impactMetric = new ImpactMetric(this.scaleManager, this.explorer);
-					this.scaleManager.autoscaleAlgorithmWithImpact(impactMetric, this.explorer.getAncestors(), this.explorer, this.assignMonitor);
-					this.scaleManager.adjustDegreesToCpuConstraint(this.explorer, this.assignMonitor);
-
-					if(this.scaleManager.getScaleOutActions().isEmpty()){
-						logger.fine("No component to scale out!");
-					}else{
-						String scaleOutInfo = "Components requiring scale out: ";
-						for(String component : this.scaleManager.getScaleOutActions().keySet()){
-							scaleOutInfo += component + " ";
+					ArrayList<String> bolts = this.explorer.getBolts();
+					for(String bolt : bolts){
+						HashMap<Integer, Long> nbInputs = this.compMonitor.getStats(bolt).getInputRecords();
+						Set<Integer> timestamps = nbInputs.keySet();
+						Double sum = 0.0;
+						Integer count = 0;
+						Boolean minFlag = false;
+						Boolean maxFlag = false;
+						Double oldRate = ComponentWindowedStats.getOldestRecord(nbInputs);
+						Double avgLatency = UtilFunctions.getAvgValue(UtilFunctions.getValues(this.compMonitor.getStats(bolt).getAvgLatencyRecords()));
+						if(oldRate < this.activityMin){
+							minFlag = true;
 						}
-						scaleOutInfo += "have required a scale out!";
-						logger.fine(scaleOutInfo);
-						IAction action = new ScaleOutAction(this.scaleManager, this.explorer, this.assignMonitor, this.nimbusHost, this.nimbusPort);
-					}
-
-					if(this.scaleManager.getScaleInActions().isEmpty()){
-						logger.fine("No component to scale in!");
-					}else{
-						String scaleInInfo = "Components requiring scale in: ";
-						for(String component : this.scaleManager.getScaleInActions().keySet()){
-							scaleInInfo += component + " ";
+						if(oldRate > this.activityMax){
+							maxFlag = true;
 						}
-						scaleInInfo += "have required a scale in!";
-						logger.fine(scaleInInfo);
-						IAction action = new ScaleInAction(this.scaleManager, this.explorer, this.assignMonitor, this.nimbusHost, this.nimbusPort);
+						for(Integer timestamp: timestamps){
+							Double rate = (nbInputs.get(timestamp) / monitFrequency) * 1.0;
+							Double activity = rate / avgLatency;
+							if(minFlag && activity > this.activityMin){
+								minFlag = false;
+							}
+							if(maxFlag && activity < this.activityMax){
+								maxFlag = false;
+							}
+							sum += rate;
+							oldRate = rate;
+							count++;
+						}
+						Integer degree = this.scaleManager.getDegree(bolt);
+						if(minFlag){
+							this.scaleManager.addScaleInAction(bolt, degree - 1);
+						}
+						if(maxFlag){
+							this.scaleManager.addScaleOutAction(bolt, degree + 1);
+						}
 					}
+					@SuppressWarnings("unused")
+					ScaleActionTrigger trigger = new ScaleActionTrigger(nimbusHost, nimbusPort, compMonitor, scaleManager, assignMonitor.getNbWorkers(), topology);
 				}
-			}			
+			}
 		}
 		/*Then we let the resource aware scheduler distribute the load*/
 		ResourceAwareScheduler scheduler = new ResourceAwareScheduler();
 		scheduler.prepare(this.conf);
 		scheduler.schedule(topologies, cluster);
 	}
-
 }

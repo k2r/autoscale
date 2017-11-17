@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<parameters>
+	<delta>90</delta>
+	<epsilon>25</epsilon>
+	<activity_min>0.2</activity_min>
+	<activity_max>0.8</activity_max>
+</parameters>

@@ -22,18 +22,18 @@ import storm.autoscale.scheduler.config.XmlConfigParser;
 import storm.autoscale.scheduler.modules.assignment.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.component.ComponentMonitor;
 import storm.autoscale.scheduler.modules.explorer.TopologyExplorer;
-import storm.autoscale.scheduler.modules.scale.ScalingManager3;
+import storm.autoscale.scheduler.modules.scale.ScalingManagerPlus;
 import storm.autoscale.scheduler.modules.stats.StatStorageManager;
 
 /**
  * @author Roland
  *
  */
-public class AutoscaleScheduler3 implements IScheduler {
+public class AutoscalePlusScheduler implements IScheduler {
 
 	@SuppressWarnings("rawtypes")
 	Map conf;
-	private ScalingManager3 sm;
+	private ScalingManagerPlus sm;
 	private ComponentMonitor compMonitor;
 	private AssignmentMonitor assignMonitor;
 	private TopologyExplorer explorer;
@@ -41,10 +41,10 @@ public class AutoscaleScheduler3 implements IScheduler {
 	private Integer nimbusPort;
 	private XmlConfigParser parser;
 
-	private static Logger logger = Logger.getLogger("AutoscaleScheduler3");
+	private static Logger logger = Logger.getLogger("AutoscalePlusScheduler");
 	
-	public AutoscaleScheduler3() {
-		logger.info("The auto-scaling scheduler v3 for Storm is starting...");
+	public AutoscalePlusScheduler() {
+		logger.info("The Autoscale+ scheduler for Storm is starting...");
 	}
 	
 	/* (non-Javadoc)
@@ -97,7 +97,7 @@ public class AutoscaleScheduler3 implements IScheduler {
 				this.assignMonitor.update();
 				this.compMonitor.getStatistics(explorer);
 				if(!this.compMonitor.getRegisteredComponents().isEmpty()){
-					this.sm = new ScalingManager3();
+					this.sm = new ScalingManagerPlus();
 					this.sm.initDegrees(compMonitor, assignMonitor);
 					this.sm.computeEstimInputs(compMonitor, explorer);
 					this.sm.computeEstimMaxCapacities(compMonitor);

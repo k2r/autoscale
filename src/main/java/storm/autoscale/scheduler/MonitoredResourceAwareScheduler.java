@@ -21,7 +21,7 @@ import storm.autoscale.scheduler.config.XmlConfigParser;
 import storm.autoscale.scheduler.modules.assignment.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.component.ComponentMonitor;
 import storm.autoscale.scheduler.modules.explorer.TopologyExplorer;
-import storm.autoscale.scheduler.modules.scale.ScalingManager3;
+import storm.autoscale.scheduler.modules.scale.ScalingManagerPlus;
 import storm.autoscale.scheduler.modules.stats.StatStorageManager;
 
 /**
@@ -32,7 +32,7 @@ public class MonitoredResourceAwareScheduler implements IScheduler {
 
 	@SuppressWarnings("rawtypes")
 	Map conf;
-	private ScalingManager3 sm;
+	private ScalingManagerPlus sm;
 	private ComponentMonitor compMonitor;
 	private AssignmentMonitor assignMonitor;
 	private TopologyExplorer explorer;
@@ -93,7 +93,7 @@ public class MonitoredResourceAwareScheduler implements IScheduler {
 				this.assignMonitor.update();
 				this.compMonitor.getStatistics(explorer);
 				if(!this.compMonitor.getRegisteredComponents().isEmpty()){
-					this.sm = new ScalingManager3();
+					this.sm = new ScalingManagerPlus();
 					this.sm.initDegrees(compMonitor, assignMonitor);
 					this.sm.computeEstimInputs(compMonitor, explorer);
 					this.sm.computeEstimMaxCapacities(compMonitor);
