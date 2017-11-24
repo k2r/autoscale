@@ -27,7 +27,6 @@ public class NimbusListener {
 		this.tTransport = new TFramedTransport(tsocket);
 		this.tBinaryProtocol = new TBinaryProtocol(tTransport);
 		this.client = new Nimbus.Client(this.tBinaryProtocol);
-		
 	}
 	
 	public static NimbusListener getInstance(String nimbusHost, Integer nimbusPort){

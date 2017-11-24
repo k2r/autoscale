@@ -37,6 +37,7 @@ public class XmlKnowledgeParser {
 		this.factory = DocumentBuilderFactory.newInstance();
 		this.builder = factory.newDocumentBuilder();
 		this.document = builder.parse(this.getFilename());
+		this.rules = new ArrayList<>();
 	}
 	
 	

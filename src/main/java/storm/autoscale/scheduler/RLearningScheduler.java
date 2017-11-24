@@ -55,7 +55,7 @@ public class RLearningScheduler implements IScheduler {
 	private static Logger logger = Logger.getLogger("RLearningScheduler");
 	
 	public RLearningScheduler() {
-		logger.info("The omniscient scheduler for Storm is starting...");
+		logger.info("The learning-based scheduler for Storm is starting...");
 	}
 	
 	/* (non-Javadoc)
