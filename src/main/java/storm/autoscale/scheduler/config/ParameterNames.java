@@ -28,6 +28,7 @@ public enum ParameterNames {
 	ACTMAX("activity_max"),
 	RULES("rules"),
 	RULE("rule"),
+	OP("operator"),
 	STATE("state"),
 	DEG("degree"),
 	RWD("reward");

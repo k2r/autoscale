@@ -9,16 +9,32 @@ package storm.autoscale.scheduler.config.knowledge;
  */
 public class KnowledgeRule {
 
+	private String operator;
 	private Double lowerBound;
 	private Double upperBound;
 	private Integer degree;
 	private Double reward;
 	
-	public KnowledgeRule(Double lb, Double ub, Integer deg, Double rwd) {
+	public KnowledgeRule(String op, Double lb, Double ub, Integer deg, Double rwd) {
+		this.setOperator(op);
 		this.lowerBound = lb;
 		this.upperBound = ub;
 		this.degree = deg;
 		this.reward = rwd;
+	}
+
+	/**
+	 * @return the operator
+	 */
+	public String getOperator() {
+		return operator;
+	}
+
+	/**
+	 * @param operator the operator to set
+	 */
+	public void setOperator(String operator) {
+		this.operator = operator;
 	}
 
 	/**
@@ -84,6 +100,6 @@ public class KnowledgeRule {
 	@Override
 	public boolean equals(Object o){
 		KnowledgeRule rule = (KnowledgeRule) o;
-		return (this.lowerBound == rule.getLowerBound() && this.upperBound == rule.getUpperBound() && this.degree == rule.getDegree() && this.reward == rule.getReward());
+		return (this.operator == rule.getOperator() && this.lowerBound == rule.getLowerBound() && this.upperBound == rule.getUpperBound() && this.degree == rule.getDegree() && this.reward == rule.getReward());
 	}
 }

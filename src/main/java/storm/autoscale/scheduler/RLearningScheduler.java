@@ -6,6 +6,7 @@ package storm.autoscale.scheduler;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -23,6 +24,7 @@ import org.xml.sax.SAXException;
 import storm.autoscale.scheduler.action.ScaleActionTrigger;
 import storm.autoscale.scheduler.config.XmlKnowledgeParser;
 import storm.autoscale.scheduler.config.XmlThresholdsParser;
+import storm.autoscale.scheduler.config.knowledge.KnowledgeRule;
 import storm.autoscale.scheduler.config.XmlConfigParser;
 import storm.autoscale.scheduler.modules.assignment.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.component.ComponentMonitor;
@@ -51,7 +53,8 @@ public class RLearningScheduler implements IScheduler {
 	private XmlKnowledgeParser knowledgeParser;
 	private Double activityMin;
 	private Double activityMax;
-
+	
+	private static final Double scale = 10.0;
 	private static Logger logger = Logger.getLogger("RLearningScheduler");
 	
 	public RLearningScheduler() {
@@ -145,11 +148,32 @@ public class RLearningScheduler implements IScheduler {
 							count++;
 						}
 						Double averageRate = sum / count;
+						
+						Double lBound = ((Math.round(averageRate)) / Math.round(scale)) * scale;
+						Double uBound = lBound + scale;
+						Integer degree = this.assignMonitor.getParallelism(bolt);
+						ArrayList<Long> execRecords = new ArrayList<>();
+						ArrayList<Long> inRecords = new ArrayList<>();
+						Collection<Long> rawExecRecords = this.compMonitor.getStats(bolt).getExecutedRecords().values();
+						Collection<Long> rawInRecords = this.compMonitor.getStats(bolt).getInputRecords().values();
+						for(Long record : rawExecRecords){
+							execRecords.add(record);
+						}
+						for(Long record : rawInRecords){
+							inRecords.add(record);
+						}
+						
+						Double avgProcessingRate = UtilFunctions.getAvgValue(execRecords);
+						Double avgInputRate = UtilFunctions.getAvgValue(inRecords);
+						Double reward = avgProcessingRate / avgInputRate;
+						
+						knowledgeParser.createOrUpdateRule(new KnowledgeRule(bolt, lBound, uBound, degree, reward));
+						
 						if(minFlag){
-							this.scaleManager.addScaleInAction(bolt, this.knowledgeParser.bestDegree(averageRate));
+							this.scaleManager.addScaleInAction(bolt, this.knowledgeParser.bestDegree(averageRate, degree, minFlag, maxFlag));
 						}
 						if(maxFlag){
-							this.scaleManager.addScaleOutAction(bolt, this.knowledgeParser.bestDegree(averageRate));
+							this.scaleManager.addScaleOutAction(bolt, this.knowledgeParser.bestDegree(averageRate, degree, minFlag, maxFlag));
 						}
 					}
 					@SuppressWarnings("unused")

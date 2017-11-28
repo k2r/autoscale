@@ -2,41 +2,49 @@
 
 <rules>
 	<rule>
+		<operator>A</operator>
 		<state>0;50</state>
 		<degree>1</degree>
 		<reward>1.0</reward>
 	</rule>
 	<rule>
+		<operator>A</operator>
 		<state>50;100</state>
 		<degree>2</degree>
 		<reward>1.0</reward>
 	</rule>
 	<rule>
+		<operator>A</operator>
 		<state>100;150</state>
 		<degree>3</degree>
 		<reward>1.0</reward>
 	</rule>
 	<rule>
+		<operator>B</operator>
 		<state>150;200</state>
 		<degree>5</degree>
 		<reward>1.0</reward>
 	</rule>
 	<rule>
+		<operator>B</operator>
 		<state>200;250</state>
 		<degree>5</degree>
 		<reward>1.0</reward>
 	</rule>
 	<rule>
+		<operator>B</operator>
 		<state>250;300</state>
 		<degree>8</degree>
 		<reward>1.0</reward>
 	</rule>
 	<rule>
+		<operator>B</operator>
 		<state>300;350</state>
 		<degree>9</degree>
 		<reward>1.0</reward>
 	</rule>
 	<rule>
+		<operator>B</operator>
 		<state>350;400</state>
 		<degree>11</degree>
 		<reward>1.0</reward>
