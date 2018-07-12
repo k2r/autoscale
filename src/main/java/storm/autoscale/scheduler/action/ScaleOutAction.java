@@ -99,10 +99,10 @@ public class ScaleOutAction implements IAction {
 	@Override
 	public void storeAction(String component, Integer currentDegree, Integer newDegree) {
 		try {
-			String query = "INSERT INTO scales VALUES('" + this.sm.getMonitor().getTimestamp() + "', '" + component + "', 'scale out', '" + currentDegree + "', '" + newDegree + "')";
+			String query = "INSERT INTO scales VALUES('" + this.sm.getMonitor().getTimestamp() + "', '" + this.explorer.getTopologyName() + "', '" + component + "', 'scale-out', '" + currentDegree + "', '" + newDegree + "')";
 			this.connector.executeUpdate(query);
-		} catch(SQLException e) {
-			logger.severe("Unable to store the scale out action for component " + component +  " because " + e);
+		} catch (SQLException e) {
+			logger.severe("Unable to store scale in action for component " + component + " because of " + e);
 		}
 	}
 

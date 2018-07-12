@@ -2,6 +2,7 @@ package storm.autoscale.scheduler;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -23,7 +24,6 @@ import storm.autoscale.scheduler.modules.assignment.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.component.ComponentMonitor;
 import storm.autoscale.scheduler.modules.explorer.TopologyExplorer;
 import storm.autoscale.scheduler.modules.scale.ScalingManagerPlus;
-import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 import storm.autoscale.scheduler.modules.stats.StatStorageManager;
 import storm.autoscale.scheduler.util.UtilFunctions;
 
@@ -119,27 +119,35 @@ public class IncrementalScheduler implements IScheduler {
 						Integer count = 0;
 						Boolean minFlag = false;
 						Boolean maxFlag = false;
-						Double oldRate = ComponentWindowedStats.getOldestRecord(nbInputs);
-						Double avgLatency = UtilFunctions.getAvgValue(UtilFunctions.getValues(this.compMonitor.getStats(bolt).getAvgLatencyRecords()));
-						if(oldRate < this.activityMin){
+						ArrayList<Long> execRecords = new ArrayList<>();
+						ArrayList<Long> inRecords = new ArrayList<>();
+						Collection<Long> rawExecRecords = this.compMonitor.getStats(bolt).getExecutedRecords().values();
+						Collection<Long> rawInRecords = this.compMonitor.getStats(bolt).getInputRecords().values();
+						
+						for(Long record : rawExecRecords){
+							execRecords.add(record);
+						}
+						for(Long record : rawInRecords){
+							inRecords.add(record);
+						}
+						
+						Double avgProcessingRate = UtilFunctions.getAvgValue(execRecords);
+						Double avgInputRate = UtilFunctions.getAvgValue(inRecords);
+						Double reward = avgInputRate / avgProcessingRate;
+						if(reward < this.activityMin){
 							minFlag = true;
 						}
-						if(oldRate > this.activityMax){
+						if(reward > this.activityMax){
 							maxFlag = true;
 						}
+						
 						for(Integer timestamp: timestamps){
 							Double rate = (nbInputs.get(timestamp) / monitFrequency) * 1.0;
-							Double activity = rate / avgLatency;
-							if(minFlag && activity > this.activityMin){
-								minFlag = false;
-							}
-							if(maxFlag && activity < this.activityMax){
-								maxFlag = false;
-							}
 							sum += rate;
-							oldRate = rate;
 							count++;
 						}
+						
+						
 						Integer degree = this.scaleManager.getDegree(bolt);
 						if(minFlag){
 							this.scaleManager.addScaleInAction(bolt, degree - 1);

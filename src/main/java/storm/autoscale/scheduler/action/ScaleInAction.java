@@ -103,9 +103,9 @@ public class ScaleInAction implements IAction {
 	}
 
 	@Override
-	public void storeAction(String component, Integer currentDegree, Integer adequateDegree) {
+	public void storeAction(String component, Integer currentDegree, Integer newDegree) {
 		try {
-			String query = "INSERT INTO scales VALUES('" + this.sm.getMonitor().getTimestamp() + "', '" + component + "', 'scale in', '" + currentDegree + "', '" + adequateDegree + "')";
+			String query = "INSERT INTO scales VALUES('" + this.sm.getMonitor().getTimestamp() + "', '" + this.explorer.getTopologyName() + "', '" + component + "', 'scale-in', '" + currentDegree + "', '" + newDegree + "')";
 			this.connector.executeUpdate(query);
 		} catch (SQLException e) {
 			logger.severe("Unable to store scale in action for component " + component + " because of " + e);

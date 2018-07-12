@@ -115,7 +115,7 @@ public class XmlKnowledgeParser {
 			final NodeList rewardNode = ruleNode.getElementsByTagName(ParameterNames.RWD.toString());
 			Double rwd = Double.parseDouble(rewardNode.item(0).getTextContent());
 			
-			if(operator.equalsIgnoreCase(op) && state.equalsIgnoreCase(stateToString) && rule.getReward() > rwd){
+			if(operator.equalsIgnoreCase(op) && state.equalsIgnoreCase(stateToString) && rule.getReward() > rwd && rule.getReward() <= 1 && !rule.getReward().isInfinite() && !rule.getReward().isNaN()){
 				degreeNode.item(0).setTextContent(degree);
 				rewardNode.item(0).setTextContent(reward);
 				existRule = true;
@@ -140,17 +140,17 @@ public class XmlKnowledgeParser {
 			ruleNode.appendChild(rewardNode);
 			
 			rules.appendChild(ruleNode);
-			
-			TransformerFactory transformerFactory = TransformerFactory.newInstance();
-			Transformer transformer;
-			try {
-				transformer = transformerFactory.newTransformer();
-				DOMSource source = new DOMSource(doc);
-				StreamResult result = new StreamResult(new File(this.filename));
-				transformer.transform(source, result);
-			} catch (TransformerException e) {
-				logger.severe("Impossible to persist the rule because " + e);
-			}
+		}
+		
+		TransformerFactory transformerFactory = TransformerFactory.newInstance();
+		Transformer transformer;
+		try {
+			transformer = transformerFactory.newTransformer();
+			DOMSource source = new DOMSource(doc);
+			StreamResult result = new StreamResult(new File(this.filename));
+			transformer.transform(source, result);
+		} catch (TransformerException e) {
+			logger.severe("Impossible to persist the rule because " + e);
 		}
 	}
 	

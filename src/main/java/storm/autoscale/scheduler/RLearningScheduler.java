@@ -30,7 +30,6 @@ import storm.autoscale.scheduler.modules.assignment.AssignmentMonitor;
 import storm.autoscale.scheduler.modules.component.ComponentMonitor;
 import storm.autoscale.scheduler.modules.explorer.TopologyExplorer;
 import storm.autoscale.scheduler.modules.scale.ScalingManagerPlus;
-import storm.autoscale.scheduler.modules.stats.ComponentWindowedStats;
 import storm.autoscale.scheduler.modules.stats.StatStorageManager;
 import storm.autoscale.scheduler.util.UtilFunctions;
 
@@ -126,36 +125,11 @@ public class RLearningScheduler implements IScheduler {
 						Integer count = 0;
 						Boolean minFlag = false;
 						Boolean maxFlag = false;
-						Double oldRate = ComponentWindowedStats.getOldestRecord(nbInputs);
-						Double avgLatency = UtilFunctions.getAvgValue(UtilFunctions.getValues(this.compMonitor.getStats(bolt).getAvgLatencyRecords()));
-						if(oldRate < this.activityMin){
-							minFlag = true;
-						}
-						if(oldRate > this.activityMax){
-							maxFlag = true;
-						}
-						for(Integer timestamp: timestamps){
-							Double rate = (nbInputs.get(timestamp) / monitFrequency) * 1.0;
-							Double activity = rate / avgLatency;
-							if(minFlag && activity > this.activityMin){
-								minFlag = false;
-							}
-							if(maxFlag && activity < this.activityMax){
-								maxFlag = false;
-							}
-							sum += rate;
-							oldRate = rate;
-							count++;
-						}
-						Double averageRate = sum / count;
-						
-						Double lBound = ((Math.round(averageRate)) / Math.round(scale)) * scale;
-						Double uBound = lBound + scale;
-						Integer degree = this.assignMonitor.getParallelism(bolt);
 						ArrayList<Long> execRecords = new ArrayList<>();
 						ArrayList<Long> inRecords = new ArrayList<>();
 						Collection<Long> rawExecRecords = this.compMonitor.getStats(bolt).getExecutedRecords().values();
 						Collection<Long> rawInRecords = this.compMonitor.getStats(bolt).getInputRecords().values();
+						
 						for(Long record : rawExecRecords){
 							execRecords.add(record);
 						}
@@ -165,8 +139,26 @@ public class RLearningScheduler implements IScheduler {
 						
 						Double avgProcessingRate = UtilFunctions.getAvgValue(execRecords);
 						Double avgInputRate = UtilFunctions.getAvgValue(inRecords);
-						Double reward = avgProcessingRate / avgInputRate;
+						Double reward = avgInputRate / avgProcessingRate;
+						if(reward < this.activityMin){
+							minFlag = true;
+						}
+						if(reward > this.activityMax){
+							maxFlag = true;
+						}
 						
+						for(Integer timestamp: timestamps){
+							Double rate = (nbInputs.get(timestamp) / monitFrequency) * 1.0;
+							sum += rate;
+							count++;
+						}
+						Double averageRate = sum / count;
+	
+						Double lBound = ((Math.round(averageRate)) / Math.round(scale)) * scale;
+						Double uBound = lBound + scale;
+						Integer degree = this.assignMonitor.getParallelism(bolt);
+						
+					
 						knowledgeParser.createOrUpdateRule(new KnowledgeRule(bolt, lBound, uBound, degree, reward));
 						
 						if(minFlag){
